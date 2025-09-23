@@ -24,7 +24,7 @@ La méthode la plus simple pour lancer l'application est d'utiliser Docker Compo
 
 ```bash
 # Cloner le repository (si nécessaire)
-git clone <repository-url>
+git clone git@github.com:pulsybkr/bnb_esgi.git
 cd bnb_esgi
 
 # Lancer tous les services
