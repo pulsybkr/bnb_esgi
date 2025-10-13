@@ -128,4 +128,3 @@ Pour contribuer au projet :
 - **Backend** : AdonisJS, Node.js, TypeScript, PostgreSQL
 - **Base de données** : PostgreSQL
 - **Conteneurisation** : Docker & Docker Compose
-
