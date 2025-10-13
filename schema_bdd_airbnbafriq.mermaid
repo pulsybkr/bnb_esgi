@@ -1,0 +1,193 @@
+erDiagram
+    USERS ||--o{ LOGEMENTS : possede
+    USERS ||--o{ RESERVATIONS : effectue
+    USERS ||--o{ MESSAGES : envoie
+    USERS ||--o{ MESSAGES : recoit
+    USERS ||--o{ AVIS : redige
+    USERS ||--o{ FAVORIS : ajoute
+    USERS ||--o{ PAIEMENTS : realise
+    
+    LOGEMENTS ||--o{ DISPONIBILITES : a
+    LOGEMENTS ||--o{ RESERVATIONS : concerne
+    LOGEMENTS ||--o{ FAVORIS : est_favori
+    LOGEMENTS ||--o{ PHOTOS : contient
+    
+    RESERVATIONS ||--|| PAIEMENTS : necessite
+    RESERVATIONS ||--o{ AVIS : genere
+    RESERVATIONS ||--o{ MESSAGES : concerne
+    
+    USERS {
+        uuid id PK
+        string nom
+        string prenom
+        string email UK
+        string telephone UK
+        string password_hash
+        string adresse
+        string ville
+        string pays
+        enum type_utilisateur "locataire, proprietaire, admin"
+        boolean email_verifie
+        boolean telephone_verifie
+        string photo_profil
+        json preferences
+        enum statut "actif, suspendu, inactif"
+        timestamp date_inscription
+        timestamp derniere_connexion
+        timestamp created_at
+        timestamp updated_at
+    }
+    
+    LOGEMENTS {
+        uuid id PK
+        uuid id_proprietaire FK
+        string titre
+        text description
+        string adresse
+        string ville
+        string pays
+        decimal latitude
+        decimal longitude
+        enum type "maison, appartement, chambre, hotel"
+        integer nombre_pieces
+        integer capacite_accueil
+        decimal prix_par_nuit
+        string devise
+        json equipements
+        json regles_maison
+        enum statut "actif, suspendu, archive"
+        float note_moyenne
+        integer nombre_avis
+        timestamp created_at
+        timestamp updated_at
+    }
+    
+    PHOTOS {
+        uuid id PK
+        uuid id_logement FK
+        string url
+        string url_miniature
+        boolean est_principale
+        integer ordre
+        timestamp created_at
+    }
+    
+    DISPONIBILITES {
+        uuid id PK
+        uuid id_logement FK
+        date date_debut
+        date date_fin
+        enum statut "disponible, reserve, bloque"
+        decimal prix_personnalise
+        text note
+        timestamp created_at
+        timestamp updated_at
+    }
+    
+    RESERVATIONS {
+        uuid id PK
+        uuid id_logement FK
+        uuid id_locataire FK
+        date date_debut
+        date date_fin
+        integer nombre_voyageurs
+        decimal montant_total
+        string devise
+        enum statut "en_attente, confirmee, annulee, terminee, en_cours"
+        text message_locataire
+        text motif_annulation
+        timestamp date_annulation
+        timestamp created_at
+        timestamp updated_at
+    }
+    
+    PAIEMENTS {
+        uuid id PK
+        uuid id_reservation FK
+        uuid id_utilisateur FK
+        decimal montant
+        string devise
+        enum statut "en_attente, reussi, echec, rembourse, annule"
+        enum moyen_paiement "mobile_money, carte, paypal"
+        string operateur_mobile_money
+        string reference_transaction
+        string reference_externe
+        json details_paiement
+        text message_erreur
+        timestamp date_transaction
+        timestamp created_at
+        timestamp updated_at
+    }
+    
+    MESSAGES {
+        uuid id PK
+        uuid expediteur_id FK
+        uuid destinataire_id FK
+        uuid id_reservation FK
+        text contenu
+        boolean lu
+        timestamp date_lecture
+        enum type "reservation, support, general"
+        timestamp date_envoi
+        timestamp created_at
+    }
+    
+    AVIS {
+        uuid id PK
+        uuid id_reservation FK
+        uuid id_auteur FK
+        uuid id_cible FK
+        enum type_cible "logement, voyageur, proprietaire"
+        integer note
+        text commentaire
+        json notes_detaillees
+        text reponse_proprietaire
+        timestamp date_reponse
+        boolean signale
+        text motif_signalement
+        enum statut "publie, masque, modere"
+        timestamp date_publication
+        timestamp created_at
+        timestamp updated_at
+    }
+    
+    FAVORIS {
+        uuid id PK
+        uuid id_utilisateur FK
+        uuid id_logement FK
+        text note_privee
+        timestamp date_ajout
+        timestamp created_at
+    }
+    
+    NOTIFICATIONS {
+        uuid id PK
+        uuid id_utilisateur FK
+        string titre
+        text contenu
+        enum type "reservation, paiement, message, avis, systeme"
+        json data
+        boolean lu
+        timestamp date_lecture
+        timestamp date_envoi
+        timestamp created_at
+    }
+    
+    SIGNALEMENTS {
+        uuid id PK
+        uuid id_utilisateur FK
+        enum type_contenu "logement, avis, utilisateur, message"
+        uuid id_contenu
+        enum motif "contenu_inapproprie, faux, spam, autre"
+        text description
+        enum statut "en_attente, traite, rejete"
+        uuid id_moderateur FK
+        text decision
+        timestamp date_traitement
+        timestamp created_at
+        timestamp updated_at
+    }
+    
+    NOTIFICATIONS ||--|| USERS : notifie
+    SIGNALEMENTS }o--|| USERS : signale_par
+    SIGNALEMENTS }o--o| USERS : traite_par
