@@ -129,6 +129,3 @@ Pour contribuer au projet :
 - **Base de données** : PostgreSQL
 - **Conteneurisation** : Docker & Docker Compose
 
-## Licence
-
-Ce projet est sous licence UNLICENSED.
