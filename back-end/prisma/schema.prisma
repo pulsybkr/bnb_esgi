@@ -1,0 +1,363 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum TypeUtilisateur {
+  locataire
+  proprietaire
+  admin
+}
+
+enum StatutUtilisateur {
+  actif
+  suspendu
+  inactif
+}
+
+enum TypeLogement {
+  maison
+  appartement
+  chambre
+  hotel
+}
+
+enum StatutLogement {
+  actif
+  suspendu
+  archive
+}
+
+enum StatutDisponibilite {
+  disponible
+  reserve
+  bloque
+}
+
+enum StatutReservation {
+  en_attente
+  confirmee
+  annulee
+  terminee
+  en_cours
+}
+
+enum StatutPaiement {
+  en_attente
+  reussi
+  echec
+  rembourse
+  annule
+}
+
+enum MoyenPaiement {
+  mobile_money
+  carte
+  paypal
+}
+
+enum TypeMessage {
+  reservation
+  support
+  general
+}
+
+enum TypeCibleAvis {
+  logement
+  voyageur
+  proprietaire
+}
+
+enum StatutAvis {
+  publie
+  masque
+  modere
+}
+
+enum TypeNotification {
+  reservation
+  paiement
+  message
+  avis
+  systeme
+}
+
+enum TypeContenuSignalement {
+  logement
+  avis
+  utilisateur
+  message
+}
+
+enum MotifSignalement {
+  contenu_inapproprie
+  faux
+  spam
+  autre
+}
+
+enum StatutSignalement {
+  en_attente
+  traite
+  rejete
+}
+
+model User {
+  id                  String            @id @default(uuid())
+  nom                 String
+  prenom              String
+  email               String            @unique
+  telephone           String?           @unique
+  passwordHash        String            @map("password_hash")
+  adresse             String?
+  ville               String?
+  pays                String?
+  typeUtilisateur     TypeUtilisateur   @map("type_utilisateur") @default(locataire)
+  emailVerifie        Boolean           @map("email_verifie") @default(false)
+  telephoneVerifie    Boolean           @map("telephone_verifie") @default(false)
+  photoProfil         String?           @map("photo_profil")
+  preferences         Json?
+  statut              StatutUtilisateur @default(actif)
+  dateInscription     DateTime          @map("date_inscription") @default(now())
+  derniereConnexion   DateTime?         @map("derniere_connexion")
+  createdAt           DateTime          @default(now()) @map("created_at")
+  updatedAt            DateTime          @updatedAt @map("updated_at")
+
+  // Relations
+  logements           Logement[]
+  reservations        Reservation[]
+  messagesEnvoyes     Message[]         @relation("MessagesEnvoyes")
+  messagesRecus       Message[]         @relation("MessagesRecus")
+  avisRediges         Avis[]            @relation("AvisRediges")
+  favoris             Favori[]
+  paiements           Paiement[]
+  notifications       Notification[]
+  signalementsCrees   Signalement[]     @relation("SignalementsCrees")
+  signalementsTraites Signalement[]     @relation("SignalementsTraites")
+
+  @@map("users")
+}
+
+model Logement {
+  id              String            @id @default(uuid())
+  idProprietaire  String            @map("id_proprietaire")
+  titre           String
+  description     String?           @db.Text
+  adresse         String
+  ville           String
+  pays            String
+  latitude        Decimal?          @db.Decimal(10, 8)
+  longitude       Decimal?          @db.Decimal(11, 8)
+  type            TypeLogement
+  nombrePieces    Int               @map("nombre_pieces")
+  capaciteAccueil Int               @map("capacite_accueil")
+  prixParNuit     Decimal           @map("prix_par_nuit") @db.Decimal(10, 2)
+  devise          String            @default("XOF")
+  equipements     Json?
+  reglesMaison    Json?             @map("regles_maison")
+  statut          StatutLogement    @default(actif)
+  noteMoyenne     Float?            @map("note_moyenne") @default(0)
+  nombreAvis      Int               @map("nombre_avis") @default(0)
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @updatedAt @map("updated_at")
+
+  // Relations
+  proprietaire    User              @relation(fields: [idProprietaire], references: [id])
+  disponibilites  Disponibilite[]
+  reservations    Reservation[]
+  favoris         Favori[]
+  photos          Photo[]
+
+  @@map("logements")
+}
+
+model Photo {
+  id            String   @id @default(uuid())
+  idLogement    String   @map("id_logement")
+  url           String
+  urlMiniature  String?  @map("url_miniature")
+  estPrincipale Boolean  @map("est_principale") @default(false)
+  ordre        Int      @default(0)
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  // Relations
+  logement     Logement @relation(fields: [idLogement], references: [id], onDelete: Cascade)
+
+  @@map("photos")
+}
+
+model Disponibilite {
+  id                String            @id @default(uuid())
+  idLogement        String            @map("id_logement")
+  dateDebut         DateTime          @map("date_debut") @db.Date
+  dateFin           DateTime          @map("date_fin") @db.Date
+  statut            StatutDisponibilite @default(disponible)
+  prixPersonnalise  Decimal?          @map("prix_personnalise") @db.Decimal(10, 2)
+  note              String?           @db.Text
+  createdAt         DateTime          @default(now()) @map("created_at")
+  updatedAt         DateTime          @updatedAt @map("updated_at")
+
+  // Relations
+  logement          Logement          @relation(fields: [idLogement], references: [id], onDelete: Cascade)
+
+  @@map("disponibilites")
+}
+
+model Reservation {
+  id              String            @id @default(uuid())
+  idLogement      String            @map("id_logement")
+  idLocataire     String            @map("id_locataire")
+  dateDebut       DateTime          @map("date_debut") @db.Date
+  dateFin         DateTime          @map("date_fin") @db.Date
+  nombreVoyageurs Int              @map("nombre_voyageurs")
+  montantTotal    Decimal           @map("montant_total") @db.Decimal(10, 2)
+  devise          String            @default("XOF")
+  statut          StatutReservation @default(en_attente)
+  messageLocataire String?          @map("message_locataire") @db.Text
+  motifAnnulation String?           @map("motif_annulation") @db.Text
+  dateAnnulation  DateTime?         @map("date_annulation")
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @updatedAt @map("updated_at")
+
+  // Relations
+  logement        Logement          @relation(fields: [idLogement], references: [id])
+  locataire       User              @relation(fields: [idLocataire], references: [id])
+  paiements       Paiement[]
+  avis            Avis[]
+  messages        Message[]
+
+  @@map("reservations")
+}
+
+model Paiement {
+  id                  String          @id @default(uuid())
+  idReservation       String          @map("id_reservation")
+  idUtilisateur       String          @map("id_utilisateur")
+  montant             Decimal         @db.Decimal(10, 2)
+  devise              String          @default("XOF")
+  statut              StatutPaiement  @default(en_attente)
+  moyenPaiement       MoyenPaiement   @map("moyen_paiement")
+  operateurMobileMoney String?        @map("operateur_mobile_money")
+  referenceTransaction String?        @map("reference_transaction")
+  referenceExterne    String?         @map("reference_externe")
+  detailsPaiement     Json?           @map("details_paiement")
+  messageErreur       String?         @map("message_erreur") @db.Text
+  dateTransaction     DateTime?       @map("date_transaction")
+  createdAt           DateTime        @default(now()) @map("created_at")
+  updatedAt           DateTime        @updatedAt @map("updated_at")
+
+  // Relations
+  reservation         Reservation     @relation(fields: [idReservation], references: [id])
+  utilisateur         User            @relation(fields: [idUtilisateur], references: [id])
+
+  @@map("paiements")
+}
+
+model Message {
+  id              String        @id @default(uuid())
+  expediteurId    String        @map("expediteur_id")
+  destinataireId  String        @map("destinataire_id")
+  idReservation   String?       @map("id_reservation")
+  contenu         String        @db.Text
+  lu              Boolean       @default(false)
+  dateLecture     DateTime?     @map("date_lecture")
+  type            TypeMessage   @default(general)
+  dateEnvoi       DateTime      @map("date_envoi") @default(now())
+  createdAt       DateTime      @default(now()) @map("created_at")
+
+  // Relations
+  expediteur      User          @relation("MessagesEnvoyes", fields: [expediteurId], references: [id])
+  destinataire    User          @relation("MessagesRecus", fields: [destinataireId], references: [id])
+  reservation     Reservation?  @relation(fields: [idReservation], references: [id])
+
+  @@map("messages")
+}
+
+model Avis {
+  id                String          @id @default(uuid())
+  idReservation     String          @map("id_reservation")
+  idAuteur          String          @map("id_auteur")
+  idCible           String?         @map("id_cible")
+  typeCible         TypeCibleAvis   @map("type_cible")
+  note              Int
+  commentaire       String?         @db.Text
+  notesDetaillees   Json?           @map("notes_detaillees")
+  reponseProprietaire String?       @map("reponse_proprietaire") @db.Text
+  dateReponse       DateTime?       @map("date_reponse")
+  signale           Boolean         @default(false)
+  motifSignalement  String?         @map("motif_signalement") @db.Text
+  statut            StatutAvis      @default(publie)
+  datePublication   DateTime?       @map("date_publication")
+  createdAt         DateTime        @default(now()) @map("created_at")
+  updatedAt         DateTime        @updatedAt @map("updated_at")
+
+  // Relations
+  reservation       Reservation     @relation(fields: [idReservation], references: [id])
+  auteur            User            @relation("AvisRediges", fields: [idAuteur], references: [id])
+  // Note: idCible is a polymorphic reference (can reference logement, voyageur, or proprietaire)
+  // based on typeCible field. Prisma doesn't support polymorphic relations directly.
+
+  @@map("avis")
+}
+
+model Favori {
+  id            String   @id @default(uuid())
+  idUtilisateur String   @map("id_utilisateur")
+  idLogement    String   @map("id_logement")
+  notePrivee    String?  @map("note_privee") @db.Text
+  dateAjout     DateTime @map("date_ajout") @default(now())
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  // Relations
+  utilisateur   User     @relation(fields: [idUtilisateur], references: [id], onDelete: Cascade)
+  logement      Logement @relation(fields: [idLogement], references: [id], onDelete: Cascade)
+
+  @@unique([idUtilisateur, idLogement])
+  @@map("favoris")
+}
+
+model Notification {
+  id            String          @id @default(uuid())
+  idUtilisateur String          @map("id_utilisateur")
+  titre         String
+  contenu       String          @db.Text
+  type          TypeNotification
+  data          Json?
+  lu            Boolean         @default(false)
+  dateLecture   DateTime?       @map("date_lecture")
+  dateEnvoi     DateTime        @map("date_envoi") @default(now())
+  createdAt     DateTime        @default(now()) @map("created_at")
+
+  // Relations
+  utilisateur   User            @relation(fields: [idUtilisateur], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+model Signalement {
+  id              String                @id @default(uuid())
+  idUtilisateur  String                @map("id_utilisateur")
+  typeContenu    TypeContenuSignalement @map("type_contenu")
+  idContenu      String                @map("id_contenu")
+  motif          MotifSignalement
+  description    String?               @db.Text
+  statut         StatutSignalement     @default(en_attente)
+  idModerateur   String?               @map("id_moderateur")
+  decision       String?               @db.Text
+  dateTraitement DateTime?             @map("date_traitement")
+  createdAt       DateTime              @default(now()) @map("created_at")
+  updatedAt       DateTime              @updatedAt @map("updated_at")
+
+  // Relations
+  utilisateur     User                  @relation("SignalementsCrees", fields: [idUtilisateur], references: [id])
+  moderateur      User?                 @relation("SignalementsTraites", fields: [idModerateur], references: [id])
+
+  @@map("signalements")
+}
