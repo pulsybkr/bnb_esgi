@@ -141,3 +141,72 @@ export const verifyEmailSchema = Joi.object({
     }),
 });
 
+export const updateProfileSchema = Joi.object({
+  firstName: Joi.string()
+    .trim()
+    .min(1)
+    .max(50)
+    .optional()
+    .messages({
+      'string.min': 'First name must be at least 1 character long',
+      'string.max': 'First name must be no more than 50 characters long',
+    }),
+
+  lastName: Joi.string()
+    .trim()
+    .min(1)
+    .max(50)
+    .optional()
+    .messages({
+      'string.min': 'Last name must be at least 1 character long',
+      'string.max': 'Last name must be no more than 50 characters long',
+    }),
+
+  phone: Joi.string()
+    .pattern(/^(\+?[1-9]\d{1,14}|0\d{9})$/)
+    .optional()
+    .allow(null, '')
+    .messages({
+      'string.pattern.base': 'Please provide a valid phone number',
+    }),
+
+  address: Joi.string()
+    .trim()
+    .max(255)
+    .optional()
+    .allow(null, '')
+    .messages({
+      'string.max': 'Address must be no more than 255 characters long',
+    }),
+
+  city: Joi.string()
+    .trim()
+    .max(100)
+    .optional()
+    .allow(null, '')
+    .messages({
+      'string.max': 'City must be no more than 100 characters long',
+    }),
+
+  country: Joi.string()
+    .trim()
+    .max(100)
+    .optional()
+    .allow(null, '')
+    .messages({
+      'string.max': 'Country must be no more than 100 characters long',
+    }),
+
+  profilePhoto: Joi.string()
+    .uri()
+    .optional()
+    .allow(null, '')
+    .messages({
+      'string.uri': 'Profile photo must be a valid URL',
+    }),
+
+  preferences: Joi.object()
+    .optional()
+    .allow(null),
+});
+

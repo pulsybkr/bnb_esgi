@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { AuthService } from '../../services/auth';
+import { UserService } from '../../services/user';
 import { AuthenticatedRequest, RegisterData, LoginData, RefreshTokenData, ChangePasswordData, PasswordResetData, ResetPasswordData } from '../../types';
 import { authConfig } from '../../config';
 
@@ -120,6 +121,40 @@ export class AuthController {
       res.json({
         success: true,
         data: { user },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Update current user profile
+   */
+  static async updateProfile(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const authReq = req as AuthenticatedRequest;
+
+      if (!authReq.user) {
+        throw new Error('User not authenticated');
+      }
+
+      const { firstName, lastName, phone, address, city, country, profilePhoto, preferences } = req.body;
+
+      const updatedUser = await UserService.updateUserProfile(authReq.user.id, {
+        firstName,
+        lastName,
+        phone,
+        address,
+        city,
+        country,
+        profilePhoto,
+        preferences,
+      });
+
+      res.json({
+        success: true,
+        message: 'Profile updated successfully',
+        data: { user: updatedUser },
       });
     } catch (error) {
       next(error);

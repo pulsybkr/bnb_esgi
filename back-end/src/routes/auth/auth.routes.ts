@@ -10,6 +10,7 @@ import {
   requestPasswordResetSchema,
   resetPasswordSchema,
   verifyEmailSchema,
+  updateProfileSchema,
 } from '../../utils/validation';
 
 const router = Router();
@@ -397,6 +398,91 @@ router.post('/logout', requireAuth, AuthController.logout);
  *               $ref: '#/components/schemas/Error'
  */
 router.get('/profile', requireAuth, AuthController.getProfile);
+
+/**
+ * @openapi
+ * /auth/profile:
+ *   put:
+ *     tags:
+ *       - Auth
+ *     summary: Mettre à jour le profil utilisateur
+ *     description: Permet à un utilisateur connecté de mettre à jour ses informations de profil
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               firstName:
+ *                 type: string
+ *                 example: John
+ *                 description: Prénom de l'utilisateur
+ *               lastName:
+ *                 type: string
+ *                 example: Doe
+ *                 description: Nom de famille de l'utilisateur
+ *               phone:
+ *                 type: string
+ *                 example: '+33612345678'
+ *                 description: Numéro de téléphone
+ *               address:
+ *                 type: string
+ *                 example: '123 Rue de la Paix'
+ *                 description: Adresse postale
+ *               city:
+ *                 type: string
+ *                 example: Paris
+ *                 description: Ville
+ *               country:
+ *                 type: string
+ *                 example: France
+ *                 description: Pays
+ *               profilePhoto:
+ *                 type: string
+ *                 format: uri
+ *                 example: 'https://example.com/photo.jpg'
+ *                 description: URL de la photo de profil
+ *               preferences:
+ *                 type: object
+ *                 description: Préférences utilisateur (JSON)
+ *     responses:
+ *       200:
+ *         description: Profil mis à jour avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Profile updated successfully
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     user:
+ *                       type: object
+ *                       description: Profil utilisateur mis à jour
+ *       400:
+ *         description: Données invalides
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       401:
+ *         description: Non authentifié
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+router.put('/profile', requireAuth, validateRequest(updateProfileSchema), AuthController.updateProfile);
+
 
 /**
  * @openapi
