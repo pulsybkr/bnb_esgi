@@ -3,8 +3,9 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import morgan from 'morgan';
+import swaggerUi from 'swagger-ui-express';
 import authRoutes from './routes/auth';
-import { apiLogger, errorHandler } from './config';
+import { apiLogger, errorHandler, swaggerSpec } from './config';
 
 dotenv.config();
 
@@ -34,6 +35,18 @@ app.get('/', (req: Request, res: Response) => {
 
 app.get('/health', (req: Request, res: Response) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// Documentation Swagger
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: 'BnB ESGI API Documentation',
+}));
+
+// Route pour accéder à la spécification JSON
+app.get('/api-docs.json', (req: Request, res: Response) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.send(swaggerSpec);
 });
 
 app.use('/auth', authRoutes);

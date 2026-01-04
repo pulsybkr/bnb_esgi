@@ -230,5 +230,63 @@ export class AuthController {
       next(error);
     }
   }
+
+  /**
+   * Check if user is a proprietaire (owner)
+   */
+  static async checkIsOwner(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const authReq = req as AuthenticatedRequest;
+
+      if (!authReq.user) {
+        res.status(401).json({
+          success: false,
+          message: 'Not authenticated',
+        });
+        return;
+      }
+
+      const isOwner = authReq.user.userType === 'proprietaire' || authReq.user.userType === 'admin';
+
+      res.json({
+        success: true,
+        data: {
+          isOwner,
+          userType: authReq.user.userType,
+        },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Check if user is an admin
+   */
+  static async checkIsAdmin(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const authReq = req as AuthenticatedRequest;
+
+      if (!authReq.user) {
+        res.status(401).json({
+          success: false,
+          message: 'Not authenticated',
+        });
+        return;
+      }
+
+      const isAdmin = authReq.user.userType === 'admin';
+
+      res.json({
+        success: true,
+        data: {
+          isAdmin,
+          userType: authReq.user.userType,
+        },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
