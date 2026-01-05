@@ -11,9 +11,10 @@
           :src="images[currentImageIndex]" 
           :alt="`Image ${currentImageIndex + 1}`"
           class="w-full h-full object-cover rounded-l-lg"
+          @error="handleImageError"
         />
-        <div class="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-10 transition-all duration-200 flex items-center justify-center">
-          <ZoomIn class="w-8 h-8 text-white opacity-0 hover:opacity-100 transition-opacity duration-200" />
+        <div class="absolute inset-0 bg-black/0 hover:bg-black/10 transition-all duration-200 flex items-center justify-center pointer-events-none">
+          <ZoomIn class="w-8 h-8 text-white opacity-0 hover:opacity-100 transition-opacity duration-200 pointer-events-auto" />
         </div>
       </div>
       
@@ -33,9 +34,10 @@
             'rounded-br-lg': index === 3,
             'rounded-none': index > 0 && index < 3
           }"
+          @error="handleImageError"
         />
-        <div class="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-10 transition-all duration-200 flex items-center justify-center">
-          <ZoomIn class="w-6 h-6 text-white opacity-0 hover:opacity-100 transition-opacity duration-200" />
+        <div class="absolute inset-0 bg-black/0 hover:bg-black/10 transition-all duration-200 flex items-center justify-center pointer-events-none">
+          <ZoomIn class="w-6 h-6 text-white opacity-0 hover:opacity-100 transition-opacity duration-200 pointer-events-auto" />
         </div>
       </div>
     </div>
@@ -151,6 +153,13 @@ const previousImage = () => {
   modalImageIndex.value = modalImageIndex.value === 0 
     ? props.images.length - 1 
     : modalImageIndex.value - 1
+}
+
+const handleImageError = (event: Event) => {
+  const img = event.target as HTMLImageElement
+  console.error('Erreur de chargement d\'image:', img.src)
+  // Optionnel: définir une image de remplacement
+  // img.src = 'https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=800&q=80'
 }
 
 // Navigation au clavier

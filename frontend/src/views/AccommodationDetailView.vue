@@ -15,8 +15,15 @@
             <button class="p-2 text-gray-600 hover:text-gray-900">
               <Share class="w-5 h-5" />
             </button>
-            <button class="p-2 text-gray-600 hover:text-gray-900">
-              <Heart class="w-5 h-5" />
+            <button 
+              @click="toggleFavorite"
+              class="p-2 text-gray-600 hover:text-gray-900 transition-colors"
+              :class="{ 'text-red-600': isFavorite }"
+            >
+              <Heart 
+                class="w-5 h-5 transition-colors" 
+                :class="{ 'fill-current': isFavorite }"
+              />
             </button>
           </div>
         </div>
@@ -71,6 +78,29 @@
             <div class="mb-8">
               <h2 class="text-xl font-semibold mb-4">À propos de ce logement</h2>
               <p class="text-gray-700 leading-relaxed">{{ accommodation.description }}</p>
+            </div>
+
+            <!-- Visualisation des disponibilités -->
+            <div class="mb-8">
+              <h2 class="text-xl font-semibold mb-4">Calendrier des disponibilités</h2>
+              <AvailabilityCalendar
+                :booked-ranges="bookedRanges"
+                :blocked-ranges="blockedRanges"
+              />
+            </div>
+
+            <!-- Tags -->
+            <div v-if="accommodation.tags && accommodation.tags.length > 0" class="mb-8">
+              <h2 class="text-xl font-semibold mb-4">Caractéristiques</h2>
+              <div class="flex flex-wrap gap-2">
+                <span
+                  v-for="tag in accommodation.tags"
+                  :key="tag"
+                  class="px-3 py-1.5 text-sm font-medium bg-gray-100 text-gray-700 rounded-full hover:bg-gray-200 transition-colors"
+                >
+                  {{ tag }}
+                </span>
+              </div>
             </div>
 
             <!-- Équipements -->
@@ -136,39 +166,154 @@
                 </div>
               </div>
 
+              <!-- Calculateur de prix automatique -->
+              <PriceCalculator
+                :pricing-config="pricingConfig"
+                :base-price="accommodation.price"
+                :max-guests="accommodation.maxGuests"
+                :min-date="minDate"
+                :disabled-dates="disabledDates"
+                :initial-dates="selectedDates"
+                :initial-guests="guests"
+                @update:dates="selectedDates = $event"
+                @update:guests="guests = $event"
+                @calculation-change="handlePriceCalculationChange"
+              />
+
               <!-- Formulaire de réservation -->
-              <form @submit.prevent="handleReservation" class="space-y-4">
-                <div class="grid grid-cols-2 gap-2">
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Arrivée</label>
-                    <input 
-                      type="date" 
-                      v-model="checkIn"
-                      class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                      required
-                    />
+              <form @submit.prevent="handleReservation" class="space-y-4 mt-6">
+
+                <!-- Services supplémentaires -->
+                <div v-if="accommodation.services && accommodation.services.length > 0" class="border-t pt-4">
+                  <button
+                    type="button"
+                    @click="showServices = !showServices"
+                    class="w-full flex items-center justify-between text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors"
+                  >
+                    <span>Services supplémentaires</span>
+                    <span class="text-xs text-gray-500">
+                      {{ selectedServices.length > 0 ? `${selectedServices.length} sélectionné${selectedServices.length > 1 ? 's' : ''}` : 'Ajouter' }}
+                    </span>
+                  </button>
+
+                  <!-- Liste des services -->
+                  <div v-if="showServices" class="mt-4 space-y-3 max-h-60 overflow-y-auto">
+                    <label
+                      v-for="service in accommodation.services"
+                      :key="service.id"
+                      class="flex items-start space-x-3 p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
+                    >
+                      <input
+                        type="checkbox"
+                        :value="service.id"
+                        :checked="selectedServices.some(s => s.serviceId === service.id)"
+                        @change="toggleService(service.id)"
+                        class="mt-1 rounded border-gray-300 text-red-600 focus:ring-red-500"
+                      />
+                      <div class="flex-1">
+                        <div class="flex items-center justify-between">
+                          <span class="text-sm font-medium text-gray-900">{{ service.name }}</span>
+                          <span class="text-sm font-semibold text-gray-900">
+                            {{ formatServicePrice(service) }}
+                          </span>
+                        </div>
+                        <p v-if="service.description" class="text-xs text-gray-500 mt-1">
+                          {{ service.description }}
+                        </p>
+                      </div>
+                    </label>
                   </div>
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Départ</label>
-                    <input 
-                      type="date" 
-                      v-model="checkOut"
-                      class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                      required
-                    />
+
+                  <!-- Résumé des services sélectionnés -->
+                  <div v-if="selectedServices.length > 0" class="mt-3 pt-3 border-t space-y-2">
+                    <div
+                      v-for="selected in selectedServices"
+                      :key="selected.serviceId"
+                      class="flex items-center justify-between text-sm"
+                    >
+                      <div class="flex items-center space-x-2">
+                        <Check class="w-4 h-4 text-green-600" />
+                        <span class="text-gray-700">
+                          {{ getServiceName(selected.serviceId) }}
+                        </span>
+                      </div>
+                      <span class="font-medium text-gray-900">
+                        {{ formatSelectedServicePrice(selected.serviceId) }}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Voyageurs</label>
-                  <select 
-                    v-model.number="guests"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                  >
-                    <option v-for="i in accommodation.maxGuests" :key="i" :value="i">
-                      {{ i }} voyageur{{ i > 1 ? 's' : '' }}
-                    </option>
-                  </select>
+                <!-- Résumé du prix -->
+                <div v-if="selectedDates.start && selectedDates.end" class="border-t pt-4 space-y-2">
+                  <!-- Détails des nuits (avec tarification dynamique si applicable) -->
+                  <template v-if="priceCalculation">
+                    <!-- Prix par nuit (si différenciés) -->
+                    <template v-if="priceCalculation.weekendNights > 0 && priceCalculation.weekNights > 0">
+                      <div v-if="priceCalculation.weekNights > 0" class="flex justify-between text-sm">
+                        <span class="text-gray-600">
+                          {{ priceCalculation.weekNights }} nuit{{ priceCalculation.weekNights > 1 ? 's' : '' }} (semaine)
+                        </span>
+                        <span class="font-medium text-gray-900">
+                          €{{ priceCalculation.nightlyPrices
+                            .filter(np => !np.isWeekend)
+                            .reduce((sum, np) => sum + np.adjustedPrice, 0)
+                            .toFixed(2) }}
+                        </span>
+                      </div>
+                      <div v-if="priceCalculation.weekendNights > 0" class="flex justify-between text-sm">
+                        <span class="text-gray-600">
+                          {{ priceCalculation.weekendNights }} nuit{{ priceCalculation.weekendNights > 1 ? 's' : '' }} (week-end)
+                        </span>
+                        <span class="font-medium text-gray-900">
+                          €{{ priceCalculation.nightlyPrices
+                            .filter(np => np.isWeekend)
+                            .reduce((sum, np) => sum + np.adjustedPrice, 0)
+                            .toFixed(2) }}
+                        </span>
+                      </div>
+                    </template>
+                    <div v-else class="flex justify-between text-sm">
+                      <span class="text-gray-600">
+                        €{{ averageNightlyPrice.toFixed(2) }} x {{ calculatedNights }} nuit{{ calculatedNights > 1 ? 's' : '' }}
+                      </span>
+                      <span class="font-medium text-gray-900">
+                        €{{ priceCalculation.subtotal.toFixed(2) }}
+                      </span>
+                    </div>
+                    
+                    <!-- Réduction séjour long -->
+                    <div v-if="longStayDiscount > 0" class="flex justify-between text-sm text-green-600">
+                      <span>Réduction séjour long</span>
+                      <span class="font-medium">-€{{ longStayDiscount.toFixed(2) }}</span>
+                    </div>
+                  </template>
+                  <template v-else>
+                    <div class="flex justify-between text-sm">
+                      <span class="text-gray-600">
+                        €{{ accommodation.price }} x {{ calculatedNights }} nuit{{ calculatedNights > 1 ? 's' : '' }}
+                      </span>
+                      <span class="font-medium text-gray-900">
+                        €{{ basePrice.toFixed(2) }}
+                      </span>
+                    </div>
+                  </template>
+                  
+                  <div v-if="selectedServices.length > 0" class="flex justify-between text-sm">
+                    <span class="text-gray-600">Services supplémentaires</span>
+                    <span class="font-medium text-gray-900">
+                      €{{ servicesPrice.toFixed(2) }}
+                    </span>
+                  </div>
+                  <div class="flex justify-between text-sm font-semibold text-lg border-t pt-2">
+                    <span>Total</span>
+                    <span>€{{ totalPrice.toFixed(2) }}</span>
+                  </div>
+                  
+                  <!-- Indication du prix moyen par nuit -->
+                  <div v-if="calculatedNights > 0" class="text-xs text-gray-500 pt-1">
+                    {{ averageNightlyPrice.toFixed(2) }}€ / nuit en moyenne
+                  </div>
                 </div>
 
                 <button 
@@ -186,6 +331,25 @@
           </div>
         </div>
       </div>
+
+      <!-- Logements similaires -->
+      <SimilarAccommodations
+        v-if="accommodation"
+        :current-accommodation="accommodation"
+        :all-accommodations="accommodations"
+        :max-results="6"
+        @accommodation-selected="goToSimilarAccommodation"
+      />
+
+      <!-- Recommandations personnalisées -->
+      <RecommendationsAccommodations
+        v-if="accommodation"
+        :all-accommodations="accommodations"
+        :exclude-accommodation-ids="[accommodation.id]"
+        :max-results="6"
+        recommendation-type="trending"
+        @accommodation-selected="goToSimilarAccommodation"
+      />
     </div>
   </div>
 
@@ -199,33 +363,259 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { 
-  ArrowLeft, Share, Heart, MapPin, Users, Bed, Bath, Star, Check 
+  ArrowLeft, Share, Heart, MapPin, Users, Bed, Bath, Star
 } from 'lucide-vue-next'
 import PhotoGallery from '@/components/PhotoGallery.vue'
+import DateRangePicker from '@/components/DateRangePicker.vue'
+import AvailabilityCalendar from '@/components/AvailabilityCalendar.vue'
+import PriceCalculator from '@/components/PriceCalculator.vue'
+import SimilarAccommodations from '@/components/SimilarAccommodations.vue'
+import RecommendationsAccommodations from '@/components/RecommendationsAccommodations.vue'
 import { accommodations } from '@/data/fixtures'
-import type { Accommodation } from '@/types/accommodation'
+import type { Accommodation, SelectedService, Service } from '@/types/accommodation'
+import { hasDateConflict, getBookedDates, type DateRange } from '@/utils/dateUtils'
+import { availableServices, calculateServicePrice, calculateTotalServicesPrice } from '@/data/services'
+import { Check } from 'lucide-vue-next'
+import { calculatePrice, calculateAverageNightlyPrice } from '@/utils/pricing'
+import { getPricingConfig } from '@/data/pricingFixtures'
+import type { PricingConfiguration, PriceCalculationResult } from '@/types/pricing'
+import { useFavorites } from '@/composables/useFavorites'
 
 const route = useRoute()
 const router = useRouter()
+const { toggleFavorite: toggleFavoriteAction, isFavorite: isFavoriteFn } = useFavorites()
 
 // État réactif
 const accommodation = ref<Accommodation | null>(null)
-const checkIn = ref('')
-const checkOut = ref('')
+const selectedDates = ref<{ start: Date | null; end: Date | null }>({
+  start: null,
+  end: null,
+})
 const guests = ref(1)
+const selectedServices = ref<SelectedService[]>([])
+const showServices = ref(false)
+const priceCalculationFromCalculator = ref<PriceCalculationResult | null>(null)
+
+// Dates minimum (aujourd'hui)
+const minDate = computed(() => {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  return today
+})
+
+// Plages de dates réservées (simulation - à remplacer par les vraies données de l'API)
+// Dans la vraie app, cela viendrait de l'API : GET /api/accommodations/:id/bookings
+const bookedRanges = computed<DateRange[]>(() => {
+  // Exemple de réservations pour démonstration
+  // Dans la vraie app, cela viendrait de l'API
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  
+  // Simuler quelques réservations
+  const ranges: DateRange[] = [
+    {
+      start: new Date(today.getTime() + 5 * 24 * 60 * 60 * 1000), // +5 jours
+      end: new Date(today.getTime() + 8 * 24 * 60 * 60 * 1000),   // +8 jours
+    },
+    {
+      start: new Date(today.getTime() + 15 * 24 * 60 * 60 * 1000), // +15 jours
+      end: new Date(today.getTime() + 18 * 24 * 60 * 60 * 1000),   // +18 jours
+    },
+    {
+      start: new Date(today.getTime() + 25 * 24 * 60 * 60 * 1000), // +25 jours
+      end: new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000),   // +30 jours
+    },
+  ]
+  
+  return ranges
+})
+
+// Dates désactivées (toutes les dates des plages réservées)
+const disabledDates = computed(() => {
+  return getBookedDates(bookedRanges.value)
+})
+
+// Plages de dates bloquées (pour l'affichage du calendrier)
+// Dans la vraie app, cela viendrait de l'API : GET /api/accommodations/:id/blocked-dates
+const blockedRanges = computed<DateRange[]>(() => {
+  // Exemple de dates bloquées pour démonstration
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  
+  return [
+    {
+      start: new Date(today.getTime() + 35 * 24 * 60 * 60 * 1000), // +35 jours
+      end: new Date(today.getTime() + 37 * 24 * 60 * 60 * 1000),   // +37 jours
+    },
+  ]
+})
+
+const handleDateChange = (dates: { start: Date | null; end: Date | null }) => {
+  // Les dates sont déjà mises à jour via v-model
+  console.log('Dates sélectionnées:', dates)
+}
+
+// Configuration de tarification
+const pricingConfig = computed<PricingConfiguration | null>(() => {
+  if (!accommodation.value) return null
+  return getPricingConfig(accommodation.value.id)
+})
+
+// Calculs de prix
+const calculatedNights = computed(() => {
+  if (!selectedDates.value.start || !selectedDates.value.end) return 0
+  return Math.ceil((selectedDates.value.end.getTime() - selectedDates.value.start.getTime()) / (1000 * 60 * 60 * 24))
+})
+
+// Calcul de prix dynamique (avec règles de tarification)
+const priceCalculation = computed<PriceCalculationResult | null>(() => {
+  if (!selectedDates.value.start || !selectedDates.value.end || !accommodation.value) {
+    return null
+  }
+  
+  const config = pricingConfig.value
+  if (!config) {
+    // Pas de configuration de tarification, utiliser le prix de base
+    return null
+  }
+  
+  const dateRange: DateRange = {
+    start: selectedDates.value.start,
+    end: selectedDates.value.end
+  }
+  
+  return calculatePrice(config, dateRange)
+})
+
+const basePrice = computed(() => {
+  if (!accommodation.value) return 0
+  
+  if (priceCalculation.value) {
+    // Utiliser le calcul de prix dynamique
+    return priceCalculation.value.subtotal
+  }
+  
+  // Prix de base simple (sans règles de tarification)
+  return accommodation.value.price * calculatedNights.value
+})
+
+const longStayDiscount = computed(() => {
+  return priceCalculation.value?.longStayDiscount || 0
+})
+
+const servicesPrice = computed(() => {
+  if (!accommodation.value || !accommodation.value.services) return 0
+  return calculateTotalServicesPrice(
+    accommodation.value.services,
+    selectedServices.value,
+    calculatedNights.value,
+    guests.value
+  )
+})
+
+const totalPrice = computed(() => {
+  // Utiliser le calcul du calculateur s'il existe, sinon utiliser le calcul local
+  const accommodationTotal = priceCalculationFromCalculator.value?.total 
+    || priceCalculation.value?.total 
+    || basePrice.value
+  
+  return accommodationTotal + servicesPrice.value
+})
+
+// Handler pour le calculateur de prix
+const handlePriceCalculationChange = (result: PriceCalculationResult | null) => {
+  priceCalculationFromCalculator.value = result
+}
+
+const averageNightlyPrice = computed(() => {
+  if (priceCalculation.value && calculatedNights.value > 0) {
+    return calculateAverageNightlyPrice(priceCalculation.value)
+  }
+  if (!accommodation.value) return 0
+  return accommodation.value.price
+})
+
+// Gestion des services
+const toggleService = (serviceId: string) => {
+  const index = selectedServices.value.findIndex(s => s.serviceId === serviceId)
+  if (index >= 0) {
+    selectedServices.value.splice(index, 1)
+  } else {
+    selectedServices.value.push({ serviceId })
+  }
+}
+
+const getServiceName = (serviceId: string): string => {
+  if (!accommodation.value || !accommodation.value.services) return ''
+  const service = accommodation.value.services.find(s => s.id === serviceId)
+  return service?.name || ''
+}
+
+const formatServicePrice = (service: Service): string => {
+  const nights = calculatedNights.value || 1
+  const price = calculateServicePrice(service, nights, guests.value)
+  
+  let suffix = ''
+  switch (service.priceType) {
+    case 'per_night':
+      suffix = '/nuit'
+      break
+    case 'per_guest':
+      suffix = '/personne'
+      break
+    case 'per_guest_per_night':
+      suffix = '/personne/nuit'
+      break
+  }
+  
+  return `€${price.toFixed(2)}${suffix ? ' ' + suffix : ''}`
+}
+
+const formatSelectedServicePrice = (serviceId: string): string => {
+  if (!accommodation.value || !accommodation.value.services) return '€0.00'
+  const service = accommodation.value.services.find(s => s.id === serviceId)
+  if (!service) return '€0.00'
+  
+  const price = calculateServicePrice(service, calculatedNights.value, guests.value)
+  return `€${price.toFixed(2)}`
+}
 
 // Trouver le logement par ID
 const findAccommodation = () => {
-  const id = route.params.id as string
-  const found = accommodations.find(acc => acc.id === id)
-  if (found) {
-    accommodation.value = found
-    guests.value = Math.min(guests.value, found.maxGuests)
-  } else {
-    router.push('/')
+  try {
+    const id = route.params.id as string
+    console.log('Recherche du logement avec ID:', id)
+    console.log('Nombre de logements disponibles:', accommodations.length)
+    const found = accommodations.find(acc => acc.id === id)
+    if (found) {
+      console.log('Logement trouvé:', found.title)
+      accommodation.value = found
+      guests.value = Math.min(guests.value, found.maxGuests)
+    } else {
+      console.log('Logement non trouvé, redirection vers /')
+      router.push('/')
+    }
+  } catch (error) {
+    console.error('Erreur lors de la recherche du logement:', error)
+  }
+}
+
+// Navigation vers un logement similaire
+const goToSimilarAccommodation = (id: string) => {
+  router.push(`/accommodation/${id}`)
+}
+
+// Favoris
+const isFavorite = computed(() => {
+  return accommodation.value ? isFavoriteFn(accommodation.value.id) : false
+})
+
+const toggleFavorite = () => {
+  if (accommodation.value) {
+    toggleFavoriteAction(accommodation.value.id)
   }
 }
 
@@ -234,25 +624,57 @@ const handleReservation = () => {
   if (!accommodation.value) return
   
   // Validation des dates
-  if (!checkIn.value || !checkOut.value) {
+  if (!selectedDates.value.start || !selectedDates.value.end) {
     alert('Veuillez sélectionner les dates d\'arrivée et de départ')
     return
   }
   
-  if (new Date(checkIn.value) >= new Date(checkOut.value)) {
+  if (selectedDates.value.start >= selectedDates.value.end) {
     alert('La date de départ doit être après la date d\'arrivée')
     return
   }
   
+  // Vérification des conflits de dates
+  const selectedRange: DateRange = {
+    start: selectedDates.value.start,
+    end: selectedDates.value.end,
+  }
+  
+  if (hasDateConflict(selectedRange, bookedRanges.value)) {
+    alert('Désolé, cette période est déjà réservée. Veuillez choisir d\'autres dates.')
+    return
+  }
+  
   // Calcul du nombre de nuits
-  const nights = Math.ceil((new Date(checkOut.value).getTime() - new Date(checkIn.value).getTime()) / (1000 * 60 * 60 * 24))
-  const totalPrice = nights * accommodation.value.price
+  const nights = calculatedNights.value
+  const servicesTotal = servicesPrice.value
+  const accommodationTotal = priceCalculation.value?.total || basePrice.value
+  const finalTotal = totalPrice.value
+  
+  // Format des dates pour l'affichage
+  const startDateStr = selectedDates.value.start.toLocaleDateString('fr-FR')
+  const endDateStr = selectedDates.value.end.toLocaleDateString('fr-FR')
+  
+  // Détails des services sélectionnés
+  let servicesDetails = ''
+  if (selectedServices.value.length > 0) {
+    servicesDetails = '\n\nServices supplémentaires :\n'
+    selectedServices.value.forEach(selected => {
+      const service = accommodation.value!.services?.find(s => s.id === selected.serviceId)
+      if (service) {
+        const servicePrice = calculateServicePrice(service, nights, guests.value)
+        servicesDetails += `- ${service.name}: €${servicePrice.toFixed(2)}\n`
+      }
+    })
+    servicesDetails += `Total services: €${servicesTotal.toFixed(2)}\n`
+  }
   
   // Simulation de la réservation
-  alert(`Réservation confirmée !\n\nLogement: ${accommodation.value.title}\nDates: ${checkIn.value} au ${checkOut.value}\nNuits: ${nights}\nPrix total: €${totalPrice}`)
+  alert(`Réservation confirmée !\n\nLogement: ${accommodation.value.title}\nDates: ${startDateStr} au ${endDateStr}\nNuits: ${nights}\nPrix hébergement: €${accommodationTotal.toFixed(2)}${servicesDetails}Prix total: €${finalTotal.toFixed(2)}`)
 }
 
 onMounted(() => {
+  console.log('AccommodationDetailView monté')
   findAccommodation()
 })
 </script>
