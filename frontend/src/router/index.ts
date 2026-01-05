@@ -1,18 +1,25 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import AccommodationListView from '@/views/AccommodationListView.vue'
-import AccommodationDetailView from '@/views/AccommodationDetailView.vue'
 
 const routes = [
   {
     path: '/',
     name: 'home',
-    component: AccommodationListView
+    component: () => import('@/views/AccommodationListView.vue')
+  },
+  {
+    path: '/accommodation/create',
+    name: 'accommodation-create',
+    component: () => import('@/views/AccommodationCreateView.vue')
   },
   {
     path: '/accommodation/:id',
     name: 'accommodation-detail',
-    component: AccommodationDetailView,
-    props: true
+    component: () => import('@/views/AccommodationDetailView.vue')
+  },
+  {
+    path: '/accommodation/:id/calendar',
+    name: 'accommodation-calendar',
+    component: () => import('@/views/AccommodationCalendarView.vue')
   }
 ]
 
@@ -22,4 +29,3 @@ const router = createRouter({
 })
 
 export default router
-
