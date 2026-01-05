@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import AccommodationListView from '@/views/AccommodationListView.vue'
 import AccommodationDetailView from '@/views/AccommodationDetailView.vue'
+import LoginView from '@/views/LoginView.vue'
 
 const routes = [
   {
@@ -13,6 +14,11 @@ const routes = [
     name: 'accommodation-detail',
     component: AccommodationDetailView,
     props: true
+  },
+  {
+    path: '/login',
+    name: 'login',
+    component: LoginView
   }
 ]
 

@@ -1,23 +1,7 @@
 <template>
   <div class="min-h-screen bg-gray-50">
     <!-- Header -->
-    <header class="bg-white shadow-sm border-b">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between items-center h-16">
-          <div class="flex items-center">
-            <h1 class="text-2xl font-bold text-gray-900">bnb</h1>
-          </div>
-          <div class="flex items-center space-x-4">
-            <button class="p-2 text-gray-600 hover:text-gray-900">
-              <Search class="w-5 h-5" />
-            </button>
-            <button class="p-2 text-gray-600 hover:text-gray-900">
-              <User class="w-5 h-5" />
-            </button>
-          </div>
-        </div>
-      </div>
-    </header>
+    <AppHeader />
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div class="flex gap-8">
@@ -110,9 +94,10 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { Search, User, Home } from 'lucide-vue-next'
+import { Home } from 'lucide-vue-next'
 import AccommodationCard from '@/components/AccommodationCard.vue'
 import FilterSidebar from '@/components/FilterSidebar.vue'
+import AppHeader from '@/components/AppHeader.vue'
 import { accommodations } from '@/data/fixtures'
 import type { Accommodation, FilterOptions } from '@/types/accommodation'
 

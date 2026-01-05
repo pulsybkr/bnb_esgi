@@ -15,6 +15,9 @@ build/
 # Prisma
 generated/
 
+# Uploads
+uploads/
+
 # Logs
 logs/
 *.log
