@@ -1,0 +1,363 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum TypeUtilisateur {
+  locataire
+  proprietaire
+  admin
+}
+
+enum StatutUtilisateur {
+  actif
+  suspendu
+  inactif
+}
+
+enum TypeLogement {
+  maison
+  appartement
+  chambre
+  hotel
+}
+
+enum StatutLogement {
+  actif
+  suspendu
+  archive
+}
+
+enum StatutDisponibilite {
+  disponible
+  reserve
+  bloque
+}
+
+enum StatutReservation {
+  en_attente
+  confirmee
+  annulee
+  terminee
+  en_cours
+}
+
+enum StatutPaiement {
+  en_attente
+  reussi
+  echec
+  rembourse
+  annule
+}
+
+enum MoyenPaiement {
+  mobile_money
+  carte
+  paypal
+}
+
+enum TypeMessage {
+  reservation
+  support
+  general
+}
+
+enum TypeCibleAvis {
+  logement
+  voyageur
+  proprietaire
+}
+
+enum StatutAvis {
+  publie
+  masque
+  modere
+}
+
+enum TypeNotification {
+  reservation
+  paiement
+  message
+  avis
+  systeme
+}
+
+enum TypeContenuSignalement {
+  logement
+  avis
+  utilisateur
+  message
+}
+
+enum MotifSignalement {
+  contenu_inapproprie
+  faux
+  spam
+  autre
+}
+
+enum StatutSignalement {
+  en_attente
+  traite
+  rejete
+}
+
+model User {
+  id                  String            @id @default(uuid())
+  firstName           String            @map("nom")
+  lastName            String            @map("prenom")
+  email               String            @unique
+  phone               String?           @unique @map("telephone")
+  passwordHash        String            @map("password_hash")
+  address             String?           @map("adresse")
+  city                String?           @map("ville")
+  country             String?           @map("pays")
+  userType            TypeUtilisateur   @map("type_utilisateur") @default(locataire)
+  emailVerified       Boolean           @map("email_verifie") @default(false)
+  phoneVerified       Boolean           @map("telephone_verifie") @default(false)
+  profilePhoto        String?           @map("photo_profil")
+  preferences         Json?
+  status              StatutUtilisateur @default(actif)
+  registrationDate    DateTime          @map("date_inscription") @default(now())
+  lastLogin           DateTime?         @map("derniere_connexion")
+  createdAt           DateTime          @default(now()) @map("created_at")
+  updatedAt           DateTime          @updatedAt @map("updated_at")
+
+  // Relations
+  logements           Logement[]
+  reservations        Reservation[]
+  messagesEnvoyes     Message[]         @relation("MessagesEnvoyes")
+  messagesRecus       Message[]         @relation("MessagesRecus")
+  avisRediges         Avis[]            @relation("AvisRediges")
+  favoris             Favori[]
+  paiements           Paiement[]
+  notifications       Notification[]
+  signalementsCrees   Signalement[]     @relation("SignalementsCrees")
+  signalementsTraites Signalement[]     @relation("SignalementsTraites")
+
+  @@map("users")
+}
+
+model Logement {
+  id              String            @id @default(uuid())
+  ownerId         String            @map("id_proprietaire")
+  title           String            @map("titre")
+  description     String?           @db.Text
+  address         String            @map("adresse")
+  city            String            @map("ville")
+  country         String            @map("pays")
+  latitude        Decimal?          @db.Decimal(10, 8)
+  longitude       Decimal?          @db.Decimal(11, 8)
+  type            TypeLogement
+  roomCount       Int               @map("nombre_pieces")
+  capacity        Int               @map("capacite_accueil")
+  pricePerNight   Decimal           @map("prix_par_nuit") @db.Decimal(10, 2)
+  currency        String            @default("XOF") @map("devise")
+  amenities       Json?             @map("equipements")
+  houseRules      Json?             @map("regles_maison")
+  status          StatutLogement    @default(actif)
+  averageRating   Float?            @map("note_moyenne") @default(0)
+  reviewCount     Int               @map("nombre_avis") @default(0)
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @updatedAt @map("updated_at")
+
+  // Relations
+  owner           User              @relation(fields: [ownerId], references: [id])
+  availabilities  Disponibilite[]
+  reservations    Reservation[]
+  favorites       Favori[]
+  photos          Photo[]
+
+  @@map("logements")
+}
+
+model Photo {
+  id            String   @id @default(uuid())
+  accommodationId String   @map("id_logement")
+  url           String
+  thumbnailUrl  String?  @map("url_miniature")
+  isMain       Boolean  @map("est_principale") @default(false)
+  order        Int      @default(0) @map("ordre")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  // Relations
+  accommodation Logement @relation(fields: [accommodationId], references: [id], onDelete: Cascade)
+
+  @@map("photos")
+}
+
+model Disponibilite {
+  id                String            @id @default(uuid())
+  accommodationId   String            @map("id_logement")
+  startDate         DateTime          @map("date_debut") @db.Date
+  endDate           DateTime          @map("date_fin") @db.Date
+  status            StatutDisponibilite @default(disponible)
+  customPrice       Decimal?          @map("prix_personnalise") @db.Decimal(10, 2)
+  note              String?           @db.Text
+  createdAt         DateTime          @default(now()) @map("created_at")
+  updatedAt         DateTime          @updatedAt @map("updated_at")
+
+  // Relations
+  accommodation     Logement          @relation(fields: [accommodationId], references: [id], onDelete: Cascade)
+
+  @@map("disponibilites")
+}
+
+model Reservation {
+  id              String            @id @default(uuid())
+  accommodationId String            @map("id_logement")
+  tenantId        String            @map("id_locataire")
+  startDate       DateTime          @map("date_debut") @db.Date
+  endDate         DateTime          @map("date_fin") @db.Date
+  guestCount      Int               @map("nombre_voyageurs")
+  totalAmount     Decimal           @map("montant_total") @db.Decimal(10, 2)
+  currency        String            @default("XOF") @map("devise")
+  status          StatutReservation @default(en_attente)
+  tenantMessage   String?           @map("message_locataire") @db.Text
+  cancellationReason String?        @map("motif_annulation") @db.Text
+  cancellationDate DateTime?        @map("date_annulation")
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @updatedAt @map("updated_at")
+
+  // Relations
+  accommodation   Logement          @relation(fields: [accommodationId], references: [id])
+  tenant          User              @relation(fields: [tenantId], references: [id])
+  payments        Paiement[]
+  reviews         Avis[]
+  messages        Message[]
+
+  @@map("reservations")
+}
+
+model Paiement {
+  id                  String          @id @default(uuid())
+  reservationId       String          @map("id_reservation")
+  userId              String          @map("id_utilisateur")
+  amount              Decimal         @db.Decimal(10, 2) @map("montant")
+  currency            String          @default("XOF") @map("devise")
+  status              StatutPaiement  @default(en_attente)
+  paymentMethod       MoyenPaiement   @map("moyen_paiement")
+  mobileOperator      String?         @map("operateur_mobile_money")
+  transactionRef      String?         @map("reference_transaction")
+  externalRef         String?         @map("reference_externe")
+  paymentDetails      Json?           @map("details_paiement")
+  errorMessage        String?         @map("message_erreur") @db.Text
+  transactionDate     DateTime?       @map("date_transaction")
+  createdAt           DateTime        @default(now()) @map("created_at")
+  updatedAt           DateTime        @updatedAt @map("updated_at")
+
+  // Relations
+  reservation         Reservation     @relation(fields: [reservationId], references: [id])
+  user                User            @relation(fields: [userId], references: [id])
+
+  @@map("paiements")
+}
+
+model Message {
+  id              String        @id @default(uuid())
+  senderId        String        @map("expediteur_id")
+  receiverId      String        @map("destinataire_id")
+  reservationId   String?       @map("id_reservation")
+  content         String        @db.Text @map("contenu")
+  isRead          Boolean       @default(false) @map("lu")
+  readAt          DateTime?     @map("date_lecture")
+  type            TypeMessage   @default(general)
+  sentAt          DateTime      @map("date_envoi") @default(now())
+  createdAt       DateTime      @default(now()) @map("created_at")
+
+  // Relations
+  sender          User          @relation("MessagesEnvoyes", fields: [senderId], references: [id])
+  receiver        User          @relation("MessagesRecus", fields: [receiverId], references: [id])
+  reservation     Reservation?  @relation(fields: [reservationId], references: [id])
+
+  @@map("messages")
+}
+
+model Avis {
+  id                String          @id @default(uuid())
+  reservationId     String          @map("id_reservation")
+  authorId          String          @map("id_auteur")
+  targetId          String?         @map("id_cible")
+  targetType        TypeCibleAvis   @map("type_cible")
+  rating            Int             @map("note")
+  comment           String?         @db.Text @map("commentaire")
+  detailedRatings   Json?           @map("notes_detaillees")
+  ownerResponse     String?         @map("reponse_proprietaire") @db.Text
+  responseDate      DateTime?       @map("date_reponse")
+  isReported        Boolean         @default(false) @map("signale")
+  reportReason      String?         @map("motif_signalement") @db.Text
+  status            StatutAvis      @default(publie)
+  publishedAt       DateTime?       @map("date_publication")
+  createdAt         DateTime        @default(now()) @map("created_at")
+  updatedAt         DateTime        @updatedAt @map("updated_at")
+
+  // Relations
+  reservation       Reservation     @relation(fields: [reservationId], references: [id])
+  author            User            @relation("AvisRediges", fields: [authorId], references: [id])
+  // Note: targetId is a polymorphic reference (can reference accommodation, guest, or owner)
+  // based on targetType field. Prisma doesn't support polymorphic relations directly.
+
+  @@map("avis")
+}
+
+model Favori {
+  id            String   @id @default(uuid())
+  userId        String   @map("id_utilisateur")
+  accommodationId String   @map("id_logement")
+  privateNote   String?  @map("note_privee") @db.Text
+  addedAt       DateTime @map("date_ajout") @default(now())
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accommodation Logement @relation(fields: [accommodationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, accommodationId])
+  @@map("favoris")
+}
+
+model Notification {
+  id            String          @id @default(uuid())
+  userId        String          @map("id_utilisateur")
+  title         String          @map("titre")
+  content       String          @db.Text @map("contenu")
+  type          TypeNotification
+  data          Json?
+  isRead        Boolean         @default(false) @map("lu")
+  readAt        DateTime?       @map("date_lecture")
+  sentAt        DateTime        @map("date_envoi") @default(now())
+  createdAt     DateTime        @default(now()) @map("created_at")
+
+  // Relations
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+model Signalement {
+  id              String                @id @default(uuid())
+  userId          String                @map("id_utilisateur")
+  contentType     TypeContenuSignalement @map("type_contenu")
+  contentId       String                @map("id_contenu")
+  reason          MotifSignalement      @map("motif")
+  description     String?               @db.Text
+  status          StatutSignalement     @default(en_attente)
+  moderatorId     String?               @map("id_moderateur")
+  decision        String?               @db.Text
+  processedAt     DateTime?             @map("date_traitement")
+  createdAt       DateTime              @default(now()) @map("created_at")
+  updatedAt       DateTime              @updatedAt @map("updated_at")
+
+  // Relations
+  user            User                  @relation("SignalementsCrees", fields: [userId], references: [id])
+  moderator       User?                 @relation("SignalementsTraites", fields: [moderatorId], references: [id])
+
+  @@map("signalements")
+}
