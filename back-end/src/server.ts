@@ -5,6 +5,9 @@ import dotenv from 'dotenv';
 import morgan from 'morgan';
 import swaggerUi from 'swagger-ui-express';
 import authRoutes from './routes/auth';
+import logementRoutes from './routes/logement/logement.routes';
+import disponibiliteRoutes from './routes/disponibilite/disponibilite.routes';
+import reservationRoutes from './routes/reservation/reservation.routes';
 import { apiLogger, errorHandler, swaggerSpec } from './config';
 
 dotenv.config();
@@ -49,7 +52,12 @@ app.get('/api-docs.json', (req: Request, res: Response) => {
   res.send(swaggerSpec);
 });
 
+// API Routes
 app.use('/auth', authRoutes);
+app.use('/logements', logementRoutes);
+app.use('/', disponibiliteRoutes); // Includes /logements/:id/availabilities and /availabilities/:id
+app.use('/reservations', reservationRoutes);
+
 
 app.use((req: Request, res: Response) => {
   res.status(404).json({
