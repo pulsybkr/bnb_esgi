@@ -100,6 +100,81 @@
       </div>
     </div>
 
+    <!-- Tags -->
+    <div class="mb-6">
+      <h4 class="text-sm font-medium text-gray-900 mb-3">Tags</h4>
+      <div class="space-y-2 max-h-48 overflow-y-auto">
+        <label 
+          v-for="tag in availableTags" 
+          :key="tag.id"
+          class="flex items-center"
+        >
+          <input 
+            type="checkbox" 
+            :value="tag.id"
+            v-model="filters.tags"
+            class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+          />
+          <span class="ml-2 text-sm text-gray-700">{{ tag.label }}</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Recherche géolocalisée -->
+    <div class="mb-6 border-t pt-6">
+      <h4 class="text-sm font-medium text-gray-900 mb-3">Recherche par proximité</h4>
+      
+      <div class="space-y-3">
+        <!-- Adresse ou ville -->
+        <div>
+          <label class="block text-xs text-gray-600 mb-1">Adresse ou ville</label>
+          <input 
+            type="text"
+            v-model="locationQuery"
+            placeholder="Ex: Paris, Lyon..."
+            class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+            @input="handleLocationInput"
+          />
+        </div>
+
+        <!-- Rayon -->
+        <div>
+          <label class="block text-xs text-gray-600 mb-1">Rayon de recherche</label>
+          <div class="flex items-center space-x-2">
+            <input 
+              type="range"
+              min="1"
+              max="100"
+              step="1"
+              v-model.number="radiusKm"
+              class="flex-1"
+              @input="updateLocationFilter"
+            />
+            <span class="text-sm font-medium text-gray-700 min-w-[60px]">{{ radiusKm }} km</span>
+          </div>
+        </div>
+
+        <!-- Utiliser ma position -->
+        <button
+          @click="useMyLocation"
+          :disabled="isGettingLocation"
+          class="w-full px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+        >
+          <MapPin class="w-4 h-4" />
+          <span>{{ isGettingLocation ? 'Recherche...' : 'Utiliser ma position' }}</span>
+        </button>
+
+        <!-- Effacer le filtre géolocalisé -->
+        <button
+          v-if="filters.locationRadius"
+          @click="clearLocationFilter"
+          class="w-full px-3 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+        >
+          Effacer la recherche par proximité
+        </button>
+      </div>
+    </div>
+
     <!-- Boutons d'action -->
     <div class="flex space-x-2">
       <button 
@@ -120,8 +195,11 @@
 
 <script setup lang="ts">
 import { ref, watch } from 'vue'
+import { MapPin } from 'lucide-vue-next'
 import type { FilterOptions } from '@/types/accommodation'
 import { propertyTypes, amenities } from '@/data/fixtures'
+import { availableTags } from '@/data/tags'
+import { getUserLocation, geocodeAddress } from '@/utils/geolocation'
 
 const emit = defineEmits<{
   filtersChanged: [filters: FilterOptions]
@@ -131,10 +209,67 @@ const filters = ref<FilterOptions>({
   priceRange: [0, 1000],
   propertyType: [],
   amenities: [],
+  tags: [],
   maxGuests: 0,
   bedrooms: 0,
   bathrooms: 0
 })
+
+const locationQuery = ref('')
+const radiusKm = ref(10)
+const isGettingLocation = ref(false)
+
+const handleLocationInput = async () => {
+  if (!locationQuery.value.trim()) {
+    clearLocationFilter()
+    return
+  }
+
+  // Debounce pour éviter trop d'appels
+  const timeout = setTimeout(async () => {
+    const coords = await geocodeAddress(locationQuery.value)
+    if (coords) {
+      filters.value.locationRadius = {
+        center: coords,
+        radiusKm: radiusKm.value
+      }
+      emit('filtersChanged', { ...filters.value })
+    }
+  }, 500)
+
+  return () => clearTimeout(timeout)
+}
+
+const updateLocationFilter = () => {
+  if (filters.value.locationRadius) {
+    filters.value.locationRadius.radiusKm = radiusKm.value
+    emit('filtersChanged', { ...filters.value })
+  }
+}
+
+const useMyLocation = async () => {
+  isGettingLocation.value = true
+  try {
+    const coords = await getUserLocation()
+    filters.value.locationRadius = {
+      center: coords,
+      radiusKm: radiusKm.value
+    }
+    locationQuery.value = `${coords.latitude.toFixed(4)}, ${coords.longitude.toFixed(4)}`
+    emit('filtersChanged', { ...filters.value })
+  } catch (error) {
+    alert('Impossible d\'obtenir votre position. Veuillez vérifier les paramètres de géolocalisation de votre navigateur.')
+    console.error('Erreur géolocalisation:', error)
+  } finally {
+    isGettingLocation.value = false
+  }
+}
+
+const clearLocationFilter = () => {
+  filters.value.locationRadius = undefined
+  locationQuery.value = ''
+  emit('filtersChanged', { ...filters.value })
+}
 
 const applyFilters = () => {
   emit('filtersChanged', { ...filters.value })
@@ -145,10 +280,13 @@ const clearFilters = () => {
     priceRange: [0, 1000],
     propertyType: [],
     amenities: [],
+    tags: [],
     maxGuests: 0,
     bedrooms: 0,
     bathrooms: 0
   }
+  locationQuery.value = ''
+  radiusKm.value = 10
   emit('filtersChanged', { ...filters.value })
 }
 </script>

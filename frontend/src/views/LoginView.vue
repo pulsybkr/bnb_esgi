@@ -68,9 +68,19 @@
 
           <!-- Mot de passe -->
           <div class="space-y-2">
-            <label for="password" class="block text-sm font-medium text-gray-700">
-              Mot de passe
-            </label>
+            <div class="flex items-center justify-between">
+              <label for="password" class="block text-sm font-medium text-gray-700">
+                Mot de passe
+              </label>
+              <button 
+                v-if="isLogin"
+                type="button"
+                @click="showForgotPassword"
+                class="text-sm text-blue-600 hover:text-blue-700 font-medium transition-colors"
+              >
+                Mot de passe oublié ?
+              </button>
+            </div>
             <div class="relative">
               <Lock class="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
@@ -210,11 +220,12 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { Mail, Lock, Eye, EyeOff, User, Home, AlertCircle, Loader2 } from 'lucide-vue-next'
 
 const router = useRouter()
+const route = useRoute()
 const authStore = useAuthStore()
 
 // État
@@ -269,8 +280,9 @@ const handleSubmit = async () => {
       })
       authStore.setTokens('fake-access-token', 'fake-refresh-token')
       
-      // Rediriger vers la page d'accueil
-      router.push('/')
+      // Rediriger vers la page d'origine ou la page d'accueil
+      const redirectPath = route.query.redirect as string || '/'
+      router.push(redirectPath)
     } else {
       // TODO: Appeler l'API d'inscription
       await new Promise(resolve => setTimeout(resolve, 1000))
@@ -299,6 +311,10 @@ const handleSubmit = async () => {
   } finally {
     isLoading.value = false
   }
+}
+
+const showForgotPassword = () => {
+  router.push('/forgot-password')
 }
 </script>
 

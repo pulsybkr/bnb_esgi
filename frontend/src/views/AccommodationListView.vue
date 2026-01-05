@@ -1,7 +1,26 @@
 <template>
   <div class="min-h-screen bg-gray-50">
     <!-- Header -->
-    <AppHeader />
+    <header class="bg-white shadow-sm border-b">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center h-16">
+          <div class="flex items-center">
+            <h1 class="text-2xl font-bold text-indigo-600">bnb</h1>
+          </div>
+          <div class="flex items-center space-x-4">
+            <button class="p-2 text-gray-600 hover:text-gray-900">
+              <Search class="w-5 h-5" />
+            </button>
+            <button 
+              @click="goToLogin"
+              class="p-2 text-gray-600 hover:text-gray-900 transition-colors"
+            >
+              <User class="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div class="flex gap-8">
@@ -12,11 +31,11 @@
 
         <!-- Contenu principal -->
         <div class="flex-1">
-          <!-- Barre de recherche et tri -->
+          <!-- Résultats et tri -->
           <div class="mb-6">
             <div class="flex justify-between items-center mb-4">
               <h2 class="text-xl font-semibold text-gray-900">
-                {{ filteredAccommodations.length }} logements trouvés
+                {{ filteredAccommodations.length }} logement{{ filteredAccommodations.length > 1 ? 's' : '' }} trouvé{{ filteredAccommodations.length > 1 ? 's' : '' }}
               </h2>
               <div class="flex items-center space-x-2">
                 <span class="text-sm text-gray-600">Trier par :</span>
@@ -33,14 +52,35 @@
             </div>
           </div>
 
+          <!-- Logements populaires (si pas de filtres actifs) -->
+          <PopularAccommodations
+            v-if="!hasActiveFilters"
+            :all-accommodations="allAccommodations"
+            :location="currentFilters.locationRadius?.center"
+            :location-name="searchQuery || undefined"
+            :radius-km="currentFilters.locationRadius?.radiusKm || 50"
+            :max-results="6"
+            @accommodation-selected="goToDetail"
+            class="mb-12"
+          />
+
+          <!-- Recommandations personnalisées -->
+          <RecommendationsAccommodations
+            v-if="!hasActiveFilters"
+            :all-accommodations="allAccommodations"
+            :user-preferences="userPreferences"
+            :max-results="6"
+            recommendation-type="personalized"
+            @accommodation-selected="goToDetail"
+            class="mb-12"
+          />
+
           <!-- Grille des logements -->
           <div v-if="filteredAccommodations.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <AccommodationCard 
               v-for="accommodation in paginatedAccommodations" 
               :key="accommodation.id"
               :accommodation="accommodation"
-              @click="goToDetail(accommodation.id)"
-              class="cursor-pointer"
             />
           </div>
 
@@ -58,6 +98,7 @@
                 @click="currentPage = Math.max(1, currentPage - 1)"
                 :disabled="currentPage === 1"
                 class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                type="button"
               >
                 Précédent
               </button>
@@ -72,6 +113,7 @@
                     ? 'text-white bg-blue-600' 
                     : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
                 ]"
+                type="button"
               >
                 {{ page }}
               </button>
@@ -80,6 +122,7 @@
                 @click="currentPage = Math.min(totalPages, currentPage + 1)"
                 :disabled="currentPage === totalPages"
                 class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                type="button"
               >
                 Suivant
               </button>
@@ -92,23 +135,61 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { Home } from 'lucide-vue-next'
+import { Search, User, Home } from 'lucide-vue-next'
 import AccommodationCard from '@/components/AccommodationCard.vue'
 import FilterSidebar from '@/components/FilterSidebar.vue'
-import AppHeader from '@/components/AppHeader.vue'
 import { accommodations } from '@/data/fixtures'
 import type { Accommodation, FilterOptions } from '@/types/accommodation'
+import { useSearchHistory } from '@/composables/useSearchHistory'
+import { getTagLabels } from '@/data/tags'
+import { generatePreferencesFromHistory } from '@/utils/recommendations'
+import type { UserPreferences } from '@/utils/recommendations'
+import { calculateDistance } from '@/utils/geolocation'
+import PopularAccommodations from '@/components/PopularAccommodations.vue'
+import RecommendationsAccommodations from '@/components/RecommendationsAccommodations.vue'
+
+console.log('📋 AccommodationListView: Script setup chargé')
 
 const router = useRouter()
+const { searchHistory, addToHistory, removeFromHistory, clearHistory } = useSearchHistory()
 
 // État réactif
 const allAccommodations = ref<Accommodation[]>(accommodations)
+
+// Préférences utilisateur pour les recommandations
+const userPreferences = computed<UserPreferences | undefined>(() => {
+  try {
+    // Générer des préférences basées sur l'historique de recherche
+    // Dans une vraie app, cela pourrait venir d'un store utilisateur
+    if (searchHistory.value.length > 0) {
+      // Simuler des logements consultés basés sur l'historique
+      const viewedAccommodations = allAccommodations.value.filter(acc =>
+        searchHistory.value.some(query =>
+          query.toLowerCase().includes(acc.location.city.toLowerCase()) ||
+          acc.title.toLowerCase().includes(query.toLowerCase())
+        )
+      ).slice(0, 5) // Limiter à 5 pour la démo
+
+      if (viewedAccommodations.length > 0) {
+        return generatePreferencesFromHistory(searchHistory.value, viewedAccommodations)
+      }
+    }
+    return undefined
+  } catch (error) {
+    console.error('Erreur lors de la génération des préférences:', error)
+    return undefined
+  }
+})
+
+const searchQuery = ref('')
+const showHistoryDropdown = ref(false)
 const currentFilters = ref<FilterOptions>({
   priceRange: [0, 1000],
   propertyType: [],
   amenities: [],
+  tags: [],
   maxGuests: 0,
   bedrooms: 0,
   bathrooms: 0
@@ -119,64 +200,122 @@ const itemsPerPage = 9
 
 // Filtrage des logements
 const filteredAccommodations = computed(() => {
-  let filtered = [...allAccommodations.value]
+  try {
+    let filtered = [...allAccommodations.value]
 
-  // Filtre par prix
-  if (currentFilters.value.priceRange[0] > 0 || currentFilters.value.priceRange[1] < 1000) {
-    filtered = filtered.filter(acc => 
-      acc.price >= currentFilters.value.priceRange[0] && 
-      acc.price <= currentFilters.value.priceRange[1]
-    )
-  }
-
-  // Filtre par type de propriété
-  if (currentFilters.value.propertyType.length > 0) {
-    filtered = filtered.filter(acc => 
-      currentFilters.value.propertyType.includes(acc.propertyType)
-    )
-  }
-
-  // Filtre par nombre de voyageurs
-  if (currentFilters.value.maxGuests > 0) {
-    filtered = filtered.filter(acc => acc.maxGuests >= currentFilters.value.maxGuests)
-  }
-
-  // Filtre par nombre de chambres
-  if (currentFilters.value.bedrooms > 0) {
-    filtered = filtered.filter(acc => acc.bedrooms >= currentFilters.value.bedrooms)
-  }
-
-  // Filtre par nombre de salles de bain
-  if (currentFilters.value.bathrooms > 0) {
-    filtered = filtered.filter(acc => acc.bathrooms >= currentFilters.value.bathrooms)
-  }
-
-  // Filtre par équipements
-  if (currentFilters.value.amenities.length > 0) {
-    filtered = filtered.filter(acc => 
-      currentFilters.value.amenities.every(amenity => 
-        acc.amenities.includes(amenity)
+    // Filtre par recherche textuelle (titre et description)
+    if (searchQuery.value.trim()) {
+      const query = searchQuery.value.toLowerCase().trim()
+      filtered = filtered.filter(acc => 
+        acc.title.toLowerCase().includes(query) || 
+        acc.description.toLowerCase().includes(query) ||
+        acc.location.city.toLowerCase().includes(query) ||
+        acc.location.country.toLowerCase().includes(query)
       )
-    )
-  }
+    }
 
-  // Tri
-  switch (sortBy.value) {
-    case 'price-asc':
-      filtered.sort((a, b) => a.price - b.price)
-      break
-    case 'price-desc':
-      filtered.sort((a, b) => b.price - a.price)
-      break
-    case 'rating-desc':
-      filtered.sort((a, b) => b.rating - a.rating)
-      break
-    case 'title-asc':
-      filtered.sort((a, b) => a.title.localeCompare(b.title))
-      break
-  }
+    // Filtre par prix
+    if (currentFilters.value.priceRange[0] > 0 || currentFilters.value.priceRange[1] < 1000) {
+      filtered = filtered.filter(acc => 
+        acc.price >= currentFilters.value.priceRange[0] && 
+        acc.price <= currentFilters.value.priceRange[1]
+      )
+    }
 
-  return filtered
+    // Filtre par type de propriété
+    if (currentFilters.value.propertyType.length > 0) {
+      filtered = filtered.filter(acc => 
+        currentFilters.value.propertyType.includes(acc.propertyType)
+      )
+    }
+
+    // Filtre par nombre de voyageurs
+    if (currentFilters.value.maxGuests > 0) {
+      filtered = filtered.filter(acc => acc.maxGuests >= currentFilters.value.maxGuests)
+    }
+
+    // Filtre par nombre de chambres
+    if (currentFilters.value.bedrooms > 0) {
+      filtered = filtered.filter(acc => acc.bedrooms >= currentFilters.value.bedrooms)
+    }
+
+    // Filtre par nombre de salles de bain
+    if (currentFilters.value.bathrooms > 0) {
+      filtered = filtered.filter(acc => acc.bathrooms >= currentFilters.value.bathrooms)
+    }
+
+    // Filtre par équipements
+    if (currentFilters.value.amenities.length > 0) {
+      filtered = filtered.filter(acc => 
+        currentFilters.value.amenities.every(amenity => 
+          acc.amenities.includes(amenity)
+        )
+      )
+    }
+
+    // Filtre par tags (convertir les IDs en labels pour la comparaison)
+    if (currentFilters.value.tags.length > 0) {
+      const filterTagLabels = getTagLabels(currentFilters.value.tags)
+      filtered = filtered.filter(acc => 
+        acc.tags && 
+        filterTagLabels.some(tagLabel => 
+          acc.tags!.includes(tagLabel)
+        )
+      )
+    }
+
+    // Filtre géolocalisé (recherche par rayon)
+    if (currentFilters.value.locationRadius && currentFilters.value.locationRadius.center && currentFilters.value.locationRadius.radiusKm > 0) {
+      const { center, radiusKm } = currentFilters.value.locationRadius
+      filtered = filtered.filter(acc => {
+        if (!acc.location.coordinates) return false
+        try {
+          const distance = calculateDistance(acc.location.coordinates, center)
+          return distance <= radiusKm
+        } catch (error) {
+          console.error('Erreur lors du calcul de distance:', error)
+          return false
+        }
+      })
+    }
+
+    // Tri
+    switch (sortBy.value) {
+      case 'price-asc':
+        filtered.sort((a, b) => a.price - b.price)
+        break
+      case 'price-desc':
+        filtered.sort((a, b) => b.price - a.price)
+        break
+      case 'rating-desc':
+        filtered.sort((a, b) => b.rating - a.rating)
+        break
+      case 'title-asc':
+        filtered.sort((a, b) => a.title.localeCompare(b.title))
+        break
+    }
+
+    return filtered
+  } catch (error) {
+    console.error('Erreur dans filteredAccommodations:', error)
+    return []
+  }
+})
+
+// Vérifier si des filtres sont actifs
+const hasActiveFilters = computed(() => {
+  return (
+    searchQuery.value.trim() !== '' ||
+    currentFilters.value.priceRange[0] > 0 ||
+    currentFilters.value.priceRange[1] < 1000 ||
+    currentFilters.value.propertyType.length > 0 ||
+    currentFilters.value.amenities.length > 0 ||
+    currentFilters.value.tags.length > 0 ||
+    currentFilters.value.maxGuests > 0 ||
+    currentFilters.value.bedrooms > 0 ||
+    currentFilters.value.bathrooms > 0 ||
+    (currentFilters.value.locationRadius !== undefined && currentFilters.value.locationRadius?.radiusKm > 0)
+  )
 })
 
 // Pagination
@@ -209,13 +348,51 @@ const goToDetail = (id: string) => {
   router.push(`/accommodation/${id}`)
 }
 
-// Réinitialiser la page quand les filtres changent
-const resetPagination = () => {
-  currentPage.value = 1
+const goToLogin = () => {
+  router.push('/login')
 }
 
+
+// Gérer la recherche (ajout à l'historique)
+const handleSearch = () => {
+  if (searchQuery.value.trim()) {
+    addToHistory(searchQuery.value)
+    showHistoryDropdown.value = false
+  }
+}
+
+// Sélectionner un élément de l'historique
+const selectHistoryItem = (item: string) => {
+  searchQuery.value = item
+  showHistoryDropdown.value = false
+}
+
+// Masquer le dropdown avec délai pour permettre les clics
+const hideHistoryDropdown = () => {
+  setTimeout(() => {
+    showHistoryDropdown.value = false
+  }, 200)
+}
+
+// Réinitialiser la page quand la recherche change
+watch(searchQuery, () => {
+  currentPage.value = 1
+})
+
+// Ajouter à l'historique quand on effectue une recherche
+watch(searchQuery, (newValue, oldValue) => {
+  if (newValue && newValue.trim().length >= 2 && newValue !== oldValue) {
+    // Attendre un peu avant d'ajouter à l'historique (debounce)
+    setTimeout(() => {
+      if (searchQuery.value === newValue) {
+        addToHistory(newValue)
+      }
+    }, 1000)
+  }
+})
+
 onMounted(() => {
+  console.log('📋 AccommodationListView: Composant monté')
   // Initialiser avec tous les logements
 })
 </script>
-
