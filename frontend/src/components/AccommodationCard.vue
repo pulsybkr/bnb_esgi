@@ -1,5 +1,8 @@
 <template>
-  <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300">
+  <router-link
+    :to="`/accommodation/${accommodation.id}`"
+    class="block bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 cursor-pointer"
+  >
     <div class="relative">
       <img 
         :src="accommodation.images[0]" 
@@ -8,8 +11,15 @@
         @error="handleImageError"
       />
       <div class="absolute top-3 right-3">
-        <button class="p-2 bg-white rounded-full shadow-md hover:bg-gray-50">
-          <Heart class="w-5 h-5 text-gray-600" />
+        <button 
+          @click.stop="toggleFavorite"
+          class="p-2 bg-white rounded-full shadow-md hover:bg-gray-50 transition-colors"
+          :class="{ 'bg-red-50': isFavorite }"
+        >
+          <Heart 
+            class="w-5 h-5 transition-colors" 
+            :class="isFavorite ? 'text-red-600 fill-current' : 'text-gray-600'"
+          />
         </button>
       </div>
     </div>
@@ -28,6 +38,22 @@
       <p class="text-sm text-gray-600 mb-3">
         {{ accommodation.location.city }}, {{ accommodation.location.country }}
       </p>
+
+      <div v-if="accommodation.tags && accommodation.tags.length > 0" class="flex flex-wrap gap-2 mb-3">
+        <span
+          v-for="tag in accommodation.tags.slice(0, 3)"
+          :key="tag"
+          class="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded-full"
+        >
+          {{ tag }}
+        </span>
+        <span
+          v-if="accommodation.tags.length > 3"
+          class="px-2 py-1 text-xs font-medium text-gray-500"
+        >
+          +{{ accommodation.tags.length - 3 }}
+        </span>
+      </div>
       
       <div class="space-y-1 mb-3">
         <div class="flex items-center text-sm text-gray-600">
@@ -54,20 +80,31 @@
         </div>
       </div>
     </div>
-  </div>
+  </router-link>
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { Heart, Star, Users, Bed, Bath } from 'lucide-vue-next'
 import type { Accommodation } from '@/types/accommodation'
+import { useFavorites } from '@/composables/useFavorites'
 
-defineProps<{
+const props = defineProps<{
   accommodation: Accommodation
 }>()
+
+const { toggleFavorite: toggleFavoriteAction, isFavorite: isFavoriteFn } = useFavorites()
+
+const isFavorite = computed(() => isFavoriteFn(props.accommodation.id))
+
+const toggleFavorite = (event: Event) => {
+  event.preventDefault()
+  event.stopPropagation()
+  toggleFavoriteAction(props.accommodation.id)
+}
 
 const handleImageError = (event: Event) => {
   const img = event.target as HTMLImageElement
   img.src = 'https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=800&q=80'
 }
 </script>
-
