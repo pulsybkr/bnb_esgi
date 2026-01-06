@@ -77,7 +77,7 @@
             <!-- Description -->
             <div class="mb-8">
               <h2 class="text-xl font-semibold mb-4">À propos de ce logement</h2>
-              <p class="text-gray-700 leading-relaxed">{{ accommodation.description }}</p>
+              <MarkdownContent :content="accommodation.description" class="text-gray-700" />
             </div>
 
             <!-- Visualisation des disponibilités -->
@@ -374,6 +374,7 @@ import AvailabilityCalendar from '@/components/accommodation/AvailabilityCalenda
 import PriceCalculator from '@/components/accommodation/PriceCalculator.vue'
 import SimilarAccommodations from '@/components/accommodation/SimilarAccommodations.vue'
 import RecommendationsAccommodations from '@/components/accommodation/RecommendationsAccommodations.vue'
+import MarkdownContent from '@/components/ui/MarkdownContent.vue'
 import type { Accommodation, SelectedService, Service } from '@/types/accommodation'
 import { hasDateConflict, getBookedDates, type DateRange } from '@/utils/dateUtils'
 import { availableServices, calculateServicePrice, calculateTotalServicesPrice } from '@/data/services'

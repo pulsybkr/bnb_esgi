@@ -29,9 +29,19 @@
 
     <!-- Description -->
     <div>
-      <label for="description" class="block text-sm font-medium text-gray-700 mb-2">
-        Description <span class="text-red-500">*</span>
-      </label>
+      <div class="flex items-center justify-between mb-2">
+        <label for="description" class="block text-sm font-medium text-gray-700">
+          Description <span class="text-red-500">*</span>
+        </label>
+        <button
+          @click="isAiModalOpen = true"
+          type="button"
+          class="text-xs font-semibold text-african-green hover:text-african-green-dark flex items-center gap-1.5 px-3 py-1.5 bg-green-50 rounded-full border border-green-100 hover:border-green-200 transition-all shadow-sm group"
+        >
+          <Sparkles class="w-3.5 h-3.5 group-hover:animate-pulse" />
+          <span>Générer avec l'IA</span>
+        </button>
+      </div>
       <textarea
         id="description"
         v-model="formData.description"
@@ -75,13 +85,22 @@
       </div>
       <p v-if="errors.type" class="text-sm text-red-600 mt-2">{{ errors.type }}</p>
     </div>
+
+    <!-- AI Modal -->
+    <AiDescriptionModal
+      :is-open="isAiModalOpen"
+      :current-description="formData.description"
+      @close="isAiModalOpen = false"
+      @accept="handleAiAccept"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import { Home, Building2, Hotel, DoorClosed } from 'lucide-vue-next'
+import { ref, computed } from 'vue'
+import { Home, Building2, Hotel, DoorClosed, Sparkles } from 'lucide-vue-next'
 import { usePropertyCreation } from '@/composables/usePropertyCreation'
+import AiDescriptionModal from './AiDescriptionModal.vue'
 import type { PropertyType } from '@/types/logement'
 
 const { formData, stepValidations } = usePropertyCreation()
@@ -94,4 +113,10 @@ const propertyTypes = [
   { value: 'chambre', label: 'Chambre', icon: DoorClosed },
   { value: 'hotel', label: 'Hôtel', icon: Hotel }
 ]
+
+const isAiModalOpen = ref(false)
+
+const handleAiAccept = (newDescription: string) => {
+  formData.description = newDescription
+}
 </script>
