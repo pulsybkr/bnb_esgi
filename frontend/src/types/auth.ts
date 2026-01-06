@@ -16,7 +16,6 @@ export interface RegisterData {
     lastName: string
     email: string
     password: string
-    phone?: string
     userType: 'locataire' | 'proprietaire' | 'admin'
 }
 

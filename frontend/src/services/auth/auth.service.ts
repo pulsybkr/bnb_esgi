@@ -29,6 +29,7 @@ export class AuthService {
 
             return response.data.data
         } catch (error) {
+            console.log(error)
             throw ErrorHandler.handleError(error)
         }
     }
@@ -45,6 +46,8 @@ export class AuthService {
 
             return response.data.data
         } catch (error) {
+            console.log('Registration error:', error)
+            console.log('Error response:', (error as any).response?.data)
             throw ErrorHandler.handleError(error)
         }
     }

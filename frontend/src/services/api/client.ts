@@ -6,7 +6,7 @@ import axios from 'axios'
 import type { AxiosInstance } from 'axios'
 
 // Configuration de base
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3333'
 
 // Créer l'instance Axios
 const apiClient: AxiosInstance = axios.create({
@@ -25,6 +25,7 @@ apiClient.interceptors.response.use(
         return response
     },
     async (error) => {
+        console.log(error)
         // Si l'erreur est 401, l'utilisateur n'est pas authentifié
         if (error.response?.status === 401) {
             // Rediriger vers la page de connexion si nécessaire

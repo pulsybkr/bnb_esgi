@@ -75,7 +75,6 @@
                 Téléphone (optionnel)
               </label>
               <input
-                v-model="formData.phone"
                 type="tel"
                 placeholder="+33 6 12 34 56 78"
                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-african-green focus:border-transparent"
@@ -125,7 +124,7 @@
                   </span>
                 </div>
                 <p class="text-xs text-gray-500">
-                  Minimum 8 caractères, avec majuscules, minuscules et chiffres
+                  Minimum 8 caractères
                 </p>
               </div>
             </div>
@@ -136,7 +135,7 @@
               </label>
               <div class="relative">
                 <input
-                  v-model="formData.confirmPassword"
+                  v-model="confirmPassword"
                   :type="showConfirmPassword ? 'text' : 'password'"
                   required
                   placeholder="••••••••"
@@ -294,6 +293,7 @@ import { ref, computed } from 'vue'
 import { X, Eye, EyeOff, ChevronLeft, ChevronRight, User, Home, Check, Loader2 } from 'lucide-vue-next'
 import Stepper from './Stepper.vue'
 import { useAuth } from '@/composables/useAuth'
+import { useToast } from '@/composables/useToast'
 import type { RegisterData } from '@/types/auth'
 
 const props = defineProps<{
@@ -305,7 +305,8 @@ const emit = defineEmits<{
   'switch-to-login': []
 }>()
 
-const { register, isLoading } = useAuth()
+const { register, isLoading, error } = useAuth()
+const toast = useToast()
 
 const currentStep = ref(0)
 const stepLabels = ['Informations', 'Sécurité', 'Type de compte']
@@ -315,7 +316,6 @@ const formData = ref<RegisterData>({
   lastName: '',
   email: '',
   password: '',
-  phone: '',
   userType: 'locataire'
 })
 
@@ -331,15 +331,10 @@ const passwordStrength = computed(() => {
   const password = formData.value.password
   if (!password) return { width: '0%', color: 'bg-gray-300', textColor: 'text-gray-500', label: '' }
 
-  let strength = 0
-  if (password.length >= 8) strength++
-  if (/[a-z]/.test(password)) strength++
-  if (/[A-Z]/.test(password)) strength++
-  if (/[0-9]/.test(password)) strength++
-  if (/[^a-zA-Z0-9]/.test(password)) strength++
-
-  if (strength <= 2) return { width: '33%', color: 'bg-red-500', textColor: 'text-red-600', label: 'Faible' }
-  if (strength <= 3) return { width: '66%', color: 'bg-yellow-500', textColor: 'text-yellow-600', label: 'Moyen' }
+  const length = password.length
+  
+  if (length < 8) return { width: '33%', color: 'bg-red-500', textColor: 'text-red-600', label: 'Trop court' }
+  if (length < 12) return { width: '66%', color: 'bg-yellow-500', textColor: 'text-yellow-600', label: 'Moyen' }
   return { width: '100%', color: 'bg-green-500', textColor: 'text-green-600', label: 'Fort' }
 })
 
@@ -378,7 +373,10 @@ const handleSignup = async () => {
   const success = await register(formData.value)
 
   if (success) {
+    toast.success('Inscription réussie', 'Bienvenue sur BnB ESGI !')
     close()
+  } else if (error.value) {
+    toast.error('Erreur d\'inscription', error.value)
   }
 }
 
@@ -389,7 +387,6 @@ const close = () => {
     lastName: '',
     email: '',
     password: '',
-    phone: '',
     userType: 'locataire'
   }
   confirmPassword.value = ''

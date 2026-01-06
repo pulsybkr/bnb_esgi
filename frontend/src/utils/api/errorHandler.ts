@@ -51,12 +51,24 @@ export class ErrorHandler {
         if (error instanceof ApiException) {
             return error.message
         }
-        if (error.response?.data?.message) {
-            return error.response.data.message
+
+        // Axios error with response
+        if (error.response?.data) {
+            const data = error.response.data
+
+            // Try different possible error message locations
+            if (data.message) return data.message
+            if (data.error) return data.error
+            if (data.errors && Array.isArray(data.errors) && data.errors.length > 0) {
+                return data.errors[0].message || data.errors[0]
+            }
         }
+
+        // Axios error message
         if (error.message) {
             return error.message
         }
+
         return 'Une erreur inattendue est survenue'
     }
 
