@@ -464,6 +464,7 @@ import { PropertyType, PROPERTY_TYPE_OPTIONS } from '@/types/accommodation'
 import { availableServices } from '@/data/services'
 import { tagsByCategory, getTagLabels } from '@/data/tags'
 import { validateAccommodationForm, type ValidationError } from '@/utils/accommodationValidation'
+import { logementService } from '@/services/logement.service'
 
 const router = useRouter()
 const imageUploadRef = ref<InstanceType<typeof ImageUpload>>()
@@ -612,59 +613,34 @@ const handleSubmit = async () => {
   isSubmitting.value = true
 
   try {
-    // TODO: Intégrer avec l'API backend
-    // Pour l'instant, on simule l'upload
-    console.log('Données du formulaire:', formData)
+    // Préparer les données pour l'API
+    const propertyData = {
+      title: formData.title,
+      description: formData.description,
+      propertyType: formData.propertyType,
+      address: formData.location.address,
+      city: formData.location.city,
+      country: formData.location.country,
+      maxGuests: formData.maxGuests,
+      bedrooms: formData.bedrooms,
+      bathrooms: formData.bathrooms,
+      price: formData.price,
+      amenities: formData.amenities,
+      tags: getTagLabels(formData.tags),
+      services: formData.services,
+      checkIn: formData.availability.checkIn,
+      checkOut: formData.availability.checkOut,
+      images: formData.images,
+    }
 
-    // Créer un FormData pour l'upload
-    const formDataToSend = new FormData()
-    
-    // Ajouter les images
-    formData.images.forEach((file, index) => {
-      formDataToSend.append(`images[${index}]`, file)
-    })
+    // Appeler l'API pour créer le logement
+    const accommodation = await logementService.create(propertyData)
 
-    // Ajouter les autres données
-    formDataToSend.append('title', formData.title)
-    formDataToSend.append('description', formData.description)
-    formDataToSend.append('propertyType', formData.propertyType)
-    formDataToSend.append('address', formData.location.address)
-    formDataToSend.append('city', formData.location.city)
-    formDataToSend.append('country', formData.location.country)
-    formDataToSend.append('maxGuests', formData.maxGuests.toString())
-    formDataToSend.append('bedrooms', formData.bedrooms.toString())
-    formDataToSend.append('bathrooms', formData.bathrooms.toString())
-    formDataToSend.append('price', formData.price.toString())
-    formDataToSend.append('amenities', JSON.stringify(formData.amenities))
-    formDataToSend.append('tags', JSON.stringify(getTagLabels(formData.tags)))
-    formDataToSend.append('services', JSON.stringify(formData.services))
-    formDataToSend.append('checkIn', formData.availability.checkIn)
-    formDataToSend.append('checkOut', formData.availability.checkOut)
-
-    // Simuler un délai d'upload
-    await new Promise(resolve => setTimeout(resolve, 2000))
-
-    // TODO: Remplacer par un vrai appel API
-    // const response = await fetch('/api/accommodations', {
-    //   method: 'POST',
-    //   body: formDataToSend,
-    //   headers: {
-    //     'Authorization': `Bearer ${token}`
-    //   }
-    // })
-    // 
-    // if (!response.ok) {
-    //   throw new Error('Erreur lors de la publication')
-    // }
-    // 
-    // const accommodation = await response.json()
-
-    // Rediriger vers la page de détail (pour l'instant vers la liste)
-    // router.push({ name: 'accommodation-detail', params: { id: accommodation.id } })
-    router.push({ name: 'home' })
-  } catch (error) {
-    console.error('Erreur:', error)
-    errorMessage.value = 'Une erreur est survenue lors de la publication. Veuillez réessayer.'
+    // Rediriger vers la page de détail du logement créé
+    router.push({ name: 'accommodation-detail', params: { id: accommodation.id } })
+  } catch (err: any) {
+    console.error('Erreur:', err)
+    errorMessage.value = err.response?.data?.message || 'Une erreur est survenue lors de la publication. Veuillez réessayer.'
     window.scrollTo({ top: 0, behavior: 'smooth' })
   } finally {
     isSubmitting.value = false

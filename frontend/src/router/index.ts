@@ -20,6 +20,11 @@ const routes = [
     path: '/accommodation/:id/calendar',
     name: 'accommodation-calendar',
     component: () => import('@/views/AccommodationCalendarView.vue')
+  },
+  {
+    path: '/favorites',
+    name: 'favorites',
+    component: () => import('@/views/FavoritesView.vue')
   }
 ]
 

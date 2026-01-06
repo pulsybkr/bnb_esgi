@@ -10,15 +10,17 @@
         class="w-full h-64 object-cover"
         @error="handleImageError"
       />
-      <div class="absolute top-3 right-3">
+      <div class="absolute top-3 right-3 z-10">
         <button 
-          @click.stop="toggleFavorite"
+          @click.prevent.stop="toggleFavorite"
+          @mousedown.prevent.stop
           class="p-2 bg-white rounded-full shadow-md hover:bg-gray-50 transition-colors"
           :class="{ 'bg-red-50': isFavorite }"
+          type="button"
         >
           <Heart 
-            class="w-5 h-5 transition-colors" 
-            :class="isFavorite ? 'text-red-600 fill-current' : 'text-gray-600'"
+            class="w-5 h-5 transition-colors pointer-events-none" 
+            :class="isFavorite ? 'text-red-600 fill-red-600' : 'text-gray-600'"
           />
         </button>
       </div>

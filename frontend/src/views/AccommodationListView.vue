@@ -73,7 +73,23 @@
           </div>
 
           <div class="flex items-center space-x-4">
-            <button class="p-2 text-gray-600 hover:text-gray-900" type="button">
+            <router-link
+              to="/favorites"
+              class="relative p-2 text-gray-600 hover:text-gray-900 transition-colors"
+              title="Mes favoris"
+            >
+              <Heart 
+                class="w-5 h-5" 
+                :class="{ 'fill-red-500 text-red-500': favoritesList && favoritesList.value && favoritesList.value.length > 0 }" 
+              />
+              <span 
+                v-if="favoritesList && favoritesList.value && favoritesList.value.length > 0"
+                class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium"
+              >
+                {{ favoritesList.value.length }}
+              </span>
+            </router-link>
+            <button class="p-2 text-gray-600 hover:text-gray-900" type="button" title="Mon compte">
               <User class="w-5 h-5" />
             </button>
           </div>
@@ -90,12 +106,14 @@
 
         <!-- Contenu principal -->
         <div class="flex-1">
+          <!-- Messages d'erreur -->
+          <div v-if="error" class="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p class="text-sm text-red-800">{{ error }}</p>
+          </div>
+
           <!-- Résultats et tri -->
           <div class="mb-6">
-            <div class="flex justify-between items-center mb-4">
-              <h2 class="text-xl font-semibold text-gray-900">
-                {{ filteredAccommodations.length }} logement{{ filteredAccommodations.length > 1 ? 's' : '' }} trouvé{{ filteredAccommodations.length > 1 ? 's' : '' }}
-              </h2>
+            <div class="flex justify-end items-center mb-4">
               <div class="flex items-center space-x-2">
                 <span class="text-sm text-gray-600">Trier par :</span>
                 <select 
@@ -111,9 +129,9 @@
             </div>
           </div>
 
-          <!-- Logements populaires (si pas de filtres actifs) -->
+          <!-- Logements populaires (optionnel, seulement si beaucoup de logements) -->
           <PopularAccommodations
-            v-if="!hasActiveFilters"
+            v-if="!hasActiveFilters && !isLoading && allAccommodations.length > 12"
             :all-accommodations="allAccommodations"
             :location="currentFilters.locationRadius?.center"
             :location-name="searchQuery || undefined"
@@ -123,9 +141,9 @@
             class="mb-12"
           />
 
-          <!-- Recommandations personnalisées -->
+          <!-- Recommandations personnalisées (optionnel, seulement si beaucoup de logements) -->
           <RecommendationsAccommodations
-            v-if="!hasActiveFilters"
+            v-if="!hasActiveFilters && !isLoading && allAccommodations.length > 12 && userPreferences"
             :all-accommodations="allAccommodations"
             :user-preferences="userPreferences"
             :max-results="6"
@@ -134,8 +152,16 @@
             class="mb-12"
           />
 
+          <!-- Titre de la section principale -->
+          <div v-if="!isLoading && filteredAccommodations.length > 0" class="mb-6">
+            <h2 class="text-2xl font-bold text-gray-900">
+              <span v-if="hasActiveFilters">Résultats de votre recherche</span>
+              <span v-else>Tous les logements</span>
+            </h2>
+          </div>
+
           <!-- Grille des logements -->
-          <div v-if="filteredAccommodations.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div v-if="!isLoading && filteredAccommodations.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <AccommodationCard 
               v-for="accommodation in paginatedAccommodations" 
               :key="accommodation.id"
@@ -144,10 +170,18 @@
           </div>
 
           <!-- Message si aucun résultat -->
-          <div v-else class="text-center py-12">
+          <div v-if="!isLoading && filteredAccommodations.length === 0" class="text-center py-12">
             <Home class="w-16 h-16 text-gray-400 mx-auto mb-4" />
             <h3 class="text-lg font-medium text-gray-900 mb-2">Aucun logement trouvé</h3>
-            <p class="text-gray-600">Essayez de modifier vos critères de recherche</p>
+            <p class="text-gray-600">
+              <span v-if="hasActiveFilters">Essayez de modifier vos critères de recherche</span>
+              <span v-else>Les logements sont en cours de chargement ou la base de données est vide</span>
+            </p>
+          </div>
+
+          <!-- Message si chargement -->
+          <div v-if="isLoading" class="text-center py-12">
+            <p class="text-gray-600">Chargement des logements...</p>
           </div>
 
           <!-- Pagination -->
@@ -156,10 +190,10 @@
               <button 
                 @click="currentPage = Math.max(1, currentPage - 1)"
                 :disabled="currentPage === 1"
-                class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 type="button"
               >
-                Précédent
+                ← Précédent
               </button>
               
               <button 
@@ -180,10 +214,10 @@
               <button 
                 @click="currentPage = Math.min(totalPages, currentPage + 1)"
                 :disabled="currentPage === totalPages"
-                class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 type="button"
               >
-                Suivant
+                Suivant →
               </button>
             </nav>
           </div>
@@ -196,26 +230,37 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { Search, User, Home, X } from 'lucide-vue-next'
+import { Search, User, Home, X, Heart } from 'lucide-vue-next'
 import AccommodationCard from '@/components/AccommodationCard.vue'
 import FilterSidebar from '@/components/FilterSidebar.vue'
 import { accommodations } from '@/data/fixtures'
 import type { Accommodation, FilterOptions } from '@/types/accommodation'
 import { useSearchHistory } from '@/composables/useSearchHistory'
+import { useFavorites } from '@/composables/useFavorites'
 import { getTagLabels } from '@/data/tags'
 import { generatePreferencesFromHistory } from '@/utils/recommendations'
 import type { UserPreferences } from '@/utils/recommendations'
 import { calculateDistance } from '@/utils/geolocation'
 import PopularAccommodations from '@/components/PopularAccommodations.vue'
 import RecommendationsAccommodations from '@/components/RecommendationsAccommodations.vue'
+import { logementService } from '@/services/logement.service'
 
 console.log('📋 AccommodationListView: Script setup chargé')
 
 const router = useRouter()
 const { searchHistory, addToHistory, removeFromHistory, clearHistory } = useSearchHistory()
+const { favoritesList } = useFavorites()
 
 // État réactif
-const allAccommodations = ref<Accommodation[]>(accommodations)
+const allAccommodations = ref<Accommodation[]>([])
+const isLoading = ref(false)
+const error = ref<string | null>(null)
+const pagination = ref({
+  total: 0,
+  page: 1,
+  limit: 20,
+  totalPages: 0,
+})
 
 // Préférences utilisateur pour les recommandations
 const userPreferences = computed<UserPreferences | undefined>(() => {
@@ -260,57 +305,57 @@ const itemsPerPage = 9
 // Filtrage des logements
 const filteredAccommodations = computed(() => {
   try {
-    let filtered = [...allAccommodations.value]
+  let filtered = [...allAccommodations.value]
 
-    // Filtre par recherche textuelle (titre et description)
-    if (searchQuery.value.trim()) {
-      const query = searchQuery.value.toLowerCase().trim()
-      filtered = filtered.filter(acc => 
-        acc.title.toLowerCase().includes(query) || 
-        acc.description.toLowerCase().includes(query) ||
-        acc.location.city.toLowerCase().includes(query) ||
-        acc.location.country.toLowerCase().includes(query)
+  // Filtre par recherche textuelle (titre et description)
+  if (searchQuery.value.trim()) {
+    const query = searchQuery.value.toLowerCase().trim()
+    filtered = filtered.filter(acc => 
+      acc.title.toLowerCase().includes(query) || 
+      acc.description.toLowerCase().includes(query) ||
+      acc.location.city.toLowerCase().includes(query) ||
+      acc.location.country.toLowerCase().includes(query)
+    )
+  }
+
+  // Filtre par prix
+  if (currentFilters.value.priceRange[0] > 0 || currentFilters.value.priceRange[1] < 1000) {
+    filtered = filtered.filter(acc => 
+      acc.price >= currentFilters.value.priceRange[0] && 
+      acc.price <= currentFilters.value.priceRange[1]
+    )
+  }
+
+  // Filtre par type de propriété
+  if (currentFilters.value.propertyType.length > 0) {
+    filtered = filtered.filter(acc => 
+      currentFilters.value.propertyType.includes(acc.propertyType)
+    )
+  }
+
+  // Filtre par nombre de voyageurs
+  if (currentFilters.value.maxGuests > 0) {
+    filtered = filtered.filter(acc => acc.maxGuests >= currentFilters.value.maxGuests)
+  }
+
+  // Filtre par nombre de chambres
+  if (currentFilters.value.bedrooms > 0) {
+    filtered = filtered.filter(acc => acc.bedrooms >= currentFilters.value.bedrooms)
+  }
+
+  // Filtre par nombre de salles de bain
+  if (currentFilters.value.bathrooms > 0) {
+    filtered = filtered.filter(acc => acc.bathrooms >= currentFilters.value.bathrooms)
+  }
+
+  // Filtre par équipements
+  if (currentFilters.value.amenities.length > 0) {
+    filtered = filtered.filter(acc => 
+      currentFilters.value.amenities.every(amenity => 
+        acc.amenities.includes(amenity)
       )
-    }
-
-    // Filtre par prix
-    if (currentFilters.value.priceRange[0] > 0 || currentFilters.value.priceRange[1] < 1000) {
-      filtered = filtered.filter(acc => 
-        acc.price >= currentFilters.value.priceRange[0] && 
-        acc.price <= currentFilters.value.priceRange[1]
-      )
-    }
-
-    // Filtre par type de propriété
-    if (currentFilters.value.propertyType.length > 0) {
-      filtered = filtered.filter(acc => 
-        currentFilters.value.propertyType.includes(acc.propertyType)
-      )
-    }
-
-    // Filtre par nombre de voyageurs
-    if (currentFilters.value.maxGuests > 0) {
-      filtered = filtered.filter(acc => acc.maxGuests >= currentFilters.value.maxGuests)
-    }
-
-    // Filtre par nombre de chambres
-    if (currentFilters.value.bedrooms > 0) {
-      filtered = filtered.filter(acc => acc.bedrooms >= currentFilters.value.bedrooms)
-    }
-
-    // Filtre par nombre de salles de bain
-    if (currentFilters.value.bathrooms > 0) {
-      filtered = filtered.filter(acc => acc.bathrooms >= currentFilters.value.bathrooms)
-    }
-
-    // Filtre par équipements
-    if (currentFilters.value.amenities.length > 0) {
-      filtered = filtered.filter(acc => 
-        currentFilters.value.amenities.every(amenity => 
-          acc.amenities.includes(amenity)
-        )
-      )
-    }
+    )
+  }
 
     // Filtre par tags (convertir les IDs en labels pour la comparaison)
     if (currentFilters.value.tags.length > 0) {
@@ -338,23 +383,23 @@ const filteredAccommodations = computed(() => {
       })
     }
 
-    // Tri
-    switch (sortBy.value) {
-      case 'price-asc':
-        filtered.sort((a, b) => a.price - b.price)
-        break
-      case 'price-desc':
-        filtered.sort((a, b) => b.price - a.price)
-        break
-      case 'rating-desc':
-        filtered.sort((a, b) => b.rating - a.rating)
-        break
-      case 'title-asc':
-        filtered.sort((a, b) => a.title.localeCompare(b.title))
-        break
-    }
+  // Tri
+  switch (sortBy.value) {
+    case 'price-asc':
+      filtered.sort((a, b) => a.price - b.price)
+      break
+    case 'price-desc':
+      filtered.sort((a, b) => b.price - a.price)
+      break
+    case 'rating-desc':
+      filtered.sort((a, b) => b.rating - a.rating)
+      break
+    case 'title-asc':
+      filtered.sort((a, b) => a.title.localeCompare(b.title))
+      break
+  }
 
-    return filtered
+  return filtered
   } catch (error) {
     console.error('Erreur dans filteredAccommodations:', error)
     return []
@@ -377,13 +422,22 @@ const hasActiveFilters = computed(() => {
   )
 })
 
-// Pagination
-const totalPages = computed(() => Math.ceil(filteredAccommodations.value.length / itemsPerPage))
+// Pagination - Utiliser les données de l'API directement (pas de pagination locale)
+// car l'API gère déjà la pagination
+const totalPages = computed(() => pagination.value.totalPages || 1)
 
 const paginatedAccommodations = computed(() => {
-  const start = (currentPage.value - 1) * itemsPerPage
-  const end = start + itemsPerPage
-  return filteredAccommodations.value.slice(start, end)
+  // Les données viennent déjà paginées de l'API, donc on les retourne telles quelles
+  // après le filtrage local (qui peut réduire le nombre d'éléments affichés)
+  const result = filteredAccommodations.value
+  console.log('📄 Pagination:', {
+    totalFromAPI: pagination.value.total,
+    filteredLocal: filteredAccommodations.value.length,
+    page: currentPage.value,
+    totalPages: totalPages.value,
+    displayed: result.length
+  })
+  return result
 })
 
 const visiblePages = computed(() => {
@@ -445,8 +499,119 @@ watch(searchQuery, (newValue, oldValue) => {
   }
 })
 
+// Charger les logements depuis l'API
+const loadAccommodations = async () => {
+  isLoading.value = true
+  error.value = null
+  
+  try {
+    // Construire les filtres API depuis les filtres locaux
+    const apiFilters: any = {
+      page: currentPage.value,
+      limit: itemsPerPage,
+      status: 'actif',
+    }
+    
+    // Ajouter les filtres
+    if (currentFilters.value.priceRange[0] > 0) {
+      apiFilters.minPrice = currentFilters.value.priceRange[0]
+    }
+    if (currentFilters.value.priceRange[1] < 1000) {
+      apiFilters.maxPrice = currentFilters.value.priceRange[1]
+    }
+    
+    if (currentFilters.value.propertyType.length > 0) {
+      apiFilters.type = currentFilters.value.propertyType[0] // API supporte un seul type
+    }
+    
+    if (currentFilters.value.maxGuests > 0) {
+      apiFilters.minCapacity = currentFilters.value.maxGuests
+    }
+    
+    // Recherche textuelle sur ville ou pays
+    if (searchQuery.value.trim()) {
+      const query = searchQuery.value.trim()
+      // Essayer d'abord la ville, puis le pays
+      if (query.length > 2) {
+        apiFilters.city = query
+      }
+    }
+    
+    // Mapping du tri
+    const sortMapping: Record<string, { sortBy: string; sortOrder: string }> = {
+      'price-asc': { sortBy: 'pricePerNight', sortOrder: 'asc' },
+      'price-desc': { sortBy: 'pricePerNight', sortOrder: 'desc' },
+      'rating-desc': { sortBy: 'averageRating', sortOrder: 'desc' },
+      'date-desc': { sortBy: 'createdAt', sortOrder: 'desc' },
+    }
+    
+    if (sortMapping[sortBy.value]) {
+      Object.assign(apiFilters, sortMapping[sortBy.value])
+    }
+    
+    const response = await logementService.getAll(apiFilters)
+    console.log('📦 Réponse API:', response)
+    console.log('📦 Propriétés transformées:', response.properties)
+    console.log('📦 Pagination API:', {
+      total: response.total,
+      page: response.page,
+      limit: response.limit,
+      totalPages: response.totalPages
+    })
+    
+    // Si c'est la page 1 ou si on change de page, remplacer les données
+    // Sinon, on pourrait append pour une pagination infinie
+    if (currentPage.value === 1) {
+      allAccommodations.value = response.properties
+    } else {
+      // Pour les pages suivantes, on remplace car on fait une nouvelle requête
+      allAccommodations.value = response.properties
+    }
+    
+    console.log('📦 allAccommodations après assignation:', allAccommodations.value.length, 'logements')
+    pagination.value = {
+      total: response.total,
+      page: response.page,
+      limit: response.limit,
+      totalPages: response.totalPages,
+    }
+  } catch (err: any) {
+    console.error('Erreur lors du chargement des logements:', err)
+    
+    // Gérer les erreurs spécifiques
+    if (err.response?.status === 503) {
+      error.value = err.response?.data?.message || 'La base de données n\'est pas accessible. Veuillez démarrer PostgreSQL.'
+    } else if (err.response?.data?.message) {
+      error.value = err.response.data.message
+    } else {
+      error.value = err.message || 'Erreur lors du chargement des logements'
+    }
+    
+    // En cas d'erreur, utiliser les données mockées comme fallback
+    allAccommodations.value = accommodations
+    pagination.value = {
+      total: accommodations.length,
+      page: 1,
+      limit: itemsPerPage,
+      totalPages: Math.ceil(accommodations.length / itemsPerPage),
+    }
+  } finally {
+    isLoading.value = false
+  }
+}
+
+// Watchers pour recharger les données
+watch([currentPage, sortBy], () => {
+  loadAccommodations()
+})
+
+watch([currentFilters, searchQuery], () => {
+  currentPage.value = 1
+  loadAccommodations()
+}, { deep: true })
+
 onMounted(() => {
   console.log('📋 AccommodationListView: Composant monté')
-  // Initialiser avec tous les logements
+  loadAccommodations()
 })
 </script>
