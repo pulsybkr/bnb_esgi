@@ -10,6 +10,8 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// Seed configuration
+
 enum TypeUtilisateur {
   locataire
   proprietaire
@@ -27,6 +29,9 @@ enum TypeLogement {
   appartement
   chambre
   hotel
+  villa
+  studio
+  loft
 }
 
 enum StatutLogement {
@@ -157,11 +162,16 @@ model Logement {
   longitude       Decimal?          @db.Decimal(11, 8)
   type            TypeLogement
   roomCount       Int               @map("nombre_pieces")
+  bedrooms        Int               @default(0) @map("nombre_chambres")
+  bathrooms       Int               @default(0) @map("nombre_salles_bain")
   capacity        Int               @map("capacite_accueil")
   pricePerNight   Decimal           @map("prix_par_nuit") @db.Decimal(10, 2)
   currency        String            @default("XOF") @map("devise")
   amenities       Json?             @map("equipements")
   houseRules      Json?             @map("regles_maison")
+  tags            Json?             @map("tags")
+  checkIn         String?           @default("15:00") @map("heure_arrivee")
+  checkOut        String?           @default("11:00") @map("heure_depart")
   status          StatutLogement    @default(actif)
   averageRating   Float?            @map("note_moyenne") @default(0)
   reviewCount     Int               @map("nombre_avis") @default(0)
@@ -169,11 +179,13 @@ model Logement {
   updatedAt       DateTime          @updatedAt @map("updated_at")
 
   // Relations
-  owner           User              @relation(fields: [ownerId], references: [id])
+  owner           User                  @relation(fields: [ownerId], references: [id])
   availabilities  Disponibilite[]
   reservations    Reservation[]
   favorites       Favori[]
   photos          Photo[]
+  services        Service[]
+  pricingConfig   PricingConfiguration?
 
   @@map("logements")
 }
@@ -360,4 +372,91 @@ model Signalement {
   moderator       User?                 @relation("SignalementsTraites", fields: [moderatorId], references: [id])
 
   @@map("signalements")
+}
+
+enum TypeService {
+  fixed
+  per_night
+  per_guest
+  per_guest_per_night
+}
+
+enum TypeRegleTarification {
+  season
+  weekend
+  long_stay
+  custom
+}
+
+enum TypeSaison {
+  high
+  low
+}
+
+model Service {
+  id              String      @id @default(uuid())
+  accommodationId String      @map("id_logement")
+  name            String      @map("nom")
+  description     String?     @db.Text
+  price           Decimal     @db.Decimal(10, 2)
+  priceType       TypeService @map("type_prix")
+  icon            String?     @map("icone")
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+
+  // Relations
+  accommodation Logement @relation(fields: [accommodationId], references: [id], onDelete: Cascade)
+
+  @@map("services")
+}
+
+model PricingConfiguration {
+  id              String   @id @default(uuid())
+  accommodationId String   @unique @map("id_logement")
+  basePrice       Decimal  @map("prix_base") @db.Decimal(10, 2)
+  currency        String   @default("EUR") @map("devise")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  accommodation Logement      @relation(fields: [accommodationId], references: [id], onDelete: Cascade)
+  rules         PricingRule[]
+
+  @@map("configurations_tarification")
+}
+
+model PricingRule {
+  id              String                @id @default(uuid())
+  configurationId String                @map("id_configuration")
+  type            TypeRegleTarification
+  name            String
+  priority        Int                   @default(0)
+  enabled         Boolean               @default(true)
+
+  // Champs pour SeasonPricingRule
+  season          TypeSaison?
+  startMonth      Int?        @map("mois_debut")
+  endMonth        Int?        @map("mois_fin")
+  priceMultiplier Decimal?    @map("multiplicateur_prix") @db.Decimal(5, 2)
+
+  // Champs pour WeekendPricingRule
+  weekendMultiplier Decimal? @map("multiplicateur_weekend") @db.Decimal(5, 2)
+  weekMultiplier    Decimal? @map("multiplicateur_semaine") @db.Decimal(5, 2)
+
+  // Champs pour LongStayPricingRule
+  minimumNights             Int?     @map("nuits_minimum")
+  discountPercentage        Decimal? @map("pourcentage_reduction") @db.Decimal(5, 2)
+  maximumDiscountPercentage Decimal? @map("reduction_maximale") @db.Decimal(5, 2)
+
+  // Champs pour CustomPeriodPricingRule
+  startDate DateTime? @map("date_debut") @db.Date
+  endDate   DateTime? @map("date_fin") @db.Date
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  configuration PricingConfiguration @relation(fields: [configurationId], references: [id], onDelete: Cascade)
+
+  @@map("regles_tarification")
 }

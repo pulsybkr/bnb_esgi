@@ -5,7 +5,7 @@ CREATE TYPE "TypeUtilisateur" AS ENUM ('locataire', 'proprietaire', 'admin');
 CREATE TYPE "StatutUtilisateur" AS ENUM ('actif', 'suspendu', 'inactif');
 
 -- CreateEnum
-CREATE TYPE "TypeLogement" AS ENUM ('maison', 'appartement', 'chambre', 'hotel');
+CREATE TYPE "TypeLogement" AS ENUM ('maison', 'appartement', 'chambre', 'hotel', 'villa', 'studio', 'loft');
 
 -- CreateEnum
 CREATE TYPE "StatutLogement" AS ENUM ('actif', 'suspendu', 'archive');
@@ -42,6 +42,15 @@ CREATE TYPE "MotifSignalement" AS ENUM ('contenu_inapproprie', 'faux', 'spam', '
 
 -- CreateEnum
 CREATE TYPE "StatutSignalement" AS ENUM ('en_attente', 'traite', 'rejete');
+
+-- CreateEnum
+CREATE TYPE "TypeService" AS ENUM ('fixed', 'per_night', 'per_guest', 'per_guest_per_night');
+
+-- CreateEnum
+CREATE TYPE "TypeRegleTarification" AS ENUM ('season', 'weekend', 'long_stay', 'custom');
+
+-- CreateEnum
+CREATE TYPE "TypeSaison" AS ENUM ('high', 'low');
 
 -- CreateTable
 CREATE TABLE "users" (
@@ -81,11 +90,16 @@ CREATE TABLE "logements" (
     "longitude" DECIMAL(11,8),
     "type" "TypeLogement" NOT NULL,
     "nombre_pieces" INTEGER NOT NULL,
+    "nombre_chambres" INTEGER NOT NULL DEFAULT 0,
+    "nombre_salles_bain" INTEGER NOT NULL DEFAULT 0,
     "capacite_accueil" INTEGER NOT NULL,
     "prix_par_nuit" DECIMAL(10,2) NOT NULL,
     "devise" TEXT NOT NULL DEFAULT 'XOF',
     "equipements" JSONB,
     "regles_maison" JSONB,
+    "tags" JSONB,
+    "heure_arrivee" TEXT DEFAULT '15:00',
+    "heure_depart" TEXT DEFAULT '11:00',
     "statut" "StatutLogement" NOT NULL DEFAULT 'actif',
     "note_moyenne" DOUBLE PRECISION DEFAULT 0,
     "nombre_avis" INTEGER NOT NULL DEFAULT 0,
@@ -307,3 +321,67 @@ ALTER TABLE "signalements" ADD CONSTRAINT "signalements_id_utilisateur_fkey" FOR
 
 -- AddForeignKey
 ALTER TABLE "signalements" ADD CONSTRAINT "signalements_id_moderateur_fkey" FOREIGN KEY ("id_moderateur") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- CreateTable
+CREATE TABLE "services" (
+    "id" TEXT NOT NULL,
+    "id_logement" TEXT NOT NULL,
+    "nom" TEXT NOT NULL,
+    "description" TEXT,
+    "price" DECIMAL(10,2) NOT NULL,
+    "type_prix" "TypeService" NOT NULL,
+    "icone" TEXT,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "services_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "configurations_tarification" (
+    "id" TEXT NOT NULL,
+    "id_logement" TEXT NOT NULL,
+    "prix_base" DECIMAL(10,2) NOT NULL,
+    "devise" TEXT NOT NULL DEFAULT 'EUR',
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "configurations_tarification_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "regles_tarification" (
+    "id" TEXT NOT NULL,
+    "id_configuration" TEXT NOT NULL,
+    "type" "TypeRegleTarification" NOT NULL,
+    "name" TEXT NOT NULL,
+    "priority" INTEGER NOT NULL DEFAULT 0,
+    "enabled" BOOLEAN NOT NULL DEFAULT true,
+    "season" "TypeSaison",
+    "mois_debut" INTEGER,
+    "mois_fin" INTEGER,
+    "multiplicateur_prix" DECIMAL(5,2),
+    "multiplicateur_weekend" DECIMAL(5,2),
+    "multiplicateur_semaine" DECIMAL(5,2),
+    "nuits_minimum" INTEGER,
+    "pourcentage_reduction" DECIMAL(5,2),
+    "reduction_maximale" DECIMAL(5,2),
+    "date_debut" DATE,
+    "date_fin" DATE,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "regles_tarification_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateIndex
+CREATE UNIQUE INDEX "configurations_tarification_id_logement_key" ON "configurations_tarification"("id_logement");
+
+-- AddForeignKey
+ALTER TABLE "services" ADD CONSTRAINT "services_id_logement_fkey" FOREIGN KEY ("id_logement") REFERENCES "logements"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "configurations_tarification" ADD CONSTRAINT "configurations_tarification_id_logement_fkey" FOREIGN KEY ("id_logement") REFERENCES "logements"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "regles_tarification" ADD CONSTRAINT "regles_tarification_id_configuration_fkey" FOREIGN KEY ("id_configuration") REFERENCES "configurations_tarification"("id") ON DELETE CASCADE ON UPDATE CASCADE;

@@ -10,13 +10,25 @@ export interface CreatePropertyData {
     country: string;
     latitude?: number;
     longitude?: number;
-    type: 'maison' | 'appartement' | 'chambre' | 'hotel';
+    type: 'maison' | 'appartement' | 'chambre' | 'hotel' | 'villa' | 'studio' | 'loft';
     roomCount: number;
     capacity: number;
+    bedrooms?: number;
+    bathrooms?: number;
     pricePerNight: number;
     currency?: string;
     amenities?: any;
     houseRules?: any;
+    tags?: string[];
+    checkIn?: string;
+    checkOut?: string;
+    services?: Array<{
+        serviceId: string;
+        name: string;
+        description?: string;
+        price: number;
+        priceType: 'fixed' | 'per_night' | 'per_guest' | 'per_guest_per_night';
+    }>;
     photos?: AddPhotoData[];
 }
 
@@ -28,20 +40,25 @@ export interface UpdatePropertyData {
     country?: string;
     latitude?: number;
     longitude?: number;
-    type?: 'maison' | 'appartement' | 'chambre' | 'hotel';
+    type?: 'maison' | 'appartement' | 'chambre' | 'hotel' | 'villa' | 'studio' | 'loft';
     roomCount?: number;
     capacity?: number;
+    bedrooms?: number;
+    bathrooms?: number;
     pricePerNight?: number;
     currency?: string;
     amenities?: any;
     houseRules?: any;
+    tags?: string[];
+    checkIn?: string;
+    checkOut?: string;
     status?: 'actif' | 'suspendu' | 'archive';
 }
 
 export interface PropertyFilters {
     city?: string;
     country?: string;
-    type?: 'maison' | 'appartement' | 'chambre' | 'hotel';
+    type?: 'maison' | 'appartement' | 'chambre' | 'hotel' | 'villa' | 'studio' | 'loft';
     minPrice?: number;
     maxPrice?: number;
     minCapacity?: number;
@@ -68,8 +85,8 @@ export class LogementService {
         propertyData: CreatePropertyData
     ): Promise<any> {
         try {
-            // Extract photos from property data
-            const { photos, ...propertyDataWithoutPhotos } = propertyData;
+            // Extract photos and services from property data
+            const { photos, services, ...propertyDataWithoutPhotos } = propertyData;
 
             // Determine if there's a main photo
             const hasMainPhoto = photos?.some(photo => photo.isMain);
@@ -79,6 +96,11 @@ export class LogementService {
                 data: {
                     ...propertyDataWithoutPhotos,
                     ownerId,
+                    bedrooms: propertyData.bedrooms ?? 0,
+                    bathrooms: propertyData.bathrooms ?? 0,
+                    tags: propertyData.tags && propertyData.tags.length > 0 ? propertyData.tags : undefined,
+                    checkIn: propertyData.checkIn || '15:00',
+                    checkOut: propertyData.checkOut || '11:00',
                     pricePerNight: new Prisma.Decimal(propertyData.pricePerNight),
                     latitude: propertyData.latitude ? new Prisma.Decimal(propertyData.latitude) : null,
                     longitude: propertyData.longitude ? new Prisma.Decimal(propertyData.longitude) : null,
@@ -91,6 +113,15 @@ export class LogementService {
                             // If no main photo is specified, make the first one main
                             isMain: hasMainPhoto ? (photo.isMain || false) : (index === 0),
                             order: photo.order !== undefined ? photo.order : index,
+                        }))
+                    } : undefined,
+                    // Create services if provided
+                    services: services && services.length > 0 ? {
+                        create: services.map(service => ({
+                            name: service.name,
+                            description: service.description,
+                            price: new Prisma.Decimal(service.price),
+                            priceType: service.priceType,
                         }))
                     } : undefined,
                 },
@@ -106,6 +137,9 @@ export class LogementService {
                     },
                     photos: {
                         orderBy: { order: 'asc' },
+                    },
+                    services: {
+                        orderBy: { createdAt: 'asc' },
                     },
                 },
             });
@@ -240,6 +274,16 @@ export class LogementService {
                     },
                     orderBy: { startDate: 'asc' },
                 },
+                services: {
+                    orderBy: { createdAt: 'asc' },
+                },
+                pricingConfig: {
+                    include: {
+                        rules: {
+                            orderBy: { priority: 'desc' },
+                        },
+                    },
+                },
                 _count: {
                     select: {
                         reservations: true,
@@ -319,6 +363,11 @@ export class LogementService {
 
         if (updateData.longitude !== undefined) {
             dataToUpdate.longitude = updateData.longitude ? new Prisma.Decimal(updateData.longitude) : null;
+        }
+
+        // Handle tags - convert array to JSON if provided
+        if (updateData.tags !== undefined) {
+            dataToUpdate.tags = updateData.tags.length > 0 ? updateData.tags : undefined;
         }
 
         const updatedProperty = await prisma.logement.update({
@@ -412,6 +461,62 @@ export class LogementService {
         });
 
         return photo;
+    }
+
+    /**
+     * Add multiple photos to a property
+     */
+    static async addMultiplePhotos(
+        propertyId: string,
+        photosData: AddPhotoData[]
+    ): Promise<any[]> {
+        const property = await prisma.logement.findUnique({
+            where: { id: propertyId },
+        });
+
+        if (!property) {
+            throw new NotFoundError('Property not found');
+        }
+
+        // Get current max order
+        const currentPhotos = await prisma.photo.findMany({
+            where: { accommodationId: propertyId },
+            orderBy: { order: 'desc' },
+            take: 1,
+        });
+
+        const startOrder = currentPhotos.length > 0 ? (currentPhotos[0].order || 0) + 1 : 0;
+
+        // Check if any photo should be main
+        const hasMainPhoto = photosData.some(photo => photo.isMain);
+
+        // If setting main photos, unset existing main photos
+        if (hasMainPhoto) {
+            await prisma.photo.updateMany({
+                where: {
+                    accommodationId: propertyId,
+                    isMain: true,
+                },
+                data: { isMain: false },
+            });
+        }
+
+        // Create all photos
+        const photos = await Promise.all(
+            photosData.map((photoData, index) =>
+                prisma.photo.create({
+                    data: {
+                        accommodationId: propertyId,
+                        url: photoData.url,
+                        thumbnailUrl: photoData.thumbnailUrl,
+                        isMain: photoData.isMain || (index === 0 && !hasMainPhoto),
+                        order: photoData.order !== undefined ? photoData.order : startOrder + index,
+                    },
+                })
+            )
+        );
+
+        return photos;
     }
 
     /**
