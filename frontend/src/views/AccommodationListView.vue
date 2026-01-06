@@ -1,79 +1,20 @@
 <template>
   <div class="min-h-screen bg-gray-50">
     <!-- Header -->
-    <header class="bg-white shadow-sm border-b sticky top-0 z-50">
+    <header class="bg-white shadow-sm border-b">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex items-center h-16 gap-8">
+        <div class="flex justify-between items-center h-16">
           <div class="flex items-center">
-            <h1 class="text-2xl font-bold text-gray-900">bnb</h1>
+            <h1 class="text-2xl font-bold text-indigo-600">bnb</h1>
           </div>
-          
-          <!-- Espace pour aligner avec la sidebar -->
-          <div class="w-80 flex-shrink-0"></div>
-          
-          <!-- Barre de recherche alignée avec les cards -->
-          <div class="flex-1 relative">
-            <div class="relative">
-              <input 
-                v-model="searchQuery"
-                type="text"
-                placeholder="Rechercher par titre, description ou ville..."
-                class="w-full px-4 py-2 pl-10 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                @focus="showHistoryDropdown = true"
-                @blur="hideHistoryDropdown"
-                @keyup.enter="handleSearch"
-              />
-              <Search class="w-4 h-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
-              <button 
-                v-if="searchQuery"
-                @click="searchQuery = ''"
-                class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                type="button"
-              >
-                <X class="w-4 h-4" />
-              </button>
-            </div>
-
-            <!-- Dropdown historique de recherche -->
-            <div 
-              v-if="showHistoryDropdown && searchHistory.length > 0 && !searchQuery"
-              class="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-80 overflow-y-auto"
-            >
-              <div class="p-2">
-                <div class="flex justify-between items-center px-3 py-2 mb-1">
-                  <h3 class="text-sm font-medium text-gray-700">Recherches récentes</h3>
-                  <button 
-                    @mousedown.prevent="clearHistory"
-                    class="text-xs text-gray-500 hover:text-gray-700"
-                    type="button"
-                  >
-                    Tout effacer
-                  </button>
-                </div>
-                <div
-                  v-for="(item, index) in searchHistory"
-                  :key="index"
-                  @mousedown.prevent="selectHistoryItem(item)"
-                  class="w-full flex items-center justify-between px-3 py-2 hover:bg-gray-50 rounded-md group cursor-pointer"
-                >
-                  <div class="flex items-center space-x-2">
-                    <Search class="w-4 h-4 text-gray-400" />
-                    <span class="text-sm text-gray-700">{{ item }}</span>
-                  </div>
-                  <button
-                    @mousedown.prevent.stop="removeFromHistory(item)"
-                    class="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-600 transition-opacity"
-                    type="button"
-                  >
-                    <X class="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-
           <div class="flex items-center space-x-4">
-            <button class="p-2 text-gray-600 hover:text-gray-900" type="button">
+            <button class="p-2 text-gray-600 hover:text-gray-900">
+              <Search class="w-5 h-5" />
+            </button>
+            <button 
+              @click="goToLogin"
+              class="p-2 text-gray-600 hover:text-gray-900 transition-colors"
+            >
               <User class="w-5 h-5" />
             </button>
           </div>
@@ -196,7 +137,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { Search, User, Home, X } from 'lucide-vue-next'
+import { Search, User, Home } from 'lucide-vue-next'
 import AccommodationCard from '@/components/AccommodationCard.vue'
 import FilterSidebar from '@/components/FilterSidebar.vue'
 import { accommodations } from '@/data/fixtures'
@@ -406,6 +347,11 @@ const handleFiltersChanged = (filters: FilterOptions) => {
 const goToDetail = (id: string) => {
   router.push(`/accommodation/${id}`)
 }
+
+const goToLogin = () => {
+  router.push('/login')
+}
+
 
 // Gérer la recherche (ajout à l'historique)
 const handleSearch = () => {

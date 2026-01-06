@@ -383,10 +383,12 @@ import { calculatePrice, calculateAverageNightlyPrice } from '@/utils/pricing'
 import { getPricingConfig } from '@/data/pricingFixtures'
 import type { PricingConfiguration, PriceCalculationResult } from '@/types/pricing'
 import { useFavorites } from '@/composables/useFavorites'
+import { useAuthStore } from '@/stores/auth'
 
 const route = useRoute()
 const router = useRouter()
 const { toggleFavorite: toggleFavoriteAction, isFavorite: isFavoriteFn } = useFavorites()
+const authStore = useAuthStore()
 
 // État réactif
 const accommodation = ref<Accommodation | null>(null)
@@ -623,6 +625,16 @@ const toggleFavorite = () => {
 const handleReservation = () => {
   if (!accommodation.value) return
   
+  // Vérifier que l'utilisateur est connecté
+  if (!authStore.isAuthenticated || !authStore.user) {
+    alert('Vous devez être connecté pour effectuer une réservation')
+    router.push({
+      name: 'login',
+      query: { redirect: route.fullPath }
+    })
+    return
+  }
+  
   // Validation des dates
   if (!selectedDates.value.start || !selectedDates.value.end) {
     alert('Veuillez sélectionner les dates d\'arrivée et de départ')
@@ -655,6 +667,9 @@ const handleReservation = () => {
   const startDateStr = selectedDates.value.start.toLocaleDateString('fr-FR')
   const endDateStr = selectedDates.value.end.toLocaleDateString('fr-FR')
   
+  // Informations du client
+  const clientInfo = `\n\nClient:\nNom: ${authStore.user.firstName} ${authStore.user.lastName}\nEmail: ${authStore.user.email}\nNombre de voyageurs: ${guests.value}`
+  
   // Détails des services sélectionnés
   let servicesDetails = ''
   if (selectedServices.value.length > 0) {
@@ -669,8 +684,29 @@ const handleReservation = () => {
     servicesDetails += `Total services: €${servicesTotal.toFixed(2)}\n`
   }
   
+  // Créer l'objet de réservation avec toutes les informations
+  const bookingData = {
+    accommodationId: accommodation.value.id,
+    accommodationTitle: accommodation.value.title,
+    guestId: authStore.user.id,
+    guestName: `${authStore.user.firstName} ${authStore.user.lastName}`,
+    guestEmail: authStore.user.email,
+    checkIn: selectedDates.value.start,
+    checkOut: selectedDates.value.end,
+    guests: guests.value,
+    nights: nights,
+    basePrice: accommodationTotal,
+    servicesPrice: servicesTotal,
+    totalPrice: finalTotal,
+    selectedServices: selectedServices.value,
+    status: 'pending'
+  }
+  
+  // TODO: Envoyer la réservation à l'API
+  console.log('Données de réservation:', bookingData)
+  
   // Simulation de la réservation
-  alert(`Réservation confirmée !\n\nLogement: ${accommodation.value.title}\nDates: ${startDateStr} au ${endDateStr}\nNuits: ${nights}\nPrix hébergement: €${accommodationTotal.toFixed(2)}${servicesDetails}Prix total: €${finalTotal.toFixed(2)}`)
+  alert(`Réservation confirmée !${clientInfo}\n\nLogement: ${accommodation.value.title}\nDates: ${startDateStr} au ${endDateStr}\nNuits: ${nights}${servicesDetails}\nPrix hébergement: €${accommodationTotal.toFixed(2)}\nPrix total: €${finalTotal.toFixed(2)}`)
 }
 
 onMounted(() => {

@@ -32,6 +32,9 @@ app.use(morgan('combined', {
 }));
 app.use(apiLogger);
 
+// Servir les fichiers statiques uploadés
+app.use('/uploads', express.static('uploads'));
+
 app.get('/', (req: Request, res: Response) => {
   res.json({ message: 'BnB ESGI API is running!' });
 });
