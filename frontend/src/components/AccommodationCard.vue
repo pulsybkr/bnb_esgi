@@ -62,7 +62,7 @@
       <div class="flex justify-between items-end pt-4 border-t border-gray-100">
         <div>
           <div class="flex items-baseline gap-1">
-            <span class="text-2xl font-bold text-gray-900">€{{ accommodation.price }}</span>
+            <span class="text-2xl font-bold text-gray-900">{{ formatCFA(accommodation.price) }}</span>
             <span class="text-sm text-gray-600">/ nuit</span>
           </div>
         </div>
@@ -76,6 +76,7 @@ import { computed } from 'vue'
 import { Heart, Star, Users, Bed, Bath, MapPin } from 'lucide-vue-next'
 import type { Accommodation } from '@/types/accommodation'
 import { useFavorites } from '@/composables/useFavorites'
+import { formatCFA } from '@/utils/currency'
 
 const props = defineProps<{
   accommodation: Accommodation

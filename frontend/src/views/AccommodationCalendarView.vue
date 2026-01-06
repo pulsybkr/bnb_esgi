@@ -31,7 +31,7 @@
           </div>
           <div class="text-right">
             <p class="text-sm text-gray-500">Prix par nuit</p>
-            <p class="text-2xl font-bold text-gray-900">€{{ accommodation.price }}</p>
+            <p class="text-2xl font-bold text-gray-900">{{ formatCFA(accommodation.price) }}</p>
           </div>
         </div>
       </div>
@@ -48,7 +48,7 @@
         </div>
         <div class="bg-white rounded-lg shadow-sm p-4">
           <p class="text-sm text-gray-500 mb-1">Revenus ce mois</p>
-          <p class="text-2xl font-bold text-green-600">€{{ monthlyRevenue }}</p>
+          <p class="text-2xl font-bold text-green-600">{{ formatCFA(monthlyRevenue) }}</p>
         </div>
         <div class="bg-white rounded-lg shadow-sm p-4">
           <p class="text-sm text-gray-500 mb-1">Dates bloquées</p>
@@ -108,7 +108,7 @@
                     <span>{{ booking.guests }} {{ booking.guests > 1 ? 'voyageurs' : 'voyageur' }}</span>
                   </div>
                   <div class="flex items-center text-gray-900 font-medium pt-2 border-t border-gray-100">
-                    <span>Total: €{{ booking.totalPrice.toFixed(2) }}</span>
+                    <span>Total: {{ formatCFA(booking.totalPrice) }}</span>
                   </div>
                 </div>
               </div>
@@ -127,28 +127,38 @@ import { X, Calendar, Users } from 'lucide-vue-next'
 import HostCalendar from '@/components/HostCalendar.vue'
 import type { Booking, BlockedDate } from '@/types/booking'
 import { BookingStatus, BlockType } from '@/types/booking'
-import { accommodations } from '@/data/fixtures'
 import type { Accommodation } from '@/types/accommodation'
 import { normalizeDate } from '@/utils/dateUtils'
+import { useLogements } from '@/composables/useLogements'
+import { mapLogementToAccommodation } from '@/utils/mappers/logementMapper'
+import { formatCFA } from '@/utils/currency'
 
 const route = useRoute()
 const router = useRouter()
+const { currentProperty, isLoading, error: apiError, loadPropertyById } = useLogements()
 
 const accommodation = ref<Accommodation | null>(null)
 const bookings = ref<Booking[]>([])
 const blockedDates = ref<BlockedDate[]>([])
 
 // Charger les données du logement
-onMounted(() => {
+onMounted(async () => {
   const accommodationId = route.params.id as string
-  const found = accommodations.find(acc => acc.id === accommodationId)
   
-  if (found) {
-    accommodation.value = found
-    // Simuler des réservations (dans la vraie app, cela viendrait de l'API)
-    loadBookings(accommodationId)
-    loadBlockedDates(accommodationId)
-  } else {
+  try {
+    // Charger le logement depuis l'API
+    await loadPropertyById(accommodationId)
+    
+    if (currentProperty.value) {
+      accommodation.value = mapLogementToAccommodation(currentProperty.value)
+      // Simuler des réservations (dans la vraie app, cela viendrait de l'API)
+      loadBookings(accommodationId)
+      loadBlockedDates(accommodationId)
+    } else {
+      router.push('/')
+    }
+  } catch (error) {
+    console.error('Erreur lors du chargement du logement:', error)
     router.push('/')
   }
 })
@@ -287,7 +297,7 @@ const handleDateBlocked = (startDate: Date, endDate: Date, reason?: string) => {
     startDate,
     endDate,
     reason,
-    type: reason?.toLowerCase().includes('maintenance') ? 'maintenance' : 'other',
+    type: reason?.toLowerCase().includes('maintenance') ? BlockType.MAINTENANCE : BlockType.OTHER,
     createdAt: new Date(),
   }
   

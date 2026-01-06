@@ -89,7 +89,7 @@
         <!-- Results count -->
         <div>
           <h2 class="text-2xl font-bold text-gray-900 mb-1">
-            {{ filteredAccommodations.length }} logement{{ filteredAccommodations.length > 1 ? 's' : '' }}
+            {{ totalItems }} logement{{ totalItems > 1 ? 's' : '' }}
           </h2>
           <p class="text-sm text-gray-600">Trouvez votre logement idéal</p>
         </div>
@@ -180,9 +180,9 @@
       <!-- List view -->
       <div v-if="currentView === 'list'">
         <!-- Accommodations grid -->
-        <div v-if="filteredAccommodations.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <div v-if="displayedAccommodations.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           <AccommodationCard 
-            v-for="accommodation in paginatedAccommodations" 
+            v-for="accommodation in displayedAccommodations" 
             :key="accommodation.id"
             :accommodation="accommodation"
             class="animate-slide-up"
@@ -278,7 +278,6 @@ import AccommodationCard from '@/components/AccommodationCard.vue'
 import FilterModal from '@/components/FilterModal.vue'
 import ViewToggle from '@/components/ViewToggle.vue'
 import UserMenu from '@/components/UserMenu.vue'
-import { accommodations } from '@/data/fixtures'
 import type { Accommodation, FilterOptions } from '@/types/accommodation'
 import { useSearchHistory } from '@/composables/useSearchHistory'
 import { getTagLabels } from '@/data/tags'
@@ -287,16 +286,23 @@ import type { UserPreferences } from '@/utils/recommendations'
 import { calculateDistance } from '@/utils/geolocation'
 import PopularAccommodations from '@/components/PopularAccommodations.vue'
 import RecommendationsAccommodations from '@/components/RecommendationsAccommodations.vue'
+import { useLogements } from '@/composables/useLogements'
+import { mapLogementsToAccommodations } from '@/utils/mappers/logementMapper'
+import { buildBackendFilters } from '@/utils/mappers/filterMapper'
+import { useDebounceFn } from '@vueuse/core'
 
 const router = useRouter()
 const { searchHistory, addToHistory, removeFromHistory, clearHistory } = useSearchHistory()
+const { properties, isLoading: isLoadingProperties, error: apiError, loadProperties, pagination } = useLogements()
 
 // State
-const allAccommodations = ref<Accommodation[]>(accommodations)
+const allAccommodations = ref<Accommodation[]>([])
+const totalItems = ref(0)
+const totalPages = ref(0)
 const searchQuery = ref('')
 const showHistoryDropdown = ref(false)
 const currentFilters = ref<FilterOptions>({
-  priceRange: [0, 1000],
+  priceRange: [0, 1000000],
   propertyType: [],
   amenities: [],
   tags: [],
@@ -306,7 +312,7 @@ const currentFilters = ref<FilterOptions>({
 })
 const sortBy = ref('price-asc')
 const currentPage = ref(1)
-const itemsPerPage = 9
+const itemsPerPage = 20
 const currentView = ref<'list' | 'map'>('list')
 const isFilterModalOpen = ref(false)
 const showSortDropdown = ref(false)
@@ -341,114 +347,49 @@ const userPreferences = computed<UserPreferences | undefined>(() => {
   }
 })
 
-// Filtered accommodations
-const filteredAccommodations = computed(() => {
+// Fonction pour charger les logements avec filtres depuis l'API
+const loadAccommodationsWithFilters = async () => {
   try {
-    let filtered = [...allAccommodations.value]
-
-    // Text search
-    if (searchQuery.value.trim()) {
-      const query = searchQuery.value.toLowerCase().trim()
-      filtered = filtered.filter(acc => 
-        acc.title.toLowerCase().includes(query) || 
-        acc.description.toLowerCase().includes(query) ||
-        acc.location.city.toLowerCase().includes(query) ||
-        acc.location.country.toLowerCase().includes(query)
-      )
+    const backendFilters = buildBackendFilters({
+      searchQuery: searchQuery.value,
+      priceRange: currentFilters.value.priceRange,
+      propertyTypes: currentFilters.value.propertyType,
+      maxGuests: currentFilters.value.maxGuests,
+      page: currentPage.value,
+      limit: itemsPerPage,
+      sortBy: sortBy.value
+    })
+    
+    await loadProperties(backendFilters)
+    
+    // Mapper les données du backend vers le format frontend
+    if (properties.value && properties.value.length > 0) {
+      allAccommodations.value = mapLogementsToAccommodations(properties.value)
+    } else {
+      allAccommodations.value = []
     }
-
-    // Price filter
-    if (currentFilters.value.priceRange[0] > 0 || currentFilters.value.priceRange[1] < 1000) {
-      filtered = filtered.filter(acc => 
-        acc.price >= currentFilters.value.priceRange[0] && 
-        acc.price <= currentFilters.value.priceRange[1]
-      )
+    
+    // Mettre à jour la pagination depuis la réponse API
+    if (pagination.value) {
+      totalPages.value = pagination.value.totalPages
+      totalItems.value = pagination.value.total
     }
-
-    // Property type filter
-    if (currentFilters.value.propertyType.length > 0) {
-      filtered = filtered.filter(acc => 
-        currentFilters.value.propertyType.includes(acc.propertyType)
-      )
-    }
-
-    // Guests filter
-    if (currentFilters.value.maxGuests > 0) {
-      filtered = filtered.filter(acc => acc.maxGuests >= currentFilters.value.maxGuests)
-    }
-
-    // Bedrooms filter
-    if (currentFilters.value.bedrooms > 0) {
-      filtered = filtered.filter(acc => acc.bedrooms >= currentFilters.value.bedrooms)
-    }
-
-    // Bathrooms filter
-    if (currentFilters.value.bathrooms > 0) {
-      filtered = filtered.filter(acc => acc.bathrooms >= currentFilters.value.bathrooms)
-    }
-
-    // Amenities filter
-    if (currentFilters.value.amenities.length > 0) {
-      filtered = filtered.filter(acc => 
-        currentFilters.value.amenities.every(amenity => 
-          acc.amenities.includes(amenity)
-        )
-      )
-    }
-
-    // Tags filter
-    if (currentFilters.value.tags.length > 0) {
-      const filterTagLabels = getTagLabels(currentFilters.value.tags)
-      filtered = filtered.filter(acc => 
-        acc.tags && 
-        filterTagLabels.some(tagLabel => 
-          acc.tags!.includes(tagLabel)
-        )
-      )
-    }
-
-    // Location radius filter
-    if (currentFilters.value.locationRadius && currentFilters.value.locationRadius.center && currentFilters.value.locationRadius.radiusKm > 0) {
-      const { center, radiusKm } = currentFilters.value.locationRadius
-      filtered = filtered.filter(acc => {
-        if (!acc.location.coordinates) return false
-        try {
-          const distance = calculateDistance(acc.location.coordinates, center)
-          return distance <= radiusKm
-        } catch (error) {
-          console.error('Erreur lors du calcul de distance:', error)
-          return false
-        }
-      })
-    }
-
-    // Sorting
-    switch (sortBy.value) {
-      case 'price-asc':
-        filtered.sort((a, b) => a.price - b.price)
-        break
-      case 'price-desc':
-        filtered.sort((a, b) => b.price - a.price)
-        break
-      case 'rating-desc':
-        filtered.sort((a, b) => b.rating - a.rating)
-        break
-      case 'title-asc':
-        filtered.sort((a, b) => a.title.localeCompare(b.title))
-        break
-    }
-
-    return filtered
   } catch (error) {
-    console.error('Erreur dans filteredAccommodations:', error)
-    return []
+    console.error('❌ Erreur lors du chargement des logements:', error)
+    allAccommodations.value = []
   }
-})
+}
+
+// Debounced search pour éviter trop de requêtes
+const debouncedLoadAccommodations = useDebounceFn(loadAccommodationsWithFilters, 500)
+
+// Les accommodations affichées sont directement celles de l'API (pas de filtrage client)
+const displayedAccommodations = computed(() => allAccommodations.value)
 
 // Active filters count
 const activeFiltersCount = computed(() => {
   let count = 0
-  if (currentFilters.value.priceRange[0] > 0 || currentFilters.value.priceRange[1] < 1000) count++
+  if (currentFilters.value.priceRange[0] > 0 || currentFilters.value.priceRange[1] < 1000000) count++
   if (currentFilters.value.propertyType.length > 0) count++
   if (currentFilters.value.amenities.length > 0) count++
   if (currentFilters.value.tags.length > 0) count++
@@ -464,7 +405,7 @@ const hasActiveFilters = computed(() => {
   return (
     searchQuery.value.trim() !== '' ||
     currentFilters.value.priceRange[0] > 0 ||
-    currentFilters.value.priceRange[1] < 1000 ||
+    currentFilters.value.priceRange[1] < 1000000 ||
     currentFilters.value.propertyType.length > 0 ||
     currentFilters.value.amenities.length > 0 ||
     currentFilters.value.tags.length > 0 ||
@@ -475,15 +416,7 @@ const hasActiveFilters = computed(() => {
   )
 })
 
-// Pagination
-const totalPages = computed(() => Math.ceil(filteredAccommodations.value.length / itemsPerPage))
-
-const paginatedAccommodations = computed(() => {
-  const start = (currentPage.value - 1) * itemsPerPage
-  const end = start + itemsPerPage
-  return filteredAccommodations.value.slice(start, end)
-})
-
+// Pagination - visiblePages reste calculé côté client pour l'affichage
 const visiblePages = computed(() => {
   const pages = []
   const start = Math.max(1, currentPage.value - 2)
@@ -564,8 +497,34 @@ watch(searchQuery, (newValue, oldValue) => {
   }
 })
 
-onMounted(() => {
+// Watchers pour recharger les données quand les filtres changent
+watch([currentFilters, sortBy, currentPage], () => {
+  loadAccommodationsWithFilters()
+}, { deep: true })
+
+// Watcher pour la recherche avec debounce
+watch(searchQuery, () => {
+  currentPage.value = 1 // Reset à la page 1 lors d'une nouvelle recherche
+  debouncedLoadAccommodations()
+})
+
+// Watcher pour reset la page quand on change de filtre
+watch(currentFilters, () => {
+  currentPage.value = 1
+}, { deep: true })
+
+// Watcher pour reset la page quand on change le tri
+watch(sortBy, () => {
+  currentPage.value = 1
+})
+
+onMounted(async () => {
   console.log('📋 AccommodationListView: Composant monté')
+  
+  // Charger les logements avec les filtres initiaux
+  await loadAccommodationsWithFilters()
+  
+  console.log(`✅ ${totalItems.value} logements trouvés`)
 })
 </script>
 

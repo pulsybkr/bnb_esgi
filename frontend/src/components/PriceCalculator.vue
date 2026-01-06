@@ -62,7 +62,7 @@
             </span>
           </div>
           <span class="font-medium text-gray-900">
-            €{{ nightly.adjustedPrice.toFixed(2) }}
+            {{ formatCFA(nightly.adjustedPrice) }}
           </span>
         </div>
         <div v-if="calculationResult.nightlyPrices.length > 7" class="text-xs text-gray-500 pt-1">
@@ -85,22 +85,22 @@
         <div class="flex justify-between text-sm">
           <span class="text-gray-600">Sous-total hébergement</span>
           <span class="font-medium text-gray-900">
-            €{{ finalCalculation.subtotal.toFixed(2) }}
+            {{ formatCFA(finalCalculation.subtotal) }}
           </span>
         </div>
 
         <div v-if="calculationResult && calculationResult.longStayDiscount > 0" class="flex justify-between text-sm text-green-600">
           <span>Réduction séjour long</span>
-          <span class="font-medium">-€{{ calculationResult.longStayDiscount.toFixed(2) }}</span>
+          <span class="font-medium">-{{ formatCFA(calculationResult.longStayDiscount) }}</span>
         </div>
 
         <div class="flex justify-between text-lg font-semibold pt-2 border-t">
           <span>Total hébergement</span>
-          <span class="text-red-600">€{{ finalCalculation.total.toFixed(2) }}</span>
+          <span class="text-red-600">{{ formatCFA(finalCalculation.total) }}</span>
         </div>
 
         <div class="text-xs text-gray-500 pt-1">
-          {{ averageNightlyPrice.toFixed(2) }}€ / nuit en moyenne
+          {{ formatCFA(averageNightlyPrice) }} / nuit en moyenne
         </div>
       </div>
 
@@ -144,6 +144,7 @@ import DateRangePicker from '@/components/DateRangePicker.vue'
 import { calculatePrice, calculateAverageNightlyPrice } from '@/utils/pricing'
 import type { PricingConfiguration, PriceCalculationResult } from '@/types/pricing'
 import type { DateRange } from '@/utils/dateUtils'
+import { formatCFA } from '@/utils/currency'
 
 interface Props {
   pricingConfig: PricingConfiguration | null

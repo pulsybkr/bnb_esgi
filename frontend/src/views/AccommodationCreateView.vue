@@ -263,10 +263,10 @@
           
           <div class="max-w-xs">
             <label for="price" class="block text-sm font-medium text-gray-700 mb-1">
-              Prix (€) *
+              Prix (CFA) *
             </label>
             <div class="relative">
-              <span class="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500">€</span>
+              <span class="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500">CFA</span>
               <input
                 id="price"
                 v-model.number="formData.price"
