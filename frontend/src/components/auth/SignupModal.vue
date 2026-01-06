@@ -291,7 +291,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { X, Eye, EyeOff, ChevronLeft, ChevronRight, User, Home, Check, Loader2 } from 'lucide-vue-next'
-import Stepper from './Stepper.vue'
+import Stepper from '../ui/Stepper.vue'
 import { useAuth } from '@/composables/useAuth'
 import { useToast } from '@/composables/useToast'
 import type { RegisterData } from '@/types/auth'

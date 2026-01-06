@@ -207,10 +207,10 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { X, Home, DollarSign, Users, Bed, Bath, Sparkles, Tag, MapPin } from 'lucide-vue-next'
-import MultiSelect from './MultiSelect.vue'
-import QuantityInput from './QuantityInput.vue'
+import MultiSelect from '../ui/MultiSelect.vue'
+import QuantityInput from '../ui/QuantityInput.vue'
 import type { FilterOptions } from '@/types/accommodation'
-import type { MultiSelectOption } from './MultiSelect.vue'
+import type { MultiSelectOption } from '../ui/MultiSelect.vue'
 import { propertyTypes, amenities } from '@/data/fixtures'
 import { availableTags } from '@/data/tags'
 import { getUserLocation, geocodeAddress } from '@/utils/geolocation'

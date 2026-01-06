@@ -124,7 +124,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { X, Calendar, Users } from 'lucide-vue-next'
-import HostCalendar from '@/components/HostCalendar.vue'
+import HostCalendar from '@/components/host/HostCalendar.vue'
 import type { Booking, BlockedDate } from '@/types/booking'
 import { BookingStatus, BlockType } from '@/types/booking'
 import type { Accommodation } from '@/types/accommodation'

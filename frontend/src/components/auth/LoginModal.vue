@@ -105,7 +105,7 @@
           </div>
 
           <!-- Social login -->
-          <div class="space-y-3">
+          <div class="space-y-3 hidden">
             <button
               type="button"
               class="w-full px-6 py-3 border-2 border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium flex items-center justify-center gap-3"

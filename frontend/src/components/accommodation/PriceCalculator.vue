@@ -140,7 +140,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { ChevronDown } from 'lucide-vue-next'
-import DateRangePicker from '@/components/DateRangePicker.vue'
+import DateRangePicker from '@/components/ui/DateRangePicker.vue'
 import { calculatePrice, calculateAverageNightlyPrice } from '@/utils/pricing'
 import type { PricingConfiguration, PriceCalculationResult } from '@/types/pricing'
 import type { DateRange } from '@/utils/dateUtils'

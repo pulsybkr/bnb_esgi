@@ -6,7 +6,7 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
 import { RouterView } from 'vue-router'
-import ToastContainer from '@/components/ToastContainer.vue'
+import ToastContainer from '@/components/ui/ToastContainer.vue'
 import { useAuth } from '@/composables/useAuth'
 
 const { loadProfile } = useAuth()
