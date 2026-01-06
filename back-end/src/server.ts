@@ -8,6 +8,7 @@ import authRoutes from './routes/auth';
 import logementRoutes from './routes/logement/logement.routes';
 import disponibiliteRoutes from './routes/disponibilite/disponibilite.routes';
 import reservationRoutes from './routes/reservation/reservation.routes';
+import aiRoutes from './routes/ai/ai.routes';
 import { apiLogger, errorHandler, swaggerSpec } from './config';
 
 dotenv.config();
@@ -31,9 +32,6 @@ app.use(morgan('combined', {
   }
 }));
 app.use(apiLogger);
-
-// Servir les fichiers statiques uploadés
-app.use('/uploads', express.static('uploads'));
 
 app.get('/', (req: Request, res: Response) => {
   res.json({ message: 'BnB ESGI API is running!' });
@@ -60,6 +58,7 @@ app.use('/auth', authRoutes);
 app.use('/logements', logementRoutes);
 app.use('/', disponibiliteRoutes); // Includes /logements/:id/availabilities and /availabilities/:id
 app.use('/reservations', reservationRoutes);
+app.use('/ai', aiRoutes);
 
 
 app.use((req: Request, res: Response) => {
