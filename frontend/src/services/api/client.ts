@@ -2,7 +2,8 @@
  * Client HTTP Axios configuré pour l'authentification par cookies
  */
 
-import axios, { AxiosInstance } from 'axios'
+import axios from 'axios'
+import type { AxiosInstance } from 'axios'
 
 // Configuration de base
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'

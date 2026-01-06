@@ -1,204 +1,283 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
+  <div class="min-h-screen">
     <!-- Header -->
-    <header class="bg-white shadow-sm border-b sticky top-0 z-50">
+    <header class="bg-white shadow-sm border-b sticky top-0 z-40">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex items-center h-16 gap-8">
+        <div class="flex items-center justify-between h-20">
+          <!-- Logo -->
           <div class="flex items-center">
-            <h1 class="text-2xl font-bold text-gray-900">bnb</h1>
+            <h1 class="text-3xl font-bold text-african-green flex items-center gap-2">
+              <Home class="w-8 h-8" />
+              <span>bnb</span>
+            </h1>
           </div>
           
-          <!-- Espace pour aligner avec la sidebar -->
-          <div class="w-80 flex-shrink-0"></div>
-          
-          <!-- Barre de recherche alignée avec les cards -->
-          <div class="flex-1 relative">
+          <!-- Search bar -->
+          <div class="flex-1 max-w-2xl mx-8 relative hidden md:block">
             <div class="relative">
               <input 
                 v-model="searchQuery"
                 type="text"
-                placeholder="Rechercher par titre, description ou ville..."
-                class="w-full px-4 py-2 pl-10 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Rechercher une destination..."
+                class="w-full px-6 py-3 pl-12 pr-12 border-2 border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-african-green focus:border-transparent transition-all shadow-sm hover:shadow-md"
                 @focus="showHistoryDropdown = true"
                 @blur="hideHistoryDropdown"
                 @keyup.enter="handleSearch"
               />
-              <Search class="w-4 h-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
+              <Search class="w-5 h-5 text-gray-400 absolute left-4 top-1/2 transform -translate-y-1/2" />
               <button 
                 v-if="searchQuery"
                 @click="searchQuery = ''"
-                class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                class="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                 type="button"
               >
-                <X class="w-4 h-4" />
+                <X class="w-5 h-5" />
               </button>
             </div>
 
-            <!-- Dropdown historique de recherche -->
-            <div 
-              v-if="showHistoryDropdown && searchHistory.length > 0 && !searchQuery"
-              class="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-80 overflow-y-auto"
-            >
-              <div class="p-2">
-                <div class="flex justify-between items-center px-3 py-2 mb-1">
-                  <h3 class="text-sm font-medium text-gray-700">Recherches récentes</h3>
-                  <button 
-                    @mousedown.prevent="clearHistory"
-                    class="text-xs text-gray-500 hover:text-gray-700"
-                    type="button"
-                  >
-                    Tout effacer
-                  </button>
-                </div>
-                <div
-                  v-for="(item, index) in searchHistory"
-                  :key="index"
-                  @mousedown.prevent="selectHistoryItem(item)"
-                  class="w-full flex items-center justify-between px-3 py-2 hover:bg-gray-50 rounded-md group cursor-pointer"
-                >
-                  <div class="flex items-center space-x-2">
-                    <Search class="w-4 h-4 text-gray-400" />
-                    <span class="text-sm text-gray-700">{{ item }}</span>
+            <!-- Search history dropdown -->
+            <Transition name="dropdown">
+              <div 
+                v-if="showHistoryDropdown && searchHistory.length > 0 && !searchQuery"
+                class="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-2xl shadow-xl z-50 max-h-80 overflow-y-auto custom-scrollbar animate-slide-down"
+              >
+                <div class="p-3">
+                  <div class="flex justify-between items-center px-3 py-2 mb-1">
+                    <h3 class="text-sm font-semibold text-gray-700">Recherches récentes</h3>
+                    <button 
+                      @mousedown.prevent="clearHistory"
+                      class="text-xs text-african-green hover:text-african-green-dark font-medium"
+                      type="button"
+                    >
+                      Tout effacer
+                    </button>
                   </div>
-                  <button
-                    @mousedown.prevent.stop="removeFromHistory(item)"
-                    class="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-600 transition-opacity"
-                    type="button"
+                  <div
+                    v-for="(item, index) in searchHistory"
+                    :key="index"
+                    @mousedown.prevent="selectHistoryItem(item)"
+                    class="w-full flex items-center justify-between px-3 py-2.5 hover:bg-gray-50 rounded-lg group cursor-pointer transition-colors"
                   >
-                    <X class="w-4 h-4" />
-                  </button>
+                    <div class="flex items-center space-x-3">
+                      <Search class="w-4 h-4 text-gray-400" />
+                      <span class="text-sm text-gray-700">{{ item }}</span>
+                    </div>
+                    <button
+                      @mousedown.prevent.stop="removeFromHistory(item)"
+                      class="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-600 transition-all"
+                      type="button"
+                    >
+                      <X class="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
+            </Transition>
           </div>
 
+          <!-- User menu -->
           <div class="flex items-center space-x-4">
-            <button class="p-2 text-gray-600 hover:text-gray-900" type="button">
-              <User class="w-5 h-5" />
-            </button>
+            <UserMenu />
           </div>
         </div>
       </div>
     </header>
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div class="flex gap-8">
-        <!-- Sidebar avec filtres -->
-        <div class="w-80 flex-shrink-0">
-          <FilterSidebar @filters-changed="handleFiltersChanged" />
+      <!-- Controls bar -->
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+        <!-- Results count -->
+        <div>
+          <h2 class="text-2xl font-bold text-gray-900 mb-1">
+            {{ filteredAccommodations.length }} logement{{ filteredAccommodations.length > 1 ? 's' : '' }}
+          </h2>
+          <p class="text-sm text-gray-600">Trouvez votre logement idéal</p>
         </div>
 
-        <!-- Contenu principal -->
-        <div class="flex-1">
-          <!-- Résultats et tri -->
-          <div class="mb-6">
-            <div class="flex justify-between items-center mb-4">
-              <h2 class="text-xl font-semibold text-gray-900">
-                {{ filteredAccommodations.length }} logement{{ filteredAccommodations.length > 1 ? 's' : '' }} trouvé{{ filteredAccommodations.length > 1 ? 's' : '' }}
-              </h2>
-              <div class="flex items-center space-x-2">
-                <span class="text-sm text-gray-600">Trier par :</span>
-                <select 
-                  v-model="sortBy"
-                  class="px-3 py-2 border border-gray-300 rounded-md text-sm"
+        <!-- Controls -->
+        <div class="flex items-center gap-3 w-full sm:w-auto">
+          <!-- Filter button -->
+          <button
+            @click="openFilterModal"
+            class="flex items-center gap-2 px-5 py-2.5 bg-white border-2 border-gray-200 rounded-full hover:border-african-green hover:shadow-md transition-all font-medium text-gray-700"
+            type="button"
+          >
+            <SlidersHorizontal class="w-5 h-5" />
+            <span>Filtres</span>
+            <span v-if="activeFiltersCount > 0" class="ml-1 px-2 py-0.5 bg-african-green text-white text-xs rounded-full">
+              {{ activeFiltersCount }}
+            </span>
+          </button>
+
+          <!-- Sort -->
+          <div class="relative">
+            <button
+              @click="showSortDropdown = !showSortDropdown"
+              class="flex items-center gap-2 px-5 py-2.5 bg-white border-2 border-gray-200 rounded-full hover:border-african-green hover:shadow-md transition-all font-medium text-gray-700"
+              type="button"
+            >
+              <ArrowUpDown class="w-5 h-5" />
+              <span class="hidden sm:inline">Trier</span>
+            </button>
+
+            <!-- Sort dropdown -->
+            <Transition name="dropdown">
+              <div
+                v-if="showSortDropdown"
+                class="absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden animate-slide-down"
+              >
+                <button
+                  v-for="option in sortOptions"
+                  :key="option.value"
+                  @click="selectSort(option.value)"
+                  class="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
+                  :class="{ 'bg-green-50 text-african-green': sortBy === option.value }"
+                  type="button"
                 >
-                  <option value="price-asc">Prix croissant</option>
-                  <option value="price-desc">Prix décroissant</option>
-                  <option value="rating-desc">Mieux notés</option>
-                  <option value="title-asc">Nom A-Z</option>
-                </select>
+                  <component :is="option.icon" class="w-4 h-4" />
+                  <span class="text-sm font-medium">{{ option.label }}</span>
+                  <Check v-if="sortBy === option.value" class="w-4 h-4 ml-auto" />
+                </button>
               </div>
-            </div>
+            </Transition>
+
+            <!-- Backdrop for sort dropdown -->
+            <div
+              v-if="showSortDropdown"
+              @click="showSortDropdown = false"
+              class="fixed inset-0 z-40"
+            ></div>
           </div>
 
-          <!-- Logements populaires (si pas de filtres actifs) -->
-          <PopularAccommodations
-            v-if="!hasActiveFilters"
-            :all-accommodations="allAccommodations"
-            :location="currentFilters.locationRadius?.center"
-            :location-name="searchQuery || undefined"
-            :radius-km="currentFilters.locationRadius?.radiusKm || 50"
-            :max-results="6"
-            @accommodation-selected="goToDetail"
-            class="mb-12"
-          />
-
-          <!-- Recommandations personnalisées -->
-          <RecommendationsAccommodations
-            v-if="!hasActiveFilters"
-            :all-accommodations="allAccommodations"
-            :user-preferences="userPreferences"
-            :max-results="6"
-            recommendation-type="personalized"
-            @accommodation-selected="goToDetail"
-            class="mb-12"
-          />
-
-          <!-- Grille des logements -->
-          <div v-if="filteredAccommodations.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <AccommodationCard 
-              v-for="accommodation in paginatedAccommodations" 
-              :key="accommodation.id"
-              :accommodation="accommodation"
-            />
-          </div>
-
-          <!-- Message si aucun résultat -->
-          <div v-else class="text-center py-12">
-            <Home class="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h3 class="text-lg font-medium text-gray-900 mb-2">Aucun logement trouvé</h3>
-            <p class="text-gray-600">Essayez de modifier vos critères de recherche</p>
-          </div>
-
-          <!-- Pagination -->
-          <div v-if="totalPages > 1" class="mt-8 flex justify-center">
-            <nav class="flex space-x-2">
-              <button 
-                @click="currentPage = Math.max(1, currentPage - 1)"
-                :disabled="currentPage === 1"
-                class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                type="button"
-              >
-                Précédent
-              </button>
-              
-              <button 
-                v-for="page in visiblePages" 
-                :key="page"
-                @click="currentPage = page"
-                :class="[
-                  'px-3 py-2 text-sm font-medium rounded-md',
-                  page === currentPage 
-                    ? 'text-white bg-blue-600' 
-                    : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
-                ]"
-                type="button"
-              >
-                {{ page }}
-              </button>
-              
-              <button 
-                @click="currentPage = Math.min(totalPages, currentPage + 1)"
-                :disabled="currentPage === totalPages"
-                class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                type="button"
-              >
-                Suivant
-              </button>
-            </nav>
-          </div>
+          <!-- View toggle -->
+          <ViewToggle v-model="currentView" />
         </div>
       </div>
+
+      <!-- Popular accommodations (if no filters) -->
+      <PopularAccommodations
+        v-if="!hasActiveFilters"
+        :all-accommodations="allAccommodations"
+        :location="currentFilters.locationRadius?.center"
+        :location-name="searchQuery || undefined"
+        :radius-km="currentFilters.locationRadius?.radiusKm || 50"
+        :max-results="6"
+        @accommodation-selected="goToDetail"
+        class="mb-12"
+      />
+
+      <!-- Recommendations (if no filters) -->
+      <RecommendationsAccommodations
+        v-if="!hasActiveFilters"
+        :all-accommodations="allAccommodations"
+        :user-preferences="userPreferences"
+        :max-results="6"
+        recommendation-type="personalized"
+        @accommodation-selected="goToDetail"
+        class="mb-12"
+      />
+
+      <!-- List view -->
+      <div v-if="currentView === 'list'">
+        <!-- Accommodations grid -->
+        <div v-if="filteredAccommodations.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          <AccommodationCard 
+            v-for="accommodation in paginatedAccommodations" 
+            :key="accommodation.id"
+            :accommodation="accommodation"
+            class="animate-slide-up"
+          />
+        </div>
+
+        <!-- No results -->
+        <div v-else class="text-center py-20">
+          <div class="inline-flex items-center justify-center w-20 h-20 bg-gray-100 rounded-full mb-6">
+            <Home class="w-10 h-10 text-gray-400" />
+          </div>
+          <h3 class="text-xl font-semibold text-gray-900 mb-2">Aucun logement trouvé</h3>
+          <p class="text-gray-600 mb-6">Essayez de modifier vos critères de recherche</p>
+          <button
+            @click="clearAllFilters"
+            class="px-6 py-3 bg-african-green text-white rounded-full hover:bg-african-green-dark transition-colors font-medium"
+            type="button"
+          >
+            Réinitialiser les filtres
+          </button>
+        </div>
+
+        <!-- Pagination -->
+        <div v-if="totalPages > 1" class="mt-12 flex justify-center">
+          <nav class="flex items-center gap-2">
+            <button 
+              @click="currentPage = Math.max(1, currentPage - 1)"
+              :disabled="currentPage === 1"
+              class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border-2 border-gray-200 rounded-lg hover:border-african-green hover:text-african-green disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+              type="button"
+            >
+              <ChevronLeft class="w-4 h-4" />
+            </button>
+            
+            <button 
+              v-for="page in visiblePages" 
+              :key="page"
+              @click="currentPage = page"
+              :class="[
+                'px-4 py-2 text-sm font-medium rounded-lg transition-all',
+                page === currentPage 
+                  ? 'text-white bg-african-green shadow-md' 
+                  : 'text-gray-700 bg-white border-2 border-gray-200 hover:border-african-green hover:text-african-green'
+              ]"
+              type="button"
+            >
+              {{ page }}
+            </button>
+            
+            <button 
+              @click="currentPage = Math.min(totalPages, currentPage + 1)"
+              :disabled="currentPage === totalPages"
+              class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border-2 border-gray-200 rounded-lg hover:border-african-green hover:text-african-green disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+              type="button"
+            >
+              <ChevronRight class="w-4 h-4" />
+            </button>
+          </nav>
+        </div>
+      </div>
+
+      <!-- Map view -->
+      <div v-else class="bg-white rounded-2xl shadow-lg p-12 text-center">
+        <div class="inline-flex items-center justify-center w-24 h-24 bg-green-50 rounded-full mb-6">
+          <Map class="w-12 h-12 text-african-green" />
+        </div>
+        <h3 class="text-2xl font-bold text-gray-900 mb-3">Vue carte</h3>
+        <p class="text-gray-600 max-w-md mx-auto">
+          La vue carte sera bientôt disponible. Elle vous permettra de visualiser tous les logements sur une carte interactive.
+        </p>
+      </div>
     </div>
+
+    <!-- Filter Modal -->
+    <FilterModal
+      :is-open="isFilterModalOpen"
+      :filters="currentFilters"
+      @close="closeFilterModal"
+      @filters-changed="handleFiltersChanged"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { Search, User, Home, X } from 'lucide-vue-next'
+import { 
+  Search, User, Home, X, SlidersHorizontal, ArrowUpDown, 
+  ChevronLeft, ChevronRight, Map, Check,
+  TrendingUp, TrendingDown, Star, ArrowDownAZ
+} from 'lucide-vue-next'
 import AccommodationCard from '@/components/AccommodationCard.vue'
-import FilterSidebar from '@/components/FilterSidebar.vue'
+import FilterModal from '@/components/FilterModal.vue'
+import ViewToggle from '@/components/ViewToggle.vue'
+import UserMenu from '@/components/UserMenu.vue'
 import { accommodations } from '@/data/fixtures'
 import type { Accommodation, FilterOptions } from '@/types/accommodation'
 import { useSearchHistory } from '@/composables/useSearchHistory'
@@ -209,39 +288,11 @@ import { calculateDistance } from '@/utils/geolocation'
 import PopularAccommodations from '@/components/PopularAccommodations.vue'
 import RecommendationsAccommodations from '@/components/RecommendationsAccommodations.vue'
 
-console.log('📋 AccommodationListView: Script setup chargé')
-
 const router = useRouter()
 const { searchHistory, addToHistory, removeFromHistory, clearHistory } = useSearchHistory()
 
-// État réactif
+// State
 const allAccommodations = ref<Accommodation[]>(accommodations)
-
-// Préférences utilisateur pour les recommandations
-const userPreferences = computed<UserPreferences | undefined>(() => {
-  try {
-    // Générer des préférences basées sur l'historique de recherche
-    // Dans une vraie app, cela pourrait venir d'un store utilisateur
-    if (searchHistory.value.length > 0) {
-      // Simuler des logements consultés basés sur l'historique
-      const viewedAccommodations = allAccommodations.value.filter(acc =>
-        searchHistory.value.some(query =>
-          query.toLowerCase().includes(acc.location.city.toLowerCase()) ||
-          acc.title.toLowerCase().includes(query.toLowerCase())
-        )
-      ).slice(0, 5) // Limiter à 5 pour la démo
-
-      if (viewedAccommodations.length > 0) {
-        return generatePreferencesFromHistory(searchHistory.value, viewedAccommodations)
-      }
-    }
-    return undefined
-  } catch (error) {
-    console.error('Erreur lors de la génération des préférences:', error)
-    return undefined
-  }
-})
-
 const searchQuery = ref('')
 const showHistoryDropdown = ref(false)
 const currentFilters = ref<FilterOptions>({
@@ -256,13 +307,46 @@ const currentFilters = ref<FilterOptions>({
 const sortBy = ref('price-asc')
 const currentPage = ref(1)
 const itemsPerPage = 9
+const currentView = ref<'list' | 'map'>('list')
+const isFilterModalOpen = ref(false)
+const showSortDropdown = ref(false)
 
-// Filtrage des logements
+// Sort options with icons
+const sortOptions = [
+  { value: 'price-asc', label: 'Prix croissant', icon: TrendingUp },
+  { value: 'price-desc', label: 'Prix décroissant', icon: TrendingDown },
+  { value: 'rating-desc', label: 'Mieux notés', icon: Star },
+  { value: 'title-asc', label: 'Nom A-Z', icon: ArrowDownAZ }
+]
+
+// User preferences for recommendations
+const userPreferences = computed<UserPreferences | undefined>(() => {
+  try {
+    if (searchHistory.value.length > 0) {
+      const viewedAccommodations = allAccommodations.value.filter(acc =>
+        searchHistory.value.some(query =>
+          query.toLowerCase().includes(acc.location.city.toLowerCase()) ||
+          acc.title.toLowerCase().includes(query.toLowerCase())
+        )
+      ).slice(0, 5)
+
+      if (viewedAccommodations.length > 0) {
+        return generatePreferencesFromHistory(searchHistory.value, viewedAccommodations)
+      }
+    }
+    return undefined
+  } catch (error) {
+    console.error('Erreur lors de la génération des préférences:', error)
+    return undefined
+  }
+})
+
+// Filtered accommodations
 const filteredAccommodations = computed(() => {
   try {
     let filtered = [...allAccommodations.value]
 
-    // Filtre par recherche textuelle (titre et description)
+    // Text search
     if (searchQuery.value.trim()) {
       const query = searchQuery.value.toLowerCase().trim()
       filtered = filtered.filter(acc => 
@@ -273,7 +357,7 @@ const filteredAccommodations = computed(() => {
       )
     }
 
-    // Filtre par prix
+    // Price filter
     if (currentFilters.value.priceRange[0] > 0 || currentFilters.value.priceRange[1] < 1000) {
       filtered = filtered.filter(acc => 
         acc.price >= currentFilters.value.priceRange[0] && 
@@ -281,29 +365,29 @@ const filteredAccommodations = computed(() => {
       )
     }
 
-    // Filtre par type de propriété
+    // Property type filter
     if (currentFilters.value.propertyType.length > 0) {
       filtered = filtered.filter(acc => 
         currentFilters.value.propertyType.includes(acc.propertyType)
       )
     }
 
-    // Filtre par nombre de voyageurs
+    // Guests filter
     if (currentFilters.value.maxGuests > 0) {
       filtered = filtered.filter(acc => acc.maxGuests >= currentFilters.value.maxGuests)
     }
 
-    // Filtre par nombre de chambres
+    // Bedrooms filter
     if (currentFilters.value.bedrooms > 0) {
       filtered = filtered.filter(acc => acc.bedrooms >= currentFilters.value.bedrooms)
     }
 
-    // Filtre par nombre de salles de bain
+    // Bathrooms filter
     if (currentFilters.value.bathrooms > 0) {
       filtered = filtered.filter(acc => acc.bathrooms >= currentFilters.value.bathrooms)
     }
 
-    // Filtre par équipements
+    // Amenities filter
     if (currentFilters.value.amenities.length > 0) {
       filtered = filtered.filter(acc => 
         currentFilters.value.amenities.every(amenity => 
@@ -312,7 +396,7 @@ const filteredAccommodations = computed(() => {
       )
     }
 
-    // Filtre par tags (convertir les IDs en labels pour la comparaison)
+    // Tags filter
     if (currentFilters.value.tags.length > 0) {
       const filterTagLabels = getTagLabels(currentFilters.value.tags)
       filtered = filtered.filter(acc => 
@@ -323,7 +407,7 @@ const filteredAccommodations = computed(() => {
       )
     }
 
-    // Filtre géolocalisé (recherche par rayon)
+    // Location radius filter
     if (currentFilters.value.locationRadius && currentFilters.value.locationRadius.center && currentFilters.value.locationRadius.radiusKm > 0) {
       const { center, radiusKm } = currentFilters.value.locationRadius
       filtered = filtered.filter(acc => {
@@ -338,7 +422,7 @@ const filteredAccommodations = computed(() => {
       })
     }
 
-    // Tri
+    // Sorting
     switch (sortBy.value) {
       case 'price-asc':
         filtered.sort((a, b) => a.price - b.price)
@@ -361,7 +445,21 @@ const filteredAccommodations = computed(() => {
   }
 })
 
-// Vérifier si des filtres sont actifs
+// Active filters count
+const activeFiltersCount = computed(() => {
+  let count = 0
+  if (currentFilters.value.priceRange[0] > 0 || currentFilters.value.priceRange[1] < 1000) count++
+  if (currentFilters.value.propertyType.length > 0) count++
+  if (currentFilters.value.amenities.length > 0) count++
+  if (currentFilters.value.tags.length > 0) count++
+  if (currentFilters.value.maxGuests > 0) count++
+  if (currentFilters.value.bedrooms > 0) count++
+  if (currentFilters.value.bathrooms > 0) count++
+  if (currentFilters.value.locationRadius && currentFilters.value.locationRadius.radiusKm > 0) count++
+  return count
+})
+
+// Check if filters are active
 const hasActiveFilters = computed(() => {
   return (
     searchQuery.value.trim() !== '' ||
@@ -397,17 +495,16 @@ const visiblePages = computed(() => {
   return pages
 })
 
-// Méthodes
+// Methods
 const handleFiltersChanged = (filters: FilterOptions) => {
   currentFilters.value = filters
-  currentPage.value = 1 // Reset à la première page
+  currentPage.value = 1
 }
 
 const goToDetail = (id: string) => {
   router.push(`/accommodation/${id}`)
 }
 
-// Gérer la recherche (ajout à l'historique)
 const handleSearch = () => {
   if (searchQuery.value.trim()) {
     addToHistory(searchQuery.value)
@@ -415,28 +512,50 @@ const handleSearch = () => {
   }
 }
 
-// Sélectionner un élément de l'historique
 const selectHistoryItem = (item: string) => {
   searchQuery.value = item
   showHistoryDropdown.value = false
 }
 
-// Masquer le dropdown avec délai pour permettre les clics
 const hideHistoryDropdown = () => {
   setTimeout(() => {
     showHistoryDropdown.value = false
   }, 200)
 }
 
-// Réinitialiser la page quand la recherche change
+const openFilterModal = () => {
+  isFilterModalOpen.value = true
+}
+
+const closeFilterModal = () => {
+  isFilterModalOpen.value = false
+}
+
+const selectSort = (value: string) => {
+  sortBy.value = value
+  showSortDropdown.value = false
+}
+
+const clearAllFilters = () => {
+  currentFilters.value = {
+    priceRange: [0, 1000],
+    propertyType: [],
+    amenities: [],
+    tags: [],
+    maxGuests: 0,
+    bedrooms: 0,
+    bathrooms: 0
+  }
+  searchQuery.value = ''
+}
+
+// Watchers
 watch(searchQuery, () => {
   currentPage.value = 1
 })
 
-// Ajouter à l'historique quand on effectue une recherche
 watch(searchQuery, (newValue, oldValue) => {
   if (newValue && newValue.trim().length >= 2 && newValue !== oldValue) {
-    // Attendre un peu avant d'ajouter à l'historique (debounce)
     setTimeout(() => {
       if (searchQuery.value === newValue) {
         addToHistory(newValue)
@@ -447,6 +566,19 @@ watch(searchQuery, (newValue, oldValue) => {
 
 onMounted(() => {
   console.log('📋 AccommodationListView: Composant monté')
-  // Initialiser avec tous les logements
 })
 </script>
+
+<style scoped>
+.dropdown-enter-active,
+.dropdown-leave-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.dropdown-enter-from,
+.dropdown-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+</style>
+

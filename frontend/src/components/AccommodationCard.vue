@@ -1,82 +1,70 @@
 <template>
   <router-link
     :to="`/accommodation/${accommodation.id}`"
-    class="block bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 cursor-pointer"
+    class="block bg-white rounded-xl overflow-hidden hover-lift cursor-pointer group"
   >
-    <div class="relative">
+    <div class="relative overflow-hidden">
       <img 
         :src="accommodation.images[0]" 
         :alt="accommodation.title"
-        class="w-full h-64 object-cover"
+        class="w-full h-72 object-cover transition-transform duration-500 group-hover:scale-105"
         @error="handleImageError"
       />
-      <div class="absolute top-3 right-3">
+      <div class="absolute top-4 right-4">
         <button 
           @click.stop="toggleFavorite"
-          class="p-2 bg-white rounded-full shadow-md hover:bg-gray-50 transition-colors"
+          class="p-2.5 bg-white/90 backdrop-blur-sm rounded-full shadow-lg hover:bg-white transition-all"
           :class="{ 'bg-red-50': isFavorite }"
         >
           <Heart 
             class="w-5 h-5 transition-colors" 
-            :class="isFavorite ? 'text-red-600 fill-current' : 'text-gray-600'"
+            :class="isFavorite ? 'text-red-600 fill-current' : 'text-gray-700'"
           />
         </button>
       </div>
+      
+      <!-- Rating badge -->
+      <div class="absolute bottom-4 left-4">
+        <div class="flex items-center gap-1 px-3 py-1.5 bg-white/90 backdrop-blur-sm rounded-full shadow-lg">
+          <Star class="w-4 h-4 text-yellow-500 fill-current" />
+          <span class="text-sm font-semibold text-gray-900">{{ accommodation.rating }}</span>
+        </div>
+      </div>
     </div>
     
-    <div class="p-4">
-      <div class="flex justify-between items-start mb-2">
-        <h3 class="text-lg font-semibold text-gray-900 line-clamp-2">
+    <div class="p-5">
+      <div class="mb-2">
+        <h3 class="text-lg font-semibold text-gray-900 line-clamp-1 group-hover:text-african-green transition-colors">
           {{ accommodation.title }}
         </h3>
-        <div class="flex items-center ml-2">
-          <Star class="w-4 h-4 text-yellow-400 fill-current" />
-          <span class="text-sm text-gray-600 ml-1">{{ accommodation.rating }}</span>
-        </div>
       </div>
       
-      <p class="text-sm text-gray-600 mb-3">
+      <p class="text-sm text-gray-600 mb-4 flex items-center">
+        <MapPin class="w-4 h-4 mr-1 text-african-green" />
         {{ accommodation.location.city }}, {{ accommodation.location.country }}
       </p>
-
-      <div v-if="accommodation.tags && accommodation.tags.length > 0" class="flex flex-wrap gap-2 mb-3">
-        <span
-          v-for="tag in accommodation.tags.slice(0, 3)"
-          :key="tag"
-          class="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-700 rounded-full"
-        >
-          {{ tag }}
+      
+      <div class="flex items-center gap-4 text-sm text-gray-600 mb-4">
+        <span class="flex items-center gap-1">
+          <Users class="w-4 h-4" />
+          {{ accommodation.maxGuests }}
         </span>
-        <span
-          v-if="accommodation.tags.length > 3"
-          class="px-2 py-1 text-xs font-medium text-gray-500"
-        >
-          +{{ accommodation.tags.length - 3 }}
+        <span class="flex items-center gap-1">
+          <Bed class="w-4 h-4" />
+          {{ accommodation.bedrooms }}
+        </span>
+        <span class="flex items-center gap-1">
+          <Bath class="w-4 h-4" />
+          {{ accommodation.bathrooms }}
         </span>
       </div>
       
-      <div class="space-y-1 mb-3">
-        <div class="flex items-center text-sm text-gray-600">
-          <Users class="w-4 h-4 mr-2" />
-          <span>{{ accommodation.maxGuests }} voyageurs</span>
-        </div>
-        <div class="flex items-center text-sm text-gray-600">
-          <Bed class="w-4 h-4 mr-2" />
-          <span>{{ accommodation.bedrooms }} chambre{{ accommodation.bedrooms > 1 ? 's' : '' }}</span>
-        </div>
-        <div class="flex items-center text-sm text-gray-600">
-          <Bath class="w-4 h-4 mr-2" />
-          <span>{{ accommodation.bathrooms }} salle{{ accommodation.bathrooms > 1 ? 's' : '' }} de bain</span>
-        </div>
-      </div>
-      
-      <div class="flex justify-between items-center">
+      <div class="flex justify-between items-end pt-4 border-t border-gray-100">
         <div>
-          <span class="text-xl font-bold text-gray-900">€{{ accommodation.price }}</span>
-          <span class="text-gray-600"> / nuit</span>
-        </div>
-        <div class="text-sm text-gray-600">
-          {{ accommodation.reviewCount }} avis
+          <div class="flex items-baseline gap-1">
+            <span class="text-2xl font-bold text-gray-900">€{{ accommodation.price }}</span>
+            <span class="text-sm text-gray-600">/ nuit</span>
+          </div>
         </div>
       </div>
     </div>
@@ -85,7 +73,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { Heart, Star, Users, Bed, Bath } from 'lucide-vue-next'
+import { Heart, Star, Users, Bed, Bath, MapPin } from 'lucide-vue-next'
 import type { Accommodation } from '@/types/accommodation'
 import { useFavorites } from '@/composables/useFavorites'
 
@@ -108,3 +96,4 @@ const handleImageError = (event: Event) => {
   img.src = 'https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=800&q=80'
 }
 </script>
+
