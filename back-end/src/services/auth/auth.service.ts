@@ -25,12 +25,6 @@ export class AuthService {
       throw new ValidationError(passwordValidation.errors.join(', '), 'password');
     }
 
-    // Check if password is compromised
-    const isCompromised = await PasswordService.checkPasswordCompromised(password);
-    if (isCompromised) {
-      throw new ValidationError('This password has been compromised. Please choose a different password.', 'password');
-    }
-
     // Hash password
     const hashedPassword = await PasswordService.hashPassword(password);
 
@@ -255,12 +249,6 @@ export class AuthService {
     const passwordValidation = PasswordService.validatePasswordStrength(newPassword);
     if (!passwordValidation.isValid) {
       throw new ValidationError(passwordValidation.errors.join(', '), 'newPassword');
-    }
-
-    // Check if new password is compromised
-    const isCompromised = await PasswordService.checkPasswordCompromised(newPassword);
-    if (isCompromised) {
-      throw new ValidationError('This password has been compromised. Please choose a different password.', 'newPassword');
     }
 
     // Hash new password
