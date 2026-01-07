@@ -22,6 +22,8 @@ export class AuthController {
         message: 'User registered successfully',
         data: {
           user: result.user,
+          accessToken: result.tokens.accessToken,
+          refreshToken: result.tokens.refreshToken,
         },
       });
     } catch (error) {
@@ -46,6 +48,8 @@ export class AuthController {
         message: 'Login successful',
         data: {
           user: result.user,
+          accessToken: result.tokens.accessToken,
+          refreshToken: result.tokens.refreshToken,
         },
       });
     } catch (error) {
@@ -70,6 +74,8 @@ export class AuthController {
         message: 'Token refreshed successfully',
         data: {
           user: result.user,
+          accessToken: result.tokens.accessToken,
+          refreshToken: result.tokens.refreshToken,
         },
       });
     } catch (error) {

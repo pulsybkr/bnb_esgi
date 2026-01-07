@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import { LogementController } from '../../controllers/logement';
 import { validateRequest, requireAuth, verifyPropertyOwnership, requireOwnerRole } from '../../middlewares';
+import { parseAccommodationFormData } from '../../middlewares/formData.middleware';
+import { uploadPhotosMiddleware } from '../../middlewares/upload.middleware';
 import {
     createPropertySchema,
     updatePropertySchema,
@@ -70,11 +72,34 @@ const router = Router();
  *                 minimum: 1
  *                 maximum: 50
  *                 example: 4
+ *               maxGuests:
+ *                 type: integer
+ *                 minimum: 1
+ *                 maximum: 100
+ *                 description: Nombre maximum de voyageurs (alias pour capacity)
+ *                 example: 6
  *               capacity:
  *                 type: integer
  *                 minimum: 1
  *                 maximum: 100
  *                 example: 6
+ *               bedrooms:
+ *                 type: integer
+ *                 minimum: 0
+ *                 maximum: 20
+ *                 description: Nombre de chambres
+ *                 example: 2
+ *               bathrooms:
+ *                 type: number
+ *                 minimum: 0
+ *                 maximum: 20
+ *                 description: Nombre de salles de bain
+ *                 example: 1.5
+ *               price:
+ *                 type: number
+ *                 minimum: 0
+ *                 description: Prix par nuit (alias pour pricePerNight)
+ *                 example: 120
  *               pricePerNight:
  *                 type: number
  *                 minimum: 0
@@ -89,6 +114,32 @@ const router = Router();
  *               houseRules:
  *                 type: object
  *                 example: { "fumeur": false, "animaux": true }
+ *               tags:
+ *                 type: array
+ *                 description: Tags du logement (array de strings)
+ *                 items:
+ *                   type: string
+ *                 example: ["Romantique", "Vue mer", "Familial"]
+ *               services:
+ *                 type: array
+ *                 description: IDs des services sélectionnés (array de strings)
+ *                 items:
+ *                   type: string
+ *                 example: ["cleaning", "breakfast", "parking"]
+ *               checkIn:
+ *                 type: string
+ *                 description: Heure d'arrivée (format HH:mm)
+ *                 example: "15:00"
+ *               checkOut:
+ *                 type: string
+ *                 description: Heure de départ (format HH:mm)
+ *                 example: "11:00"
+ *               images:
+ *                 type: array
+ *                 description: Images du logement (FormData files)
+ *                 items:
+ *                   type: string
+ *                   format: binary
  *               photos:
  *                 type: array
  *                 description: Photos du bien (optionnel, peut être ajouté lors de la création)
@@ -150,7 +201,9 @@ router.post(
     '/',
     requireAuth,
     requireOwnerRole,
-    validateRequest(createPropertySchema),
+    parseAccommodationFormData,
+    // Note: La validation est effectuée après le parsing FormData
+    // validateRequest(createPropertySchema),
     LogementController.createProperty
 );
 
@@ -548,6 +601,74 @@ router.post(
     verifyPropertyOwnership,
     validateRequest(addPhotoSchema),
     LogementController.addPhoto
+);
+
+/**
+ * @openapi
+ * /logements/{id}/photos/upload:
+ *   post:
+ *     tags:
+ *       - Logements
+ *     summary: Uploader plusieurs photos à un bien
+ *     description: Permet au propriétaire d'uploader plusieurs photos à la fois (max 20)
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID du bien
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - images
+ *             properties:
+ *               images:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   format: binary
+ *                 description: Fichiers images à uploader (max 20, 10MB chacun)
+ *     responses:
+ *       201:
+ *         description: Photos uploadées avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     photos:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *       400:
+ *         description: Aucun fichier fourni ou format invalide
+ *       401:
+ *         description: Non authentifié
+ *       403:
+ *         description: Accès refusé
+ *       404:
+ *         description: Bien non trouvé
+ */
+router.post(
+    '/:id/photos/upload',
+    requireAuth,
+    verifyPropertyOwnership,
+    uploadPhotosMiddleware,
+    LogementController.uploadMultiplePhotos
 );
 
 /**

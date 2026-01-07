@@ -4,7 +4,7 @@
       <div class="flex justify-between items-center h-16">
         <!-- Logo -->
         <div class="flex items-center cursor-pointer" @click="goHome">
-          <h1 class="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+          <h1 class="text-2xl font-bold text-indigo-600">
             bnb
           </h1>
         </div>
@@ -103,6 +103,7 @@
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { authService } from '@/services/auth.service'
 import { Search, User, Home, Calendar, Settings, LogOut } from 'lucide-vue-next'
 
 const router = useRouter()
@@ -156,10 +157,18 @@ const goToSettings = () => {
   showUserMenu.value = false
 }
 
-const handleLogout = () => {
-  authStore.clearAuth()
-  showUserMenu.value = false
-  router.push('/')
+const handleLogout = async () => {
+  try {
+    // Appeler l'API de déconnexion
+    await authService.logout()
+  } catch (error) {
+    console.error('Erreur lors de la déconnexion:', error)
+  } finally {
+    // Nettoyer le store même si l'API échoue
+    authStore.clearAuth()
+    showUserMenu.value = false
+    router.push('/')
+  }
 }
 
 // Fermer le menu si on clique ailleurs

@@ -12,9 +12,6 @@
             <span>Retour</span>
           </button>
           <div class="flex items-center space-x-4">
-            <button class="p-2 text-gray-600 hover:text-gray-900">
-              <Share class="w-5 h-5" />
-            </button>
             <button 
               @click="toggleFavorite"
               class="p-2 text-gray-600 hover:text-gray-900 transition-colors"
@@ -80,14 +77,6 @@
               <p class="text-gray-700 leading-relaxed">{{ accommodation.description }}</p>
             </div>
 
-            <!-- Visualisation des disponibilités -->
-            <div class="mb-8">
-              <h2 class="text-xl font-semibold mb-4">Calendrier des disponibilités</h2>
-              <AvailabilityCalendar
-                :booked-ranges="bookedRanges"
-                :blocked-ranges="blockedRanges"
-              />
-            </div>
 
             <!-- Tags -->
             <div v-if="accommodation.tags && accommodation.tags.length > 0" class="mb-8">
@@ -203,7 +192,7 @@
                       :key="service.id"
                       class="flex items-start space-x-3 p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
                     >
-                      <input
+                    <input 
                         type="checkbox"
                         :value="service.id"
                         :checked="selectedServices.some(s => s.serviceId === service.id)"
@@ -356,7 +345,7 @@
   <!-- Loading ou erreur -->
   <div v-else class="min-h-screen flex items-center justify-center">
     <div class="text-center">
-      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
       <p class="text-gray-600">Chargement du logement...</p>
     </div>
   </div>
@@ -366,11 +355,10 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { 
-  ArrowLeft, Share, Heart, MapPin, Users, Bed, Bath, Star
+  ArrowLeft, Heart, MapPin, Users, Bed, Bath, Star
 } from 'lucide-vue-next'
 import PhotoGallery from '@/components/PhotoGallery.vue'
 import DateRangePicker from '@/components/DateRangePicker.vue'
-import AvailabilityCalendar from '@/components/AvailabilityCalendar.vue'
 import PriceCalculator from '@/components/PriceCalculator.vue'
 import SimilarAccommodations from '@/components/SimilarAccommodations.vue'
 import RecommendationsAccommodations from '@/components/RecommendationsAccommodations.vue'
@@ -383,6 +371,8 @@ import { calculatePrice, calculateAverageNightlyPrice } from '@/utils/pricing'
 import { getPricingConfig } from '@/data/pricingFixtures'
 import type { PricingConfiguration, PriceCalculationResult } from '@/types/pricing'
 import { useFavorites } from '@/composables/useFavorites'
+import { logementService } from '@/services/logement.service'
+import { availabilityService } from '@/services/availability.service'
 import { useAuthStore } from '@/stores/auth'
 
 const route = useRoute()
@@ -392,6 +382,8 @@ const authStore = useAuthStore()
 
 // État réactif
 const accommodation = ref<Accommodation | null>(null)
+const isLoading = ref(false)
+const error = ref<string | null>(null)
 const selectedDates = ref<{ start: Date | null; end: Date | null }>({
   start: null,
   end: null,
@@ -586,22 +578,47 @@ const formatSelectedServicePrice = (serviceId: string): string => {
 }
 
 // Trouver le logement par ID
-const findAccommodation = () => {
+const loadAccommodation = async () => {
+  const id = route.params.id as string
+  if (!id) {
+    router.push('/')
+    return
+  }
+
+  isLoading.value = true
+  error.value = null
+
   try {
-    const id = route.params.id as string
-    console.log('Recherche du logement avec ID:', id)
-    console.log('Nombre de logements disponibles:', accommodations.length)
+    const found = await logementService.getById(id)
+    accommodation.value = found
+    guests.value = Math.min(guests.value, found.maxGuests)
+    
+    // Charger les disponibilités pour les dates bloquées
+    await loadAvailabilities(id)
+  } catch (err: any) {
+    console.error('Erreur lors du chargement du logement:', err)
+    error.value = err.message || 'Erreur lors du chargement du logement'
+    
+    // Fallback vers les données mockées
     const found = accommodations.find(acc => acc.id === id)
     if (found) {
-      console.log('Logement trouvé:', found.title)
       accommodation.value = found
       guests.value = Math.min(guests.value, found.maxGuests)
     } else {
-      console.log('Logement non trouvé, redirection vers /')
       router.push('/')
     }
-  } catch (error) {
-    console.error('Erreur lors de la recherche du logement:', error)
+  } finally {
+    isLoading.value = false
+  }
+}
+
+const loadAvailabilities = async (propertyId: string) => {
+  try {
+    const availabilities = await availabilityService.getByProperty(propertyId)
+    // Convertir les disponibilités en plages de dates pour bookedRanges et blockedRanges
+    // Cette logique peut être adaptée selon vos besoins
+  } catch (err) {
+    console.error('Erreur lors du chargement des disponibilités:', err)
   }
 }
 
@@ -711,7 +728,7 @@ const handleReservation = () => {
 
 onMounted(() => {
   console.log('AccommodationDetailView monté')
-  findAccommodation()
+  loadAccommodation()
 })
 </script>
 

@@ -7,15 +7,15 @@ export const accommodations: Accommodation[] = [
     title: 'Magnifique appartement avec vue sur la Seine',
     description: 'Appartement moderne et élégant situé au cœur de Paris, avec une vue imprenable sur la Seine. Parfait pour découvrir la ville lumière.',
     price: 120,
-          location: {
-            city: 'Paris',
-            country: 'France',
+    location: {
+      city: 'Paris',
+      country: 'France',
             address: '15 Quai de la Tournelle, 75005 Paris',
             coordinates: {
               latitude: 48.8506,
               longitude: 2.3548
             }
-          },
+    },
     images: [
       'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800',
       'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800',
@@ -44,15 +44,15 @@ export const accommodations: Accommodation[] = [
     title: 'Villa de luxe avec piscine privée',
     description: 'Villa exceptionnelle avec piscine privée, jardin paysager et vue panoramique sur la mer. Idéale pour des vacances de rêve.',
     price: 350,
-          location: {
-            city: 'Nice',
-            country: 'France',
+    location: {
+      city: 'Nice',
+      country: 'France',
             address: '45 Promenade des Anglais, 06000 Nice',
             coordinates: {
               latitude: 43.6956,
               longitude: 7.2556
             }
-          },
+    },
     images: [
       'https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=800',
       'https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800',

@@ -29,7 +29,7 @@
                 v-model="form.firstName"
                 type="text"
                 required
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 outline-none"
+                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 outline-none"
                 placeholder="Jean"
               />
             </div>
@@ -42,7 +42,7 @@
                 v-model="form.lastName"
                 type="text"
                 required
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 outline-none"
+                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 outline-none"
                 placeholder="Dupont"
               />
             </div>
@@ -60,7 +60,7 @@
                 v-model="form.email"
                 type="email"
                 required
-                class="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 outline-none"
+                class="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 outline-none"
                 placeholder="vous@exemple.com"
               />
             </div>
@@ -76,7 +76,7 @@
                 v-if="isLogin"
                 type="button"
                 @click="showForgotPassword"
-                class="text-sm text-blue-600 hover:text-blue-700 font-medium transition-colors"
+                class="text-sm bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent hover:from-blue-700 hover:to-indigo-700 font-medium transition-colors"
               >
                 Mot de passe oublié ?
               </button>
@@ -88,7 +88,7 @@
                 v-model="form.password"
                 :type="showPassword ? 'text' : 'password'"
                 required
-                class="w-full pl-11 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 outline-none"
+                class="w-full pl-11 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 outline-none"
                 placeholder="••••••••"
               />
               <button
@@ -114,7 +114,7 @@
                 :class="[
                   'px-4 py-3 rounded-lg border-2 transition-all duration-200 font-medium',
                   form.userType === 'locataire'
-                    ? 'border-blue-600 bg-blue-50 text-blue-700'
+                    ? 'border-indigo-600 bg-gradient-to-br from-blue-50 to-indigo-50'
                     : 'border-gray-300 hover:border-gray-400 text-gray-700'
                 ]"
               >
@@ -127,7 +127,7 @@
                 :class="[
                   'px-4 py-3 rounded-lg border-2 transition-all duration-200 font-medium',
                   form.userType === 'proprietaire'
-                    ? 'border-blue-600 bg-blue-50 text-blue-700'
+                    ? 'border-indigo-600 bg-gradient-to-br from-blue-50 to-indigo-50'
                     : 'border-gray-300 hover:border-gray-400 text-gray-700'
                 ]"
               >
@@ -147,7 +147,7 @@
           <button
             type="submit"
             :disabled="isLoading"
-            class="w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02] active:scale-[0.98]"
+            class="w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02] active:scale-[0.98]"
           >
             <span v-if="!isLoading">{{ isLogin ? 'Se connecter' : 'Créer mon compte' }}</span>
             <span v-else class="flex items-center justify-center">
@@ -164,7 +164,7 @@
             <button
               type="button"
               @click="toggleMode"
-              class="text-blue-600 hover:text-blue-700 font-semibold transition-colors ml-1"
+              class="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent hover:from-blue-700 hover:to-indigo-700 font-semibold transition-colors ml-1"
             >
               {{ isLogin ? 'Créer un compte' : 'Se connecter' }}
             </button>
@@ -210,23 +210,32 @@
       <!-- Footer -->
       <p class="mt-6 text-center text-sm text-gray-600">
         En continuant, vous acceptez nos
-        <a href="#" class="text-blue-600 hover:underline">conditions d'utilisation</a>
+        <a href="#" class="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent hover:underline">conditions d'utilisation</a>
         et notre
-        <a href="#" class="text-blue-600 hover:underline">politique de confidentialité</a>
+        <a href="#" class="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent hover:underline">politique de confidentialité</a>
       </p>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { authService } from '@/services/auth.service'
 import { Mail, Lock, Eye, EyeOff, User, Home, AlertCircle, Loader2 } from 'lucide-vue-next'
 
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
+
+// Rediriger si déjà authentifié
+onMounted(() => {
+  if (authStore.isAuthenticated) {
+    const redirectPath = route.query.redirect as string || '/'
+    router.push(redirectPath)
+  }
+})
 
 // État
 const isLogin = ref(true)
@@ -262,52 +271,92 @@ const handleSubmit = async () => {
 
   try {
     if (isLogin.value) {
-      // TODO: Appeler l'API de connexion
-      // Pour l'instant, simulons une connexion
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      // Simuler un utilisateur connecté
-      authStore.setUser({
-        id: '1',
-        firstName: 'John',
-        lastName: 'Doe',
+      // Appeler l'API de connexion
+      const response = await authService.login({
         email: form.value.email,
-        userType: 'locataire',
-        emailVerified: true,
-        phoneVerified: false,
-        status: 'active',
-        registrationDate: new Date().toISOString()
+        password: form.value.password
       })
-      authStore.setTokens('fake-access-token', 'fake-refresh-token')
-      
-      // Rediriger vers la page d'origine ou la page d'accueil
-      const redirectPath = route.query.redirect as string || '/'
-      router.push(redirectPath)
+
+      if (response.success && response.data) {
+        // Sauvegarder les tokens
+        authStore.setTokens(response.data.accessToken, response.data.refreshToken)
+        
+        // Sauvegarder les informations utilisateur
+        authStore.setUser({
+          id: response.data.user.id,
+          firstName: response.data.user.firstName,
+          lastName: response.data.user.lastName,
+          email: response.data.user.email,
+          userType: response.data.user.userType as 'locataire' | 'proprietaire' | 'admin',
+          emailVerified: response.data.user.emailVerified,
+          phoneVerified: false,
+          status: 'actif',
+          registrationDate: new Date().toISOString()
+        })
+        
+        console.log('Connexion réussie:', {
+          isAuthenticated: authStore.isAuthenticated,
+          user: authStore.user,
+          hasAccessToken: !!authStore.accessToken
+        })
+        
+        // Rediriger vers la page d'origine ou la page d'accueil
+        const redirectPath = route.query.redirect as string || '/'
+        router.push(redirectPath)
+      }
     } else {
-      // TODO: Appeler l'API d'inscription
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      // Simuler une inscription réussie
-      authStore.setUser({
-        id: '1',
+      // Appeler l'API d'inscription
+      const response = await authService.register({
+        email: form.value.email,
+        password: form.value.password,
         firstName: form.value.firstName,
         lastName: form.value.lastName,
-        email: form.value.email,
-        userType: form.value.userType,
-        emailVerified: false,
-        phoneVerified: false,
-        status: 'active',
-        registrationDate: new Date().toISOString()
+        userType: form.value.userType
       })
-      authStore.setTokens('fake-access-token', 'fake-refresh-token')
-      
-      // Rediriger vers la page d'accueil
-      router.push('/')
+
+      if (response.success && response.data) {
+        // Sauvegarder les tokens
+        authStore.setTokens(response.data.accessToken, response.data.refreshToken)
+        
+        // Sauvegarder les informations utilisateur
+        authStore.setUser({
+          id: response.data.user.id,
+          firstName: response.data.user.firstName,
+          lastName: response.data.user.lastName,
+          email: response.data.user.email,
+          userType: response.data.user.userType as 'locataire' | 'proprietaire' | 'admin',
+          emailVerified: response.data.user.emailVerified,
+          phoneVerified: false,
+          status: 'actif',
+          registrationDate: new Date().toISOString()
+        })
+        
+        // Rediriger vers la page d'accueil
+        router.push('/')
+      }
     }
-  } catch (err) {
-    error.value = isLogin.value 
-      ? 'Email ou mot de passe incorrect' 
-      : 'Une erreur est survenue lors de l\'inscription'
+  } catch (err: any) {
+    console.error('Erreur de connexion:', err)
+    
+    // Gérer les erreurs de l'API
+    if (err.response?.data?.type === 'already_authenticated' || err.response?.data?.message?.includes('already authenticated')) {
+      // Si l'utilisateur est déjà authentifié, forcer la déconnexion et réessayer
+      authStore.clearAuth()
+      error.value = 'Vous étiez déjà connecté. Veuillez réessayer.'
+      
+      // Optionnel : réessayer automatiquement après nettoyage
+      setTimeout(() => {
+        error.value = null
+      }, 3000)
+    } else if (err.response?.data?.message) {
+      error.value = err.response.data.message
+    } else if (err.response?.data?.error) {
+      error.value = err.response.data.error
+    } else {
+      error.value = isLogin.value 
+        ? 'Email ou mot de passe incorrect' 
+        : 'Une erreur est survenue lors de l\'inscription'
+    }
   } finally {
     isLoading.value = false
   }

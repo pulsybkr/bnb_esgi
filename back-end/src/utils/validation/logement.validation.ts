@@ -77,10 +77,10 @@ export const createPropertySchema = Joi.object({
         }),
 
     type: Joi.string()
-        .valid('maison', 'appartement', 'chambre', 'hotel')
+        .valid('maison', 'appartement', 'chambre', 'hotel', 'villa', 'studio', 'loft')
         .required()
         .messages({
-            'any.only': 'Type must be one of: maison, appartement, chambre, hotel',
+            'any.only': 'Type must be one of: maison, appartement, chambre, hotel, villa, studio, loft',
             'string.empty': 'Type is required',
         }),
 
@@ -261,10 +261,10 @@ export const updatePropertySchema = Joi.object({
         }),
 
     type: Joi.string()
-        .valid('maison', 'appartement', 'chambre', 'hotel')
+        .valid('maison', 'appartement', 'chambre', 'hotel', 'villa', 'studio', 'loft')
         .optional()
         .messages({
-            'any.only': 'Type must be one of: maison, appartement, chambre, hotel',
+            'any.only': 'Type must be one of: maison, appartement, chambre, hotel, villa, studio, loft',
         }),
 
     roomCount: Joi.number()

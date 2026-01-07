@@ -66,6 +66,15 @@ export const useAuthStore = defineStore('auth', () => {
         accessToken.value = null
         refreshToken.value = null
         error.value = null
+        
+        // Nettoyer aussi le localStorage explicitement
+        try {
+            localStorage.removeItem('bnb-auth')
+            // Nettoyer aussi les cookies si possible (mais HTTP-only cookies ne peuvent pas être supprimés depuis JS)
+            // Les cookies seront nettoyés par le serveur lors du logout
+        } catch (e) {
+            console.error('Erreur lors du nettoyage du localStorage:', e)
+        }
     }
 
     return {

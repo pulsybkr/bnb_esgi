@@ -42,7 +42,7 @@
                 v-model="form.email"
                 type="email"
                 required
-                class="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 outline-none"
+                class="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 outline-none"
                 placeholder="vous@exemple.com"
               />
             </div>
@@ -58,7 +58,7 @@
           <button
             type="submit"
             :disabled="isLoading"
-            class="w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02] active:scale-[0.98]"
+            class="w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02] active:scale-[0.98]"
           >
             <span v-if="!isLoading">Envoyer le lien de réinitialisation</span>
             <span v-else class="flex items-center justify-center">
@@ -83,7 +83,7 @@
                 :type="showPassword ? 'text' : 'password'"
                 required
                 minlength="8"
-                class="w-full pl-11 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 outline-none"
+                class="w-full pl-11 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 outline-none"
                 placeholder="••••••••"
               />
               <button
@@ -110,7 +110,7 @@
                 v-model="form.confirmPassword"
                 :type="showConfirmPassword ? 'text' : 'password'"
                 required
-                class="w-full pl-11 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 outline-none"
+                class="w-full pl-11 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 outline-none"
                 placeholder="••••••••"
               />
               <button
@@ -134,7 +134,7 @@
           <button
             type="submit"
             :disabled="isLoading"
-            class="w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02] active:scale-[0.98]"
+            class="w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02] active:scale-[0.98]"
           >
             <span v-if="!isLoading">Réinitialiser le mot de passe</span>
             <span v-else class="flex items-center justify-center">
@@ -149,7 +149,7 @@
           <button
             type="button"
             @click="goToLogin"
-            class="text-sm text-blue-600 hover:text-blue-700 font-medium transition-colors inline-flex items-center"
+            class="text-sm bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent hover:from-blue-700 hover:to-indigo-700 font-medium transition-colors inline-flex items-center"
           >
             <ArrowLeft class="w-4 h-4 mr-1" />
             Retour à la connexion
@@ -160,7 +160,7 @@
       <!-- Footer -->
       <p class="mt-6 text-center text-sm text-gray-600">
         Besoin d'aide ?
-        <a href="#" class="text-blue-600 hover:underline">Contactez le support</a>
+        <a href="#" class="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent hover:underline">Contactez le support</a>
       </p>
     </div>
   </div>

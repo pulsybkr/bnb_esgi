@@ -1,10 +1,43 @@
+import { Request, Response, NextFunction } from 'express';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
-import { Request } from 'express';
 
-// Configuration du stockage
-const storage = multer.diskStorage({
+// ============================================
+// Configuration pour upload multiple d'images (logements)
+// ============================================
+export const uploadMultiple = multer({
+    storage: multer.memoryStorage(),
+    limits: {
+        fileSize: 10 * 1024 * 1024, // 10MB max par fichier
+        files: 20, // Maximum 20 fichiers
+    },
+    fileFilter: (req, file, cb) => {
+        // Vérifier que c'est une image
+        if (file.mimetype.startsWith('image/')) {
+            cb(null, true);
+        } else {
+            cb(new Error('Only image files are allowed'));
+        }
+    },
+});
+
+/**
+ * Middleware pour upload multiple d'images (logements)
+ */
+export const uploadPhotosMiddleware = [
+    uploadMultiple.array('images', 20),
+    (req: Request, res: Response, next: NextFunction): void => {
+        const files = req.files as Express.Multer.File[];
+        (req as any).uploadedFiles = files;
+        next();
+    },
+];
+
+// ============================================
+// Configuration pour upload photo de profil
+// ============================================
+const profileStorage = multer.diskStorage({
   destination: (req: Request, file: Express.Multer.File, cb) => {
     const uploadDir = path.join(__dirname, '../../uploads/profiles');
     
@@ -25,7 +58,7 @@ const storage = multer.diskStorage({
 });
 
 // Filtre pour valider le type de fichier
-const fileFilter = (req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
+const profileFileFilter = (req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
   // Types MIME autorisés pour les images
   const allowedMimeTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
   
@@ -36,10 +69,10 @@ const fileFilter = (req: Request, file: Express.Multer.File, cb: multer.FileFilt
   }
 };
 
-// Configuration de multer
+// Configuration de multer pour photo de profil
 export const uploadProfilePhoto = multer({
-  storage: storage,
-  fileFilter: fileFilter,
+  storage: profileStorage,
+  fileFilter: profileFileFilter,
   limits: {
     fileSize: parseInt(process.env.MAX_FILE_SIZE || '5242880'), // 5MB par défaut
   }
