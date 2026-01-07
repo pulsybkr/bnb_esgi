@@ -23,7 +23,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import AccommodationCard from '@/components/AccommodationCard.vue'
+import AccommodationCard from '@/components/accommodation/AccommodationCard.vue'
 import type { Accommodation } from '@/types/accommodation'
 import { getRecommendedAccommodations } from '@/utils/recommendations'
 import {

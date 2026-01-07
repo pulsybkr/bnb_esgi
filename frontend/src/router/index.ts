@@ -1,10 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-
-// Imports dynamiques pour éviter les problèmes de circular dependencies
-const AccommodationListView = () => import('@/views/AccommodationListView.vue')
-const AccommodationDetailView = () => import('@/views/AccommodationDetailView.vue')
-const LoginView = () => import('@/views/LoginView.vue')
-const ForgotPasswordView = () => import('@/views/ForgotPasswordView.vue')
+import { useAuth } from '@/composables/useAuth'
 
 const routes = [
   {
@@ -16,7 +11,7 @@ const routes = [
     path: '/accommodation/create',
     name: 'accommodation-create',
     component: () => import('@/views/AccommodationCreateView.vue'),
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: true, requiresOwner: true }
   },
   {
     path: '/accommodation/:id',
@@ -63,45 +58,34 @@ const router = createRouter({
   routes
 })
 
-// Navigation guard pour vérifier l'authentification
-// Note: Le store doit être importé ici mais Pinia doit être initialisé avant dans main.ts
-router.beforeEach((to, from, next) => {
-  try {
-    // Import dynamique pour éviter les problèmes d'initialisation
-    import('@/stores/auth').then((module) => {
-      const authStore = module.useAuthStore()
-      
-      // Si l'utilisateur essaie d'accéder au login et est déjà authentifié, rediriger vers l'accueil
-      if ((to.name === 'login' || to.name === 'forgot-password') && authStore.isAuthenticated) {
-        next({ name: 'home' })
-        return
-      }
+// Navigation guard pour protéger les routes
+router.beforeEach(async (to, from, next) => {
+  const { isAuthenticated, isOwner, loadProfile } = useAuth()
 
-      // Si la route nécessite une authentification
-      if (to.meta.requiresAuth) {
-        if (!authStore.isAuthenticated) {
-          // Rediriger vers la page de login avec l'URL de retour
-          next({
-            name: 'login',
-            query: { redirect: to.fullPath }
-          })
-        } else {
-          next()
-        }
-      } else {
-        // Route publique, continuer
-        next()
-      }
-    }).catch((error) => {
-      console.error('Erreur lors du chargement du store auth:', error)
-      // En cas d'erreur, continuer la navigation (fallback)
-      next()
-    })
-  } catch (error) {
-    console.error('Erreur dans le router guard:', error)
-    // En cas d'erreur, continuer la navigation
-    next()
+  // Si la route nécessite une authentification
+  if (to.meta.requiresAuth) {
+    // Charger le profil si pas encore chargé
+    if (!isAuthenticated.value) {
+      await loadProfile()
+    }
+
+    // Vérifier si l'utilisateur est authentifié
+    if (!isAuthenticated.value) {
+      // Rediriger vers la page d'accueil avec un message
+      alert('Vous devez être connecté pour accéder à cette page')
+      next({ name: 'home' })
+      return
+    }
+
+    // Si la route nécessite le rôle propriétaire
+    if (to.meta.requiresOwner && !isOwner.value) {
+      alert('Seuls les propriétaires peuvent accéder à cette page')
+      next({ name: 'home' })
+      return
+    }
   }
+
+  next()
 })
 
 export default router

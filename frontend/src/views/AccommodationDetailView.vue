@@ -74,9 +74,17 @@
             <!-- Description -->
             <div class="mb-8">
               <h2 class="text-xl font-semibold mb-4">À propos de ce logement</h2>
-              <p class="text-gray-700 leading-relaxed">{{ accommodation.description }}</p>
+              <MarkdownContent :content="accommodation.description" class="text-gray-700" />
             </div>
 
+            <!-- Visualisation des disponibilités -->
+            <div class="mb-8 hidden">
+              <h2 class="text-xl font-semibold mb-4">Calendrier des disponibilités</h2>
+              <AvailabilityCalendar
+                :booked-ranges="bookedRanges"
+                :blocked-ranges="blockedRanges"
+              />
+            </div>
 
             <!-- Tags -->
             <div v-if="accommodation.tags && accommodation.tags.length > 0" class="mb-8">
@@ -125,7 +133,7 @@
                       Superhost
                     </span>
                   </div>
-                  <p class="text-gray-600 mb-4">
+                  <p class="text-gray-600 mb-4 hidden">
                     Hôte depuis 2020 • Répond généralement en moins d'une heure
                   </p>
                   <button class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200">
@@ -143,7 +151,7 @@
             <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-lg">
               <div class="flex justify-between items-start mb-4">
                 <div>
-                  <span class="text-2xl font-bold">€{{ accommodation.price }}</span>
+                  <span class="text-2xl font-bold">{{ formatCFA(accommodation.price) }}</span>
                   <span class="text-gray-600"> / nuit</span>
                 </div>
                 <div class="text-right">
@@ -264,26 +272,26 @@
                     </template>
                     <div v-else class="flex justify-between text-sm">
                       <span class="text-gray-600">
-                        €{{ averageNightlyPrice.toFixed(2) }} x {{ calculatedNights }} nuit{{ calculatedNights > 1 ? 's' : '' }}
+                        {{ formatCFA(averageNightlyPrice) }} x {{ calculatedNights }} nuit{{ calculatedNights > 1 ? 's' : '' }}
                       </span>
                       <span class="font-medium text-gray-900">
-                        €{{ priceCalculation.subtotal.toFixed(2) }}
+                        {{ formatCFA(priceCalculation.subtotal) }}
                       </span>
                     </div>
                     
                     <!-- Réduction séjour long -->
                     <div v-if="longStayDiscount > 0" class="flex justify-between text-sm text-green-600">
                       <span>Réduction séjour long</span>
-                      <span class="font-medium">-€{{ longStayDiscount.toFixed(2) }}</span>
+                      <span class="font-medium">-{{ formatCFA(longStayDiscount) }}</span>
                     </div>
                   </template>
                   <template v-else>
                     <div class="flex justify-between text-sm">
                       <span class="text-gray-600">
-                        €{{ accommodation.price }} x {{ calculatedNights }} nuit{{ calculatedNights > 1 ? 's' : '' }}
+                        {{ formatCFA(accommodation.price) }} x {{ calculatedNights }} nuit{{ calculatedNights > 1 ? 's' : '' }}
                       </span>
                       <span class="font-medium text-gray-900">
-                        €{{ basePrice.toFixed(2) }}
+                        {{ formatCFA(basePrice) }}
                       </span>
                     </div>
                   </template>
@@ -291,12 +299,12 @@
                   <div v-if="selectedServices.length > 0" class="flex justify-between text-sm">
                     <span class="text-gray-600">Services supplémentaires</span>
                     <span class="font-medium text-gray-900">
-                      €{{ servicesPrice.toFixed(2) }}
+                      {{ formatCFA(servicesPrice) }}
                     </span>
                   </div>
                   <div class="flex justify-between text-sm font-semibold text-lg border-t pt-2">
                     <span>Total</span>
-                    <span>€{{ totalPrice.toFixed(2) }}</span>
+                    <span>{{ formatCFA(totalPrice) }}</span>
                   </div>
                   
                   <!-- Indication du prix moyen par nuit -->
@@ -325,7 +333,7 @@
       <SimilarAccommodations
         v-if="accommodation"
         :current-accommodation="accommodation"
-        :all-accommodations="accommodations"
+        :all-accommodations="allAccommodations"
         :max-results="6"
         @accommodation-selected="goToSimilarAccommodation"
       />
@@ -333,7 +341,7 @@
       <!-- Recommandations personnalisées -->
       <RecommendationsAccommodations
         v-if="accommodation"
-        :all-accommodations="accommodations"
+        :all-accommodations="allAccommodations"
         :exclude-accommodation-ids="[accommodation.id]"
         :max-results="6"
         recommendation-type="trending"
@@ -357,12 +365,13 @@ import { useRoute, useRouter } from 'vue-router'
 import { 
   ArrowLeft, Heart, MapPin, Users, Bed, Bath, Star
 } from 'lucide-vue-next'
-import PhotoGallery from '@/components/PhotoGallery.vue'
-import DateRangePicker from '@/components/DateRangePicker.vue'
-import PriceCalculator from '@/components/PriceCalculator.vue'
-import SimilarAccommodations from '@/components/SimilarAccommodations.vue'
-import RecommendationsAccommodations from '@/components/RecommendationsAccommodations.vue'
-import { accommodations } from '@/data/fixtures'
+import PhotoGallery from '@/components/accommodation/PhotoGallery.vue'
+import DateRangePicker from '@/components/ui/DateRangePicker.vue'
+import AvailabilityCalendar from '@/components/accommodation/AvailabilityCalendar.vue'
+import PriceCalculator from '@/components/accommodation/PriceCalculator.vue'
+import SimilarAccommodations from '@/components/accommodation/SimilarAccommodations.vue'
+import RecommendationsAccommodations from '@/components/accommodation/RecommendationsAccommodations.vue'
+import MarkdownContent from '@/components/ui/MarkdownContent.vue'
 import type { Accommodation, SelectedService, Service } from '@/types/accommodation'
 import { hasDateConflict, getBookedDates, type DateRange } from '@/utils/dateUtils'
 import { availableServices, calculateServicePrice, calculateTotalServicesPrice } from '@/data/services'
@@ -371,19 +380,18 @@ import { calculatePrice, calculateAverageNightlyPrice } from '@/utils/pricing'
 import { getPricingConfig } from '@/data/pricingFixtures'
 import type { PricingConfiguration, PriceCalculationResult } from '@/types/pricing'
 import { useFavorites } from '@/composables/useFavorites'
-import { logementService } from '@/services/logement.service'
-import { availabilityService } from '@/services/availability.service'
-import { useAuthStore } from '@/stores/auth'
+import { useLogements } from '@/composables/useLogements'
+import { mapLogementToAccommodation } from '@/utils/mappers/logementMapper'
+import { formatCFA } from '@/utils/currency'
 
 const route = useRoute()
 const router = useRouter()
 const { toggleFavorite: toggleFavoriteAction, isFavorite: isFavoriteFn } = useFavorites()
-const authStore = useAuthStore()
+const { currentProperty, isLoading: isLoadingProperty, error: apiError, loadPropertyById } = useLogements()
 
 // État réactif
 const accommodation = ref<Accommodation | null>(null)
-const isLoading = ref(false)
-const error = ref<string | null>(null)
+const allAccommodations = ref<Accommodation[]>([]) // Pour les recommandations
 const selectedDates = ref<{ start: Date | null; end: Date | null }>({
   start: null,
   end: null,
@@ -565,60 +573,38 @@ const formatServicePrice = (service: Service): string => {
       break
   }
   
-  return `€${price.toFixed(2)}${suffix ? ' ' + suffix : ''}`
+  return `${formatCFA(price)}${suffix ? ' ' + suffix : ''}`
 }
 
 const formatSelectedServicePrice = (serviceId: string): string => {
-  if (!accommodation.value || !accommodation.value.services) return '€0.00'
+  if (!accommodation.value || !accommodation.value.services) return formatCFA(0)
   const service = accommodation.value.services.find(s => s.id === serviceId)
-  if (!service) return '€0.00'
+  if (!service) return formatCFA(0)
   
   const price = calculateServicePrice(service, calculatedNights.value, guests.value)
-  return `€${price.toFixed(2)}`
+  return formatCFA(price)
 }
 
 // Trouver le logement par ID
-const loadAccommodation = async () => {
-  const id = route.params.id as string
-  if (!id) {
-    router.push('/')
-    return
-  }
-
-  isLoading.value = true
-  error.value = null
-
+const findAccommodation = async () => {
   try {
-    const found = await logementService.getById(id)
-    accommodation.value = found
-    guests.value = Math.min(guests.value, found.maxGuests)
+    const id = route.params.id as string
+    console.log('Recherche du logement avec ID:', id)
     
-    // Charger les disponibilités pour les dates bloquées
-    await loadAvailabilities(id)
-  } catch (err: any) {
-    console.error('Erreur lors du chargement du logement:', err)
-    error.value = err.message || 'Erreur lors du chargement du logement'
+    // Charger le logement depuis l'API
+    await loadPropertyById(id)
     
-    // Fallback vers les données mockées
-    const found = accommodations.find(acc => acc.id === id)
-    if (found) {
-      accommodation.value = found
-      guests.value = Math.min(guests.value, found.maxGuests)
+    if (currentProperty.value) {
+      console.log('Logement trouvé:', currentProperty.value.title)
+      // Mapper les données du backend vers le format frontend
+      accommodation.value = mapLogementToAccommodation(currentProperty.value)
+      guests.value = Math.min(guests.value, accommodation.value.maxGuests)
     } else {
       router.push('/')
     }
-  } finally {
-    isLoading.value = false
-  }
-}
-
-const loadAvailabilities = async (propertyId: string) => {
-  try {
-    const availabilities = await availabilityService.getByProperty(propertyId)
-    // Convertir les disponibilités en plages de dates pour bookedRanges et blockedRanges
-    // Cette logique peut être adaptée selon vos besoins
-  } catch (err) {
-    console.error('Erreur lors du chargement des disponibilités:', err)
+  } catch (error) {
+    console.error('Erreur lors de la recherche du logement:', error)
+    router.push('/')
   }
 }
 
@@ -695,40 +681,19 @@ const handleReservation = () => {
       const service = accommodation.value!.services?.find(s => s.id === selected.serviceId)
       if (service) {
         const servicePrice = calculateServicePrice(service, nights, guests.value)
-        servicesDetails += `- ${service.name}: €${servicePrice.toFixed(2)}\n`
+        servicesDetails += `- ${service.name}: ${formatCFA(servicePrice)}\n`
       }
     })
-    servicesDetails += `Total services: €${servicesTotal.toFixed(2)}\n`
+    servicesDetails += `Total services: ${formatCFA(servicesTotal)}\n`
   }
-  
-  // Créer l'objet de réservation avec toutes les informations
-  const bookingData = {
-    accommodationId: accommodation.value.id,
-    accommodationTitle: accommodation.value.title,
-    guestId: authStore.user.id,
-    guestName: `${authStore.user.firstName} ${authStore.user.lastName}`,
-    guestEmail: authStore.user.email,
-    checkIn: selectedDates.value.start,
-    checkOut: selectedDates.value.end,
-    guests: guests.value,
-    nights: nights,
-    basePrice: accommodationTotal,
-    servicesPrice: servicesTotal,
-    totalPrice: finalTotal,
-    selectedServices: selectedServices.value,
-    status: 'pending'
-  }
-  
-  // TODO: Envoyer la réservation à l'API
-  console.log('Données de réservation:', bookingData)
   
   // Simulation de la réservation
-  alert(`Réservation confirmée !${clientInfo}\n\nLogement: ${accommodation.value.title}\nDates: ${startDateStr} au ${endDateStr}\nNuits: ${nights}${servicesDetails}\nPrix hébergement: €${accommodationTotal.toFixed(2)}\nPrix total: €${finalTotal.toFixed(2)}`)
+  alert(`Réservation confirmée !\n\nLogement: ${accommodation.value.title}\nDates: ${startDateStr} au ${endDateStr}\nNuits: ${nights}\nPrix hébergement: ${formatCFA(accommodationTotal)}${servicesDetails}Prix total: ${formatCFA(finalTotal)}`)
 }
 
-onMounted(() => {
+onMounted(async () => {
   console.log('AccommodationDetailView monté')
-  loadAccommodation()
+  await findAccommodation()
 })
 </script>
 

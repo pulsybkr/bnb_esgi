@@ -9,6 +9,9 @@ import authRoutes from './routes/auth';
 import logementRoutes from './routes/logement/logement.routes';
 import disponibiliteRoutes from './routes/disponibilite/disponibilite.routes';
 import reservationRoutes from './routes/reservation/reservation.routes';
+<<<<<<< HEAD
+import aiRoutes from './routes/ai/ai.routes';
+=======
 
 import searchRoutes from './routes/search/search.routes';
 import aiRoutes from './routes/ai/ai.routes';
@@ -16,6 +19,7 @@ import aiRoutes from './routes/ai/ai.routes';
 import serviceRoutes from './routes/service';
 import pricingRoutes from './routes/pricing';
 
+>>>>>>> main
 import { apiLogger, errorHandler, swaggerSpec } from './config';
 
 dotenv.config();
@@ -73,7 +77,10 @@ app.use('/logements', serviceRoutes); // Services routes: /logements/:id/service
 app.use('/logements', pricingRoutes); // Pricing routes: /logements/:id/pricing
 app.use('/', disponibiliteRoutes); // Includes /logements/:id/availabilities and /availabilities/:id
 app.use('/reservations', reservationRoutes);
+<<<<<<< HEAD
+=======
 app.use('/search', searchRoutes);
+>>>>>>> main
 app.use('/ai', aiRoutes);
 
 
