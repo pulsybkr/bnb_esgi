@@ -64,6 +64,7 @@ export interface CreatePropertyData {
     capacity: number
     pricePerNight: number
     currency?: string
+    bookingMode?: 'instant' | 'request'
     amenities?: any
     houseRules?: any
     photos?: AddPhotoData[]

@@ -395,4 +395,51 @@ router.put(
     ReservationController.cancelReservation
 );
 
+/**
+ * @openapi
+ * /reservations/{id}/price:
+ *   put:
+ *     tags:
+ *       - Réservations
+ *     summary: Mettre à jour le prix négocié
+ *     description: Permet de modifier le prix par nuit négocié pour une réservation en attente
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID de la réservation
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - newPrice
+ *             properties:
+ *               newPrice:
+ *                 type: number
+ *                 minimum: 1
+ *                 example: 25000
+ *     responses:
+ *       200:
+ *         description: Prix mis à jour
+ *       400:
+ *         description: Prix invalide ou réservation non en attente
+ *       403:
+ *         description: Non autorisé
+ *       404:
+ *         description: Réservation non trouvée
+ */
+router.put(
+    '/:id/price',
+    requireAuth,
+    verifyReservationAccess,
+    ReservationController.updateNegotiatedPrice
+);
+
 export default router;

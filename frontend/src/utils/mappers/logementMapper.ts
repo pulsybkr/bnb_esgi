@@ -69,9 +69,17 @@ export function mapLogementToAccommodation(logement: Logement): Accommodation {
             isSuperhost: false // Valeur par défaut, à implémenter plus tard
         },
         propertyType: mapPropertyType(logement.type),
+        bookingMode: (logement as any).bookingMode || 'instant',
         availability: {
             checkIn: '15:00', // Valeur par défaut
-            checkOut: '11:00'  // Valeur par défaut
+            checkOut: '11:00',  // Valeur par défaut
+            minNights: 1,
+            maxNights: 30
+        },
+        pricing: {
+            basePrice: price,
+            cleaningFee: 0,
+            serviceFee: 0
         }
     }
 }

@@ -55,6 +55,8 @@ export interface Reservation {
     guestCount: number
     totalAmount: number
     status: ReservationStatus
+    negotiatedPrice?: number
+    pricePerNight?: number
     tenantMessage?: string
     cancellationReason?: string
     cancellationDate?: Date

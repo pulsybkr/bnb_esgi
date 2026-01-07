@@ -219,4 +219,19 @@ export class ReservationService {
             throw ErrorHandler.handleError(error)
         }
     }
+
+    /**
+     * Mettre à jour le prix négocié d'une réservation
+     */
+    static async updateNegotiatedPrice(id: string, newPrice: number): Promise<Reservation> {
+        try {
+            const response = await apiClient.put<{
+                success: boolean
+                data: { reservation: Reservation }
+            }>(`/reservations/${id}/price`, { newPrice })
+            return response.data.data.reservation
+        } catch (error) {
+            throw ErrorHandler.handleError(error)
+        }
+    }
 }

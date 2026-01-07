@@ -135,7 +135,7 @@
                     <span>{{ property.bedrooms }} chambre{{ property.bedrooms > 1 ? 's' : '' }}</span>
                     <span>{{ property.bathrooms }} salle{{ property.bathrooms > 1 ? 's' : '' }} de bain</span>
                     <span>{{ property.maxGuests }} voyageur{{ property.maxGuests > 1 ? 's' : '' }}</span>
-                    <span class="font-semibold text-indigo-600">{{ property.price }}€ / nuit</span>
+                    <span class="font-semibold text-indigo-600">{{ property.price }} XOF / nuit</span>
                   </div>
                 </div>
               </div>

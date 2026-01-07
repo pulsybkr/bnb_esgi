@@ -40,7 +40,7 @@ export class ReservationService {
                 pricePerNight: true,
                 capacity: true,
                 status: true,
-                // instantBooking: true, // Will be added in migration
+                bookingMode: true,
             },
         });
 
@@ -81,10 +81,10 @@ export class ReservationService {
             endDate
         );
 
-        // Determine initial status based on instant booking
-        // For now, default to en_attente (will be updated when instantBooking field is added)
-        const isInstantBooking = false; // property.instantBooking
+        // Determine initial status based on booking mode
+        const isInstantBooking = property.bookingMode === 'instant';
         const initialStatus = isInstantBooking ? 'confirmee' : 'en_attente';
+        const pricePerNight = parseFloat(property.pricePerNight.toString());
 
         // Create reservation
         const reservation = await prisma.reservation.create({
@@ -95,6 +95,7 @@ export class ReservationService {
                 endDate,
                 guestCount,
                 totalAmount: new Prisma.Decimal(totalAmount),
+                pricePerNight: new Prisma.Decimal(pricePerNight),
                 status: initialStatus,
                 tenantMessage,
             },
@@ -246,6 +247,15 @@ export class ReservationService {
                         photos: {
                             where: { isMain: true },
                             take: 1,
+                        },
+                        owner: {
+                            select: {
+                                id: true,
+                                firstName: true,
+                                lastName: true,
+                                email: true,
+                                profilePhoto: true,
+                            },
                         },
                     },
                 },
@@ -677,4 +687,79 @@ export class ReservationService {
             totalRevenue: totalRevenue.toFixed(2),
         };
     }
+
+    /**
+     * Update negotiated price for a reservation (owner or tenant can propose)
+     */
+    static async updateNegotiatedPrice(
+        reservationId: string,
+        newPrice: number,
+        userId: string
+    ): Promise<any> {
+        const reservation = await prisma.reservation.findUnique({
+            where: { id: reservationId },
+            include: {
+                accommodation: {
+                    select: {
+                        ownerId: true,
+                    },
+                },
+            },
+        });
+
+        if (!reservation) {
+            throw new NotFoundError('Reservation not found');
+        }
+
+        // Only allow price negotiation for pending reservations
+        if (reservation.status !== 'en_attente') {
+            throw new ValidationError(
+                'Price negotiation is only allowed for pending reservations'
+            );
+        }
+
+        // Only owner or tenant can update the price
+        if (userId !== reservation.tenantId && userId !== reservation.accommodation.ownerId) {
+            throw new AuthorizationError('You are not authorized to modify this reservation');
+        }
+
+        // Calculate new total based on negotiated price
+        const nights = Math.ceil(
+            (reservation.endDate.getTime() - reservation.startDate.getTime()) / (1000 * 60 * 60 * 24)
+        );
+        const newTotal = nights * newPrice;
+
+        const updated = await prisma.reservation.update({
+            where: { id: reservationId },
+            data: {
+                negotiatedPrice: new Prisma.Decimal(newPrice),
+                totalAmount: new Prisma.Decimal(newTotal),
+            },
+            include: {
+                accommodation: {
+                    select: {
+                        id: true,
+                        title: true,
+                        owner: {
+                            select: {
+                                id: true,
+                                firstName: true,
+                                lastName: true,
+                            },
+                        },
+                    },
+                },
+                tenant: {
+                    select: {
+                        id: true,
+                        firstName: true,
+                        lastName: true,
+                    },
+                },
+            },
+        });
+
+        return updated;
+    }
 }
+

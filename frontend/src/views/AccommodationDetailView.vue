@@ -118,10 +118,10 @@
             <!-- Informations sur l'hôte -->
             <div class="border-t pt-8">
               <div class="flex items-start space-x-4">
-                <img 
-                  :src="accommodation.host.avatar" 
-                  :alt="accommodation.host.name"
-                  class="w-16 h-16 rounded-full object-cover"
+                <HostAvatar 
+                  :name="accommodation.host.name"
+                  :avatar="accommodation.host.avatar"
+                  size="lg"
                 />
                 <div class="flex-1">
                   <div class="flex items-center space-x-2 mb-2">
@@ -252,7 +252,7 @@
                           {{ priceCalculation.weekNights }} nuit{{ priceCalculation.weekNights > 1 ? 's' : '' }} (semaine)
                         </span>
                         <span class="font-medium text-gray-900">
-                          €{{ priceCalculation.nightlyPrices
+                            XOF {{ priceCalculation.nightlyPrices
                             .filter(np => !np.isWeekend)
                             .reduce((sum, np) => sum + np.adjustedPrice, 0)
                             .toFixed(2) }}
@@ -263,7 +263,7 @@
                           {{ priceCalculation.weekendNights }} nuit{{ priceCalculation.weekendNights > 1 ? 's' : '' }} (week-end)
                         </span>
                         <span class="font-medium text-gray-900">
-                          €{{ priceCalculation.nightlyPrices
+                            XOF {{ priceCalculation.nightlyPrices
                             .filter(np => np.isWeekend)
                             .reduce((sum, np) => sum + np.adjustedPrice, 0)
                             .toFixed(2) }}
@@ -309,7 +309,7 @@
                   
                   <!-- Indication du prix moyen par nuit -->
                   <div v-if="calculatedNights > 0" class="text-xs text-gray-500 pt-1">
-                    {{ averageNightlyPrice.toFixed(2) }}€ / nuit en moyenne
+                    {{ averageNightlyPrice.toFixed(2) }}  XOF  / nuit en moyenne
                   </div>
                 </div>
 
@@ -348,6 +348,34 @@
         @accommodation-selected="goToSimilarAccommodation"
       />
     </div>
+
+    <!-- Reservation Modal -->
+    <ReservationModal
+      v-if="showReservationModal"
+      :show="showReservationModal"
+      :accommodation="{
+        id: accommodation.id,
+        title: accommodation.title
+      }"
+      :start-date="selectedDates.start!"
+      :end-date="selectedDates.end!"
+      :guests="guestCount"
+      :nights="calculatedNights"
+      :total-amount="totalPrice"
+      :booking-mode="bookingMode"
+      @close="showReservationModal = false"
+      @confirm="handleReservationConfirm"
+    />
+
+    <!-- Payment Modal -->
+    <PaymentModal
+      v-if="showPaymentModal"
+      :show="showPaymentModal"
+      :amount="totalPrice"
+      :reservation-id="currentReservationId"
+      @close="showPaymentModal = false"
+      @success="handlePaymentSuccess"
+    />
   </div>
 
   <!-- Loading ou erreur -->
@@ -372,6 +400,9 @@ import PriceCalculator from '@/components/accommodation/PriceCalculator.vue'
 import SimilarAccommodations from '@/components/accommodation/SimilarAccommodations.vue'
 import RecommendationsAccommodations from '@/components/accommodation/RecommendationsAccommodations.vue'
 import MarkdownContent from '@/components/ui/MarkdownContent.vue'
+import HostAvatar from '@/components/ui/HostAvatar.vue'
+import ReservationModal from '@/components/reservation/ReservationModal.vue'
+import PaymentModal from '@/components/payment/PaymentModal.vue'
 import type { Accommodation, SelectedService, Service } from '@/types/accommodation'
 import { hasDateConflict, getBookedDates, type DateRange } from '@/utils/dateUtils'
 import { availableServices, calculateServicePrice, calculateTotalServicesPrice } from '@/data/services'
@@ -384,6 +415,8 @@ import { useLogements } from '@/composables/useLogements'
 import { useAuthStore } from '@/stores/auth'
 import { mapLogementToAccommodation } from '@/utils/mappers/logementMapper'
 import { formatCFA } from '@/utils/currency'
+import { ReservationService } from '@/services/reservation/reservation.service'
+import { paymentService } from '@/services/payment'
 
 const route = useRoute()
 const router = useRouter()
@@ -610,10 +643,6 @@ const findAccommodation = async () => {
   }
 }
 
-// Navigation vers un logement similaire
-const goToSimilarAccommodation = (id: string) => {
-  router.push(`/accommodation/${id}`)
-}
 
 // Favoris
 const isFavorite = computed(() => {
@@ -625,6 +654,13 @@ const toggleFavorite = () => {
     toggleFavoriteAction(accommodation.value.id)
   }
 }
+
+// Modal states
+const showReservationModal = ref(false)
+const showPaymentModal = ref(false)
+const currentReservationId = ref('')
+const bookingMode = computed(() => accommodation.value?.bookingMode || 'instant')
+const guestCount = computed(() => guests.value)
 
 // Gestion de la réservation
 const handleReservation = () => {
@@ -640,57 +676,54 @@ const handleReservation = () => {
     return
   }
   
-  // Validation des dates
-  if (!selectedDates.value.start || !selectedDates.value.end) {
-    alert('Veuillez sélectionner les dates d\'arrivée et de départ')
+  // Vérifier les conflits de dates
+  if (hasDateConflict(selectedDates.value as DateRange, bookedRanges.value)) {
+    alert('Ces dates ne sont pas disponibles. Veuillez en choisir d\'autres.')
     return
   }
   
-  if (selectedDates.value.start >= selectedDates.value.end) {
-    alert('La date de départ doit être après la date d\'arrivée')
-    return
-  }
+  // Ouvrir modal de confirmation
+  showReservationModal.value = true
+}
+
+// Confirmer la réservation
+const handleReservationConfirm = async (message: string) => {
+  if (!accommodation.value || !selectedDates.value.start || !selectedDates.value.end) return
   
-  // Vérification des conflits de dates
-  const selectedRange: DateRange = {
-    start: selectedDates.value.start,
-    end: selectedDates.value.end,
-  }
-  
-  if (hasDateConflict(selectedRange, bookedRanges.value)) {
-    alert('Désolé, cette période est déjà réservée. Veuillez choisir d\'autres dates.')
-    return
-  }
-  
-  // Calcul du nombre de nuits
-  const nights = calculatedNights.value
-  const servicesTotal = servicesPrice.value
-  const accommodationTotal = priceCalculation.value?.total || basePrice.value
-  const finalTotal = totalPrice.value
-  
-  // Format des dates pour l'affichage
-  const startDateStr = selectedDates.value.start.toLocaleDateString('fr-FR')
-  const endDateStr = selectedDates.value.end.toLocaleDateString('fr-FR')
-  
-  // Informations du client
-  const clientInfo = `\n\nClient:\nNom: ${authStore.user?.firstName || ''} ${authStore.user?.lastName || ''}\nEmail: ${authStore.user?.email || ''}\nNombre de voyageurs: ${guests.value}`
-  
-  // Détails des services sélectionnés
-  let servicesDetails = ''
-  if (selectedServices.value.length > 0) {
-    servicesDetails = '\n\nServices supplémentaires :\n'
-    selectedServices.value.forEach(selected => {
-      const service = accommodation.value!.services?.find(s => s.id === selected.serviceId)
-      if (service) {
-        const servicePrice = calculateServicePrice(service, nights, guests.value)
-        servicesDetails += `- ${service.name}: ${formatCFA(servicePrice)}\n`
-      }
+  try {
+    const reservation = await ReservationService.createReservation({
+      accommodationId: accommodation.value.id,
+      startDate: selectedDates.value.start,
+      endDate: selectedDates.value.end,
+      guestCount: guests.value,
+      tenantMessage: message
     })
-    servicesDetails += `Total services: ${formatCFA(servicesTotal)}\n`
+    
+    currentReservationId.value = reservation.id
+    showReservationModal.value = false
+    
+    // Si instant booking, ouvrir modal paiement
+    if (bookingMode.value === 'instant') {
+      showPaymentModal.value = true
+    } else {
+      alert('Votre demande de réservation a été envoyée au propriétaire')
+      router.push('/reservations')
+    }
+  } catch (error: any) {
+    console.error('Erreur création réservation:', error)
+    alert(error.message || 'Erreur lors de la création de la réservation')
   }
-  
-  // Simulation de la réservation
-  alert(`Réservation confirmée !\n\nLogement: ${accommodation.value.title}\nDates: ${startDateStr} au ${endDateStr}\nNuits: ${nights}\nPrix hébergement: ${formatCFA(accommodationTotal)}${servicesDetails}Prix total: ${formatCFA(finalTotal)}`)
+}
+
+// Succès paiement
+const handlePaymentSuccess = (paymentId: string) => {
+  showPaymentModal.value = false
+  alert('Paiement effectué avec succès ! Votre réservation est confirmée.')
+  router.push('/reservations')
+}
+
+const goToSimilarAccommodation = (id: string) => {
+  router.push(`/accommodation/${id}`)
 }
 
 onMounted(async () => {
