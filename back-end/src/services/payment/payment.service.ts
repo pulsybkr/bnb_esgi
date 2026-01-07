@@ -79,7 +79,7 @@ export class PaymentService {
         }
 
         // Check if reservation can be paid
-        if (reservation.status !== 'en_attente' && reservation.status !== 'confirmee') {
+        if (reservation.status !== 'en_attente' && reservation.status !== 'confirmee' && reservation.status !== 'acceptee') {
             throw new ValidationError(
                 `Cannot process payment for reservation with status: ${reservation.status}`
             );
@@ -190,7 +190,7 @@ export class PaymentService {
         }
 
         // Check if reservation can be paid
-        if (reservation.status !== 'en_attente' && reservation.status !== 'confirmee') {
+        if (reservation.status !== 'en_attente' && reservation.status !== 'confirmee' && reservation.status !== 'acceptee') {
             throw new ValidationError(
                 `Cannot process payment for reservation with status: ${reservation.status}`
             );
