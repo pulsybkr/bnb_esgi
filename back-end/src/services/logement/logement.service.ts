@@ -22,6 +22,7 @@ export interface CreatePropertyData {
     tags?: string[];
     checkIn?: string;
     checkOut?: string;
+
     services?: Array<{
         serviceId: string;
         name: string;
@@ -29,6 +30,7 @@ export interface CreatePropertyData {
         price: number;
         priceType: 'fixed' | 'per_night' | 'per_guest' | 'per_guest_per_night';
     }>;
+
     photos?: AddPhotoData[];
 }
 
@@ -62,6 +64,9 @@ export interface PropertyFilters {
     minPrice?: number;
     maxPrice?: number;
     minCapacity?: number;
+    minBedrooms?: number;
+    minBathrooms?: number;
+    tags?: string[];
     status?: 'actif' | 'suspendu' | 'archive';
     page?: number;
     limit?: number;
@@ -167,6 +172,9 @@ export class LogementService {
             minPrice,
             maxPrice,
             minCapacity,
+            minBedrooms,
+            minBathrooms,
+            tags,
             status = 'actif',
             page = 1,
             limit = 20,
@@ -203,6 +211,22 @@ export class LogementService {
 
         if (minCapacity !== undefined) {
             where.capacity = { gte: minCapacity };
+        }
+
+        if (minBedrooms !== undefined) {
+            where.bedrooms = { gte: minBedrooms };
+        }
+
+        if (minBathrooms !== undefined) {
+            where.bathrooms = { gte: minBathrooms };
+        }
+
+        if (tags && tags.length > 0) {
+            // For JSONB array filtering, we need to use array overlap operator
+            // This checks if the tags array contains any of the specified tags
+            where.tags = {
+                array_contains: tags,
+            } as any; // Prisma JSON filtering may need custom query
         }
 
         // Calculate pagination

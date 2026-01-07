@@ -9,8 +9,13 @@ import authRoutes from './routes/auth';
 import logementRoutes from './routes/logement/logement.routes';
 import disponibiliteRoutes from './routes/disponibilite/disponibilite.routes';
 import reservationRoutes from './routes/reservation/reservation.routes';
+
 import searchRoutes from './routes/search/search.routes';
 import aiRoutes from './routes/ai/ai.routes';
+
+import serviceRoutes from './routes/service';
+import pricingRoutes from './routes/pricing';
+
 import { apiLogger, errorHandler, swaggerSpec } from './config';
 
 dotenv.config();
@@ -64,6 +69,8 @@ app.get('/api-docs.json', (req: Request, res: Response) => {
 // API Routes
 app.use('/auth', authRoutes);
 app.use('/logements', logementRoutes);
+app.use('/logements', serviceRoutes); // Services routes: /logements/:id/services
+app.use('/logements', pricingRoutes); // Pricing routes: /logements/:id/pricing
 app.use('/', disponibiliteRoutes); // Includes /logements/:id/availabilities and /availabilities/:id
 app.use('/reservations', reservationRoutes);
 app.use('/search', searchRoutes);
