@@ -263,6 +263,7 @@ import { useLogements } from '@/composables/useLogements'
 import { mapLogementsToAccommodations } from '@/utils/mappers/logementMapper'
 import { buildBackendFilters } from '@/utils/mappers/filterMapper'
 import { useDebounceFn } from '@vueuse/core'
+import { useSeo } from '@/composables/useSeo'
 
 const router = useRouter()
 const { searchHistory, addToHistory, removeFromHistory, clearHistory } = useSearchHistory()
@@ -457,6 +458,14 @@ watch(sortBy, () => {
 
 onMounted(async () => {
   console.log('📋 AccommodationListView: Composant monté')
+  
+  // SEO pour la page d'accueil
+  const { setSeoTags } = useSeo()
+  setSeoTags({
+    title: 'Locations en Afrique',
+    description: 'Découvrez les meilleures locations saisonnières en Afrique. Appartements, villas, maisons traditionnelles dans toute l\'Afrique francophone.',
+    url: window.location.href
+  })
   
   // Charger les logements avec les filtres initiaux
   await loadAccommodationsWithFilters()

@@ -8,12 +8,18 @@ import { onMounted } from 'vue'
 import { RouterView } from 'vue-router'
 import ToastContainer from '@/components/ui/ToastContainer.vue'
 import { useAuth } from '@/composables/useAuth'
+import { useAnalytics } from '@/composables/useAnalytics'
 
 const { loadProfile } = useAuth()
+const { init: initAnalytics } = useAnalytics()
 
 // Load user profile on app mount (restore session from cookies)
 onMounted(async () => {
   console.log('🔄 Attempting to restore user session from cookies...')
+  
+  // Initialize Matomo analytics
+  initAnalytics()
+  
   try {
     const success = await loadProfile()
     if (success) {

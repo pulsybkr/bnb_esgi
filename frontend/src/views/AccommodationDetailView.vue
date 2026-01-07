@@ -433,6 +433,7 @@ import { ReservationService } from '@/services/reservation/reservation.service'
 
 import { paymentService } from '@/services/payment'
 import { DisponibiliteService } from '@/services/disponibilite/disponibilite.service'
+import { useSeo } from '@/composables/useSeo'
 
 const route = useRoute()
 const router = useRouter()
@@ -491,6 +492,11 @@ const loadAvailabilityData = async (accommodationId: string) => {
     console.error('Erreur lors du chargement des disponibilités:', error)
   }
 }
+
+// Dates désactivées (toutes les dates des plages réservées et bloquées)
+const disabledDates = computed(() => {
+  return getBookedDates([...bookedRanges.value, ...blockedRanges.value])
+})
 
 const handleDateChange = (dates: { start: Date | null; end: Date | null }) => {
   // Les dates sont déjà mises à jour via v-model
@@ -732,8 +738,19 @@ onMounted(async () => {
   console.log('AccommodationDetailView monté')
   await findAccommodation()
   
-  // Charger les disponibilités après avoir chargé le logement
+  // SEO dynamique pour la page de détail
   if (accommodation.value) {
+    const { setSeoTags } = useSeo()
+    const city = accommodation.value.location.city || ''
+    const description = accommodation.value.description.substring(0, 160).replace(/\n/g, ' ')
+    
+    setSeoTags({
+      title: `${accommodation.value.title} - ${city}`,
+      description: description || `Découvrez ${accommodation.value.title} à ${city}. ${accommodation.value.bedrooms} chambre(s), ${accommodation.value.maxGuests} voyageurs max.`,
+      image: accommodation.value.images[0] || undefined,
+      url: window.location.href
+    })
+    
     await loadAvailabilityData(accommodation.value.id)
   }
 })

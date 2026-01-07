@@ -78,8 +78,43 @@ services:
     networks:
       - bnb_network
 
+  # === Matomo Analytics ===
+  matomo_db:
+    image: mariadb:10
+    container_name: bnb_matomo_db
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MATOMO_DB_ROOT_PASSWORD:-matomo_root_secret}
+      MYSQL_DATABASE: ${MATOMO_DB_NAME:-matomo}
+      MYSQL_USER: ${MATOMO_DB_USER:-matomo}
+      MYSQL_PASSWORD: ${MATOMO_DB_PASSWORD:-matomo_password}
+    volumes:
+      - matomo_db_data:/var/lib/mysql
+    networks:
+      - bnb_network
+    restart: unless-stopped
+
+  matomo:
+    image: matomo:5
+    container_name: bnb_matomo
+    environment:
+      MATOMO_DATABASE_HOST: matomo_db
+      MATOMO_DATABASE_USERNAME: ${MATOMO_DB_USER:-matomo}
+      MATOMO_DATABASE_PASSWORD: ${MATOMO_DB_PASSWORD:-matomo_password}
+      MATOMO_DATABASE_DBNAME: ${MATOMO_DB_NAME:-matomo}
+    volumes:
+      - matomo_data:/var/www/html
+    ports:
+      - "${MATOMO_PORT:-8081}:80"
+    depends_on:
+      - matomo_db
+    networks:
+      - bnb_network
+    restart: unless-stopped
+
 volumes:
   postgres_data:
+  matomo_data:
+  matomo_db_data:
 
 
 networks:
