@@ -170,7 +170,7 @@ onMounted(async () => {
 // Charger les disponibilités depuis l'API
 const loadAvailabilities = async (accommodationId: string) => {
   try {
-    const availabilities = await DisponibiliteService.getPropertyAvailabilities(accommodationId, {
+    const availabilities = await DisponibiliteService.getPropertyDisponibilites(accommodationId, {
       status: 'bloque'
     })
     
@@ -281,7 +281,8 @@ const handleDateBlocked = async (startDate: Date, endDate: Date, reason?: string
   
   try {
     // Créer la disponibilité avec statut "bloqué"
-    await DisponibiliteService.createAvailability(accommodation.value.id, {
+    await DisponibiliteService.createDisponibilite({
+      accommodationId: accommodation.value.id,
       startDate,
       endDate,
       status: 'bloque',
@@ -302,7 +303,7 @@ const handleDateUnblocked = async (blockedDateId: string) => {
   if (!accommodation.value) return
   
   try {
-    await DisponibiliteService.deleteAvailability(blockedDateId)
+    await DisponibiliteService.deleteDisponibilite(blockedDateId)
     
     // Recharger les disponibilités
     await loadAvailabilities(accommodation.value.id)

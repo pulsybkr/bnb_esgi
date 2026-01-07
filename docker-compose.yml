@@ -1,22 +1,4 @@
 services:
-  # === Reverse Proxy (seul point d'entrée public) ===
-  nginx:
-    image: nginx:alpine
-    container_name: bnb_nginx
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./nginx/ssl:/etc/nginx/ssl:ro
-    depends_on:
-      - frontend
-      - backend
-      - matomo
-    networks:
-      - bnb_network
-    restart: unless-stopped
-
   # === Base de données principale ===
   postgres:
     image: postgres:15
@@ -25,7 +7,7 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    # Port NON exposé publiquement (accessible uniquement via réseau Docker)
+    # Port interne uniquement
     expose:
       - "5432"
     volumes:
@@ -39,13 +21,12 @@ services:
       retries: 10
     restart: unless-stopped
 
-  # === Adminer (admin BDD - accessible via /adminer) ===
+  # === Adminer (admin BDD) ===
   adminer:
     image: adminer
     container_name: bnb_adminer
-    # Port NON exposé publiquement
-    expose:
-      - "8080"
+    ports:
+      - "8082:8080"
     depends_on:
       - postgres
     networks:
@@ -58,9 +39,9 @@ services:
       context: ./back-end
       dockerfile: Dockerfile
     container_name: bnb_backend
-    # Port NON exposé publiquement
-    expose:
-      - "3333"
+    # Port exposé pour Nginx système
+    ports:
+      - "3333:3333"
     environment:
       NODE_ENV: ${NODE_ENV}
       APP_KEY: ${APP_KEY}
@@ -93,9 +74,9 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: bnb_frontend
-    # Port NON exposé publiquement
-    expose:
-      - "4173"
+    # Port exposé pour Nginx système
+    ports:
+      - "5173:4173"
     environment:
       VITE_API_URL: ${VITE_API_URL}
       VITE_APP_NAME: ${VITE_APP_NAME}
@@ -135,9 +116,9 @@ services:
       MATOMO_DATABASE_DBNAME: ${MATOMO_DB_NAME:-matomo}
     volumes:
       - matomo_data:/var/www/html
-    # Port NON exposé publiquement
-    expose:
-      - "80"
+    # Port exposé pour Nginx système
+    ports:
+      - "8081:80"
     depends_on:
       - matomo_db
     networks:
@@ -173,12 +154,12 @@ services:
       SECRET_KEY: ${GLITCHTIP_SECRET_KEY:-change-me-in-production}
       PORT: 8000
       EMAIL_URL: ${GLITCHTIP_EMAIL_URL:-consolemail://}
-      GLITCHTIP_DOMAIN: ${GLITCHTIP_DOMAIN:-http://localhost/glitchtip}
+      GLITCHTIP_DOMAIN: ${GLITCHTIP_DOMAIN:-http://localhost:8000}
       DEFAULT_FROM_EMAIL: ${GLITCHTIP_FROM_EMAIL:-noreply@bnb-afriq.com}
       CELERY_WORKER_AUTOSCALE: "1,3"
       REDIS_URL: redis://redis:6379/0
-    expose:
-      - "8000"
+    ports:
+      - "8000:8000"
     depends_on:
       - glitchtip_db
       - redis

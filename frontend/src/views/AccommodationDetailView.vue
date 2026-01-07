@@ -456,7 +456,7 @@ const loadAvailabilityData = async (accommodationId: string) => {
     }))
     
     // Charger les disponibilités bloquées
-    const availabilities = await DisponibiliteService.getPropertyAvailabilities(accommodationId, {
+    const availabilities = await DisponibiliteService.getPropertyDisponibilites(accommodationId, {
       status: 'bloque'
     })
     
