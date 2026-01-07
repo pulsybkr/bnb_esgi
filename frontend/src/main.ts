@@ -3,6 +3,7 @@ import { createPinia } from 'pinia'
 import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
 import App from './App.vue'
 import router from './router'
+import { initSentry } from './plugins/sentry'
 import './index.css'
 
 try {
@@ -12,6 +13,10 @@ try {
   const app = createApp(App)
   app.use(pinia)
   app.use(router)
+
+  // Initialize Sentry/GlitchTip error tracking
+  initSentry({ app, router })
+
   app.mount('#app')
 } catch (error) {
   console.error('Erreur lors du démarrage de l\'application:', error)

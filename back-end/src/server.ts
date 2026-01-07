@@ -7,6 +7,23 @@ import dotenv from 'dotenv';
 import morgan from 'morgan';
 import swaggerUi from 'swagger-ui-express';
 import path from 'path';
+
+dotenv.config();
+
+import * as Sentry from '@sentry/node';
+
+if (process.env.SENTRY_DSN) {
+  Sentry.init({
+    dsn: process.env.SENTRY_DSN,
+    environment: process.env.NODE_ENV || 'development',
+    release: `bnb-afriq-api@${process.env.npm_package_version || '1.0.0'}`,
+    tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.2 : 1.0,
+  });
+  console.log('✅ Sentry initialized for error tracking');
+} else {
+  console.warn('⚠️ Sentry DSN not configured. Error tracking disabled.');
+}
+
 import authRoutes from './routes/auth';
 import logementRoutes from './routes/logement/logement.routes';
 import disponibiliteRoutes from './routes/disponibilite/disponibilite.routes';
@@ -20,10 +37,9 @@ import aiRoutes from './routes/ai/ai.routes';
 import serviceRoutes from './routes/service';
 import pricingRoutes from './routes/pricing';
 import favoriRoutes from './routes/favori/favori.routes';
+import reviewRoutes from './routes/review.routes';
 
 import { apiLogger, errorHandler, swaggerSpec } from './config';
-
-dotenv.config();
 
 const app: Express = express();
 const httpServer = createServer(app);
@@ -183,6 +199,7 @@ app.use('/payments', paymentRoutes);
 app.use('/search', searchRoutes);
 app.use('/ai', aiRoutes);
 app.use('/favoris', favoriRoutes);
+app.use('/reviews', reviewRoutes);
 
 
 app.use((req: Request, res: Response) => {

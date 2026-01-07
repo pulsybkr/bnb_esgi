@@ -12,19 +12,18 @@ export interface Disponibilite {
     status: DisponibiliteStatus
     customPrice?: number
     minimumStay?: number
-    notes?: string
+    note?: string
     createdAt: Date
     updatedAt: Date
 }
 
 export interface CreateDisponibiliteData {
-    accommodationId: string
     startDate: Date
     endDate: Date
     status: DisponibiliteStatus
     customPrice?: number
     minimumStay?: number
-    notes?: string
+    note?: string
 }
 
 export interface UpdateDisponibiliteData {
@@ -33,7 +32,7 @@ export interface UpdateDisponibiliteData {
     status?: DisponibiliteStatus
     customPrice?: number
     minimumStay?: number
-    notes?: string
+    note?: string
 }
 
 export interface DisponibiliteFilters {
