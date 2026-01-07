@@ -6,17 +6,22 @@ import { SERVICE_MAP } from '../data/services';
 import { CreatePropertyData } from '../services/logement/logement.service';
 
 // Configuration du dossier d'upload pour les logements
-const uploadsDir = path.join(__dirname, '../../uploads/logements');
-
-// Créer le dossier s'il n'existe pas
-if (!fs.existsSync(uploadsDir)) {
-    fs.mkdirSync(uploadsDir, { recursive: true });
+function ensureUploadsDir(): string {
+    const uploadsDir = path.join(__dirname, '../../uploads/logements');
+    
+    // Créer le dossier s'il n'existe pas
+    if (!fs.existsSync(uploadsDir)) {
+        fs.mkdirSync(uploadsDir, { recursive: true });
+    }
+    
+    return uploadsDir;
 }
 
 // Configuration de multer pour sauvegarder les fichiers sur le disque
 const upload = multer({
     storage: multer.diskStorage({
         destination: (req, file, cb) => {
+            const uploadsDir = ensureUploadsDir();
             cb(null, uploadsDir);
         },
         filename: (req, file, cb) => {

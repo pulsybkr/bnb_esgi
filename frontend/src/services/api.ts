@@ -13,13 +13,14 @@ const apiClient: AxiosInstance = axios.create({
 // Intercepteur pour ajouter le token d'authentification
 apiClient.interceptors.request.use(
   (config) => {
-    // Ne pas envoyer le token pour les routes de login/register
-    // pour éviter le message "already authenticated"
-    if (config.url?.includes('/auth/login') || config.url?.includes('/auth/register')) {
-      // Supprimer explicitement le header Authorization si présent
-      delete config.headers.Authorization
-      return config
-    }
+      // Ne pas envoyer le token pour les routes de login/register
+      // pour éviter le message "already authenticated" et permettre la reconnexion
+      if (config.url?.includes('/auth/login') || config.url?.includes('/auth/register')) {
+        // Supprimer explicitement le header Authorization si présent
+        delete config.headers.Authorization
+        // Ne pas lire depuis localStorage pour ces routes
+        return config
+      }
 
     // Ne pas ajouter le token si la requête est marquée pour skip (après refresh)
     if ((config as any)._skipAuthInterceptor) {

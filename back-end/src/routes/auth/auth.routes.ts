@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { AuthController } from '../../controllers/auth';
-import { validateRequest, checkNotAlreadyAuthenticated, uploadProfilePhoto, handleUploadError } from '../../middlewares';
+import { validateRequest, checkNotAlreadyAuthenticated } from '../../middlewares';
 import { requireAuth } from '../../middlewares/auth.middleware';
 import {
   registerSchema,
@@ -482,66 +482,6 @@ router.get('/profile', requireAuth, AuthController.getProfile);
  *               $ref: '#/components/schemas/Error'
  */
 router.put('/profile', requireAuth, validateRequest(updateProfileSchema), AuthController.updateProfile);
-
-/**
- * @openapi
- * /auth/profile/photo:
- *   post:
- *     tags:
- *       - Auth
- *     summary: Uploader une photo de profil
- *     description: Permet à un utilisateur connecté d'uploader ou mettre à jour sa photo de profil
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         multipart/form-data:
- *           schema:
- *             type: object
- *             required:
- *               - photo
- *             properties:
- *               photo:
- *                 type: string
- *                 format: binary
- *                 description: Image de profil (JPEG, PNG, WebP, max 5MB)
- *     responses:
- *       200:
- *         description: Photo uploadée avec succès
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 message:
- *                   type: string
- *                   example: Photo de profil mise à jour avec succès
- *                 data:
- *                   type: object
- *                   properties:
- *                     user:
- *                       $ref: '#/components/schemas/User'
- *                     photoUrl:
- *                       type: string
- *                       example: /uploads/profiles/profile-1641234567890-123456789.jpg
- *       400:
- *         description: Fichier invalide ou manquant
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- *       401:
- *         description: Non authentifié
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- */
-router.post('/profile/photo', requireAuth, uploadProfilePhoto.single('photo'), handleUploadError, AuthController.uploadProfilePhoto);
 
 
 /**

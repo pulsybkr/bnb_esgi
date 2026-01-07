@@ -48,6 +48,48 @@ async function main() {
     },
   });
 
+  // Compte de test simple
+  const testUser = await prisma.user.upsert({
+    where: { email: 'test@test.com' },
+    update: {
+      passwordHash: hashedPassword, // Mettre à jour le mot de passe si le compte existe déjà
+    },
+    create: {
+      firstName: 'Test',
+      lastName: 'User',
+      email: 'test@test.com',
+      passwordHash: hashedPassword,
+      phone: '+33612345678',
+      userType: 'locataire',
+      emailVerified: true,
+      phoneVerified: true,
+      status: 'actif',
+      city: 'Paris',
+      country: 'France',
+    },
+  });
+
+  // Compte propriétaire de test
+  const testOwner = await prisma.user.upsert({
+    where: { email: 'owner@test.com' },
+    update: {
+      passwordHash: hashedPassword, // Mettre à jour le mot de passe si le compte existe déjà
+    },
+    create: {
+      firstName: 'Owner',
+      lastName: 'Test',
+      email: 'owner@test.com',
+      passwordHash: hashedPassword,
+      phone: '+33687654321',
+      userType: 'proprietaire',
+      emailVerified: true,
+      phoneVerified: true,
+      status: 'actif',
+      city: 'Paris',
+      country: 'France',
+    },
+  });
+
   const tenant = await prisma.user.upsert({
     where: { email: 'locataire@test.com' },
     update: {},
@@ -799,6 +841,12 @@ async function main() {
   console.log('Availabilities created');
 
   console.log('🎉 Seeding completed!');
+  console.log('\n📋 Comptes de test disponibles :');
+  console.log('   Locataire: test@test.com / password123');
+  console.log('   Propriétaire: owner@test.com / password123');
+  console.log('   Propriétaire 1: proprietaire1@test.com / password123');
+  console.log('   Propriétaire 2: proprietaire2@test.com / password123');
+  console.log('   Locataire: locataire@test.com / password123');
 }
 
 main()
@@ -809,4 +857,3 @@ main()
   .finally(async () => {
     await prisma.$disconnect();
   });
-

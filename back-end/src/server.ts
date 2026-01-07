@@ -10,6 +10,7 @@ import logementRoutes from './routes/logement/logement.routes';
 import disponibiliteRoutes from './routes/disponibilite/disponibilite.routes';
 import reservationRoutes from './routes/reservation/reservation.routes';
 import searchRoutes from './routes/search/search.routes';
+import aiRoutes from './routes/ai/ai.routes';
 import { apiLogger, errorHandler, swaggerSpec } from './config';
 
 dotenv.config();
@@ -66,6 +67,7 @@ app.use('/logements', logementRoutes);
 app.use('/', disponibiliteRoutes); // Includes /logements/:id/availabilities and /availabilities/:id
 app.use('/reservations', reservationRoutes);
 app.use('/search', searchRoutes);
+app.use('/ai', aiRoutes);
 
 
 app.use((req: Request, res: Response) => {
