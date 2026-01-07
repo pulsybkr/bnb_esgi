@@ -6,7 +6,7 @@
     <!-- Image avatar si disponible -->
     <img 
       v-if="hasValidAvatar"
-      :src="avatar"
+      :src="(avatar as string)"
       :alt="name"
       class="avatar-image"
       @error="handleImageError"
@@ -27,11 +27,11 @@ import { ref, computed } from 'vue'
 
 const props = withDefaults(defineProps<{
   name: string
-  avatar?: string
+  avatar?: string | null
   size?: 'sm' | 'md' | 'lg' | 'xl'
 }>(), {
   size: 'md',
-  avatar: undefined
+  avatar: null
 })
 
 // État pour gérer les erreurs d'image

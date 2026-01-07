@@ -3,18 +3,18 @@ services:
     image: postgres:15
     container_name: bnb_postgres
     environment:
-      POSTGRES_DB: bnb
-      POSTGRES_USER: bnb_user
-      POSTGRES_PASSWORD: bnb_password
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./database/init:/docker-entrypoint-initdb.d
     networks:
       - bnb_network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U bnb_user -d bnb"]
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
       timeout: 20s
       retries: 10
 
@@ -22,33 +22,34 @@ services:
     image: adminer
     container_name: bnb_adminer
     ports:
-      - "8080:8080"
+      - "${ADMINER_PORT:-8080}:8080"
     depends_on:
       - postgres
     networks:
       - bnb_network
 
   backend:
-    build: 
+    build:
       context: ./back-end
       dockerfile: Dockerfile
     container_name: bnb_backend
     ports:
-      - "3333:3333"
+      - "${BACKEND_PORT:-3333}:3333"
     environment:
-      NODE_ENV: development
-      APP_KEY: development_app_key
-      PORT: 3333
+      NODE_ENV: ${NODE_ENV}
+      APP_KEY: ${APP_KEY}
+      PORT: ${BACKEND_PORT:-3333}
       HOST: 0.0.0.0
-      DB_CONNECTION: pg
-      DB_HOST: postgres
+      DB_CONNECTION: ${DB_CONNECTION}
+      DB_HOST: ${DB_HOST}
       DB_PORT: 5432
-      DB_USER: bnb_user
-      DB_PASSWORD: bnb_password
-      DB_DATABASE: bnb
-      JWT_SECRET: "$2y$10$W107VhHX9DsdcS293AH7eeFSDh6TFPz1wz9AHRtDpbdXvFhQWf3ny"
-      CORS_ORIGIN: http://localhost:5173
-      LOG_LEVEL: debug
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_DATABASE: ${POSTGRES_DB}
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${DB_HOST}:5432/${POSTGRES_DB}?schema=public
+      JWT_SECRET: ${JWT_SECRET}
+      CORS_ORIGIN: ${CORS_ORIGIN}
+      LOG_LEVEL: ${LOG_LEVEL}
     volumes:
       - ./back-end:/app
       - /app/node_modules
@@ -64,11 +65,11 @@ services:
       dockerfile: Dockerfile
     container_name: bnb_frontend
     ports:
-      - "5173:5173"
+      - "${FRONTEND_PORT:-5173}:5173"
     environment:
-      VITE_API_URL: http://localhost:3333
-      VITE_APP_NAME: bnb
-      VITE_APP_VERSION: 1.0.0
+      VITE_API_URL: ${VITE_API_URL}
+      VITE_APP_NAME: ${VITE_APP_NAME}
+      VITE_APP_VERSION: ${VITE_APP_VERSION}
     volumes:
       - ./frontend:/app
       - /app/node_modules
@@ -77,10 +78,10 @@ services:
     networks:
       - bnb_network
 
-
 volumes:
   postgres_data:
 
+
 networks:
   bnb_network:
-    driver: bridge
+    driver: ${bnb_network_driver:-bridge}

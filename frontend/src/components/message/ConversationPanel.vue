@@ -94,7 +94,7 @@ const newMessage = ref('')
 const messagesContainer = ref<HTMLElement>()
 const localMessages = ref<Message[]>([...props.messages])
 const isTyping = ref(false)
-let typingTimeout: NodeJS.Timeout | null = null
+let typingTimeout: ReturnType<typeof setTimeout> | null = null
 
 const scrollToBottom = () => {
   nextTick(() => {

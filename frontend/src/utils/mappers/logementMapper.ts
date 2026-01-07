@@ -57,7 +57,10 @@ export function mapLogementToAccommodation(logement: Logement): Accommodation {
         images: images.length > 0 ? images : ['/placeholder-property.jpg'],
         amenities: Array.isArray(logement.amenities)
             ? logement.amenities
-            : (logement.amenities ? Object.values(logement.amenities) : []),
+            : (logement.amenities && typeof logement.amenities === 'object'
+                ? Object.keys(logement.amenities).filter(key => logement.amenities[key] === true)
+                : []),
+
         maxGuests: logement.capacity,
         bedrooms: logement.roomCount,
         bathrooms: 1, // Valeur par défaut, le backend n'a pas ce champ

@@ -86,7 +86,7 @@
           <h3 class="text-xl font-semibold mb-4">
             {{ isOwner ? 'Informations du voyageur' : 'Informations du propriétaire' }}
           </h3>
-          <div class="flex items-center gap-4">
+          <div v-if="otherUser" class="flex items-center gap-4">
             <HostAvatar
               :name="otherUser.firstName + ' ' + otherUser.lastName"
               :avatar="otherUser.profilePhoto"
@@ -179,7 +179,7 @@
     <div v-if="showConversation" class="fixed bottom-4 right-4 w-96 h-[600px] shadow-2xl rounded-lg overflow-hidden z-50">
       <ConversationPanel
         :messages="messages"
-        :other-user="otherUser"
+        :other-user="(otherUser! as any)"
         :reservation="conversationReservation"
         :current-user-id="currentUserId"
         @close="showConversation = false"

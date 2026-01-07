@@ -156,7 +156,7 @@ import type { Message } from '@/types/message'
 const router = useRouter()
 
 const statuses = [
-  { value: null, label: 'Toutes' },
+  { value: 'all', label: 'Toutes' },
   { value: 'en_attente', label: 'En attente' },
   { value: 'acceptee', label: 'Acceptées' },
   { value: 'confirmee', label: 'Confirmées' },
@@ -165,7 +165,7 @@ const statuses = [
   { value: 'annulee', label: 'Annulées' },
 ]
 
-const selectedStatus = ref<string | null>(null)
+const selectedStatus = ref<string>('all')
 const currentPage = ref(1)
 const reservations = ref<Reservation[]>([])
 const totalPages = ref(1)
@@ -180,7 +180,7 @@ const loadReservations = async () => {
   loading.value = true
   try {
     const result = await ReservationService.getMyReservations({
-      status: selectedStatus.value as any,
+      status: selectedStatus.value === 'all' ? undefined : selectedStatus.value as any,
       page: currentPage.value,
       limit: 10,
     })

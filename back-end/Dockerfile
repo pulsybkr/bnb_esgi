@@ -18,5 +18,8 @@ COPY . .
 # Exposer le port
 EXPOSE 3333
 
-# Démarrer l'application
-CMD ["npm", "run", "dev"]
+# Build the application
+RUN npm run build
+
+# Start the application
+CMD ["npm", "start"]

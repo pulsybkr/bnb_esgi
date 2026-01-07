@@ -102,18 +102,24 @@
 
             <!-- Équipements -->
             <div class="mb-8">
-              <h2 class="text-xl font-semibold mb-4">Équipements</h2>
-              <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <h2 class="text-xl font-semibold mb-6">Équipements</h2>
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-6 gap-x-4">
                 <div 
-                  v-for="amenity in accommodation.amenities" 
-                  :key="amenity"
-                  class="flex items-center space-x-2"
+                  v-for="amenityKey in accommodation.amenities" 
+                  :key="amenityKey"
+                  class="flex items-center group"
                 >
-                  <Check class="w-4 h-4 text-green-600" />
-                  <span class="text-gray-700">{{ amenity }}</span>
+                  <div class="w-12 h-12 rounded-xl bg-gray-50 flex items-center justify-center mr-4 group-hover:bg-african-green/10 transition-colors">
+                    <component 
+                      :is="getAmenityInfo(amenityKey).icon" 
+                      class="w-6 h-6 text-gray-700 group-hover:text-african-green transition-colors" 
+                    />
+                  </div>
+                  <span class="text-gray-700 font-medium">{{ getAmenityInfo(amenityKey).label }}</span>
                 </div>
               </div>
             </div>
+
 
             <!-- Informations sur l'hôte -->
             <div class="border-t pt-8">
@@ -415,7 +421,9 @@ import { useLogements } from '@/composables/useLogements'
 import { useAuthStore } from '@/stores/auth'
 import { mapLogementToAccommodation } from '@/utils/mappers/logementMapper'
 import { formatCFA } from '@/utils/currency'
+import { getAmenityInfo, getHouseRuleInfo } from '@/utils/amenities'
 import { ReservationService } from '@/services/reservation/reservation.service'
+
 import { paymentService } from '@/services/payment'
 
 const route = useRoute()

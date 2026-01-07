@@ -6,7 +6,7 @@
         <h1 class="text-3xl font-bold">Réservations de mes biens</h1>
         <div class="bg-white rounded-lg shadow px-6 py-3">
           <p class="text-sm text-gray-600">Revenus totaux</p>
-          <p class="text-2xl font-bold text-green-600">{{ formatCFA(statistics?.totalRevenue || 0) }}</p>
+          <p class="text-2xl font-bold text-green-600">{{ formatCFA(Number(statistics?.totalRevenue || 0)) }}</p>
         </div>
       </div>
 
@@ -154,7 +154,7 @@ import type { Reservation, ReservationStatistics } from '@/types/reservation'
 const router = useRouter()
 
 const statuses = [
-  { value: null, label: 'Toutes' },
+  { value: 'all', label: 'Toutes' },
   { value: 'en_attente', label: 'En attente' },
   { value: 'confirmee', label: 'Confirmées' },
   { value: 'en_cours', label: 'En cours' },
@@ -162,7 +162,7 @@ const statuses = [
   { value: 'annulee', label: 'Annulées' },
 ]
 
-const selectedStatus = ref<string | null>(null)
+const selectedStatus = ref<string>('all')
 const currentPage = ref(1)
 const reservations = ref<Reservation[]>([])
 const statistics = ref<ReservationStatistics>()
@@ -172,7 +172,7 @@ const loadReservations = async () => {
   loading.value = true
   try {
     const result = await ReservationService.getOwnerReservations({
-      status: selectedStatus.value as any,
+      status: selectedStatus.value === 'all' ? undefined : selectedStatus.value as any,
       page: currentPage.value,
       limit: 10,
     })

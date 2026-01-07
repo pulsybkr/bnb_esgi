@@ -1,51 +1,27 @@
 <template>
   <div class="min-h-screen bg-gray-50">
     <!-- Header -->
-    <header class="bg-white shadow-sm border-b sticky top-0 z-50">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex items-center justify-between h-16">
-          <div class="flex items-center">
-            <router-link to="/" class="text-2xl font-bold text-indigo-600 hover:text-indigo-700">
-              bnb
-            </router-link>
-          </div>
-          <div class="flex items-center space-x-4">
-            <router-link
-              to="/favorites"
-              class="relative p-2 text-gray-600 hover:text-gray-900 transition-colors"
-              title="Mes favoris"
-            >
-              <Heart class="w-5 h-5 fill-red-500 text-red-500" />
-              <span 
-                v-if="favoritesList && favoritesList.length > 0"
-                class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium"
-              >
-                {{ favoritesList.length }}
-              </span>
-            </router-link>
-            <button class="p-2 text-gray-600 hover:text-gray-900" type="button" title="Mon compte">
-              <User class="w-5 h-5" />
-            </button>
-          </div>
-        </div>
-      </div>
-    </header>
+    <SimpleHeader />
 
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div class="mb-6">
+    <main class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div class="mb-8">
         <button
           @click="$router.back()"
-          class="flex items-center text-gray-600 hover:text-gray-900 mb-4 transition-colors"
+          class="flex items-center text-gray-600 hover:text-african-green mb-4 transition-colors group"
           type="button"
         >
-          <ArrowLeft class="w-5 h-5 mr-2" />
-          Retour
+          <ArrowLeft class="w-5 h-5 mr-2 group-hover:-translate-x-1 transition-transform" />
+          <span>Retour</span>
         </button>
-        <h1 class="text-3xl font-bold text-gray-900">Mes favoris</h1>
+        <div class="flex items-center gap-3">
+          <Heart class="w-8 h-8 text-african-green fill-african-green" />
+          <h1 class="text-3xl font-bold text-gray-900">Mes favoris</h1>
+        </div>
+        <p class="text-gray-600 mt-2">Retrouvez ici tous les logements que vous avez enregistrés.</p>
       </div>
 
       <!-- Grille des favoris -->
-      <div v-if="!isLoading && favoriteAccommodations.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div v-if="!isLoading && favoriteAccommodations.length > 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         <AccommodationCard 
           v-for="accommodation in favoriteAccommodations" 
           :key="accommodation.id"
@@ -54,81 +30,59 @@
       </div>
 
       <!-- Message si aucun favori -->
-      <div v-if="!isLoading && favoriteAccommodations.length === 0" class="text-center py-12">
-        <Heart class="w-16 h-16 text-gray-400 mx-auto mb-4" />
-        <h3 class="text-lg font-medium text-gray-900 mb-2">Aucun favori</h3>
-        <p class="text-gray-600 mb-4">Vous n'avez pas encore ajouté de logements à vos favoris</p>
+      <div v-if="!isLoading && favoriteAccommodations.length === 0" class="flex flex-col items-center justify-center py-20 text-center">
+        <div class="w-24 h-24 bg-green-50 rounded-full flex items-center justify-center mb-6">
+          <Heart class="w-12 h-12 text-african-green" />
+        </div>
+        <h3 class="text-2xl font-bold text-gray-900 mb-2">Votre liste est vide</h3>
+        <p class="text-gray-600 mb-8 max-w-md">Vous n'avez pas encore de favoris. Cliquez sur le cœur d'un logement pour l'ajouter à votre liste.</p>
         <router-link
           to="/"
-          class="inline-block px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-colors"
+          class="inline-flex items-center gap-2 px-6 py-3 bg-african-green text-white rounded-xl hover:bg-african-green-dark transition-all font-semibold shadow-lg hover:shadow-xl hover:-translate-y-0.5"
         >
-          Découvrir les logements
+          Découvrir les lieux
         </router-link>
       </div>
 
       <!-- Message si chargement -->
-      <div v-if="isLoading" class="text-center py-12">
-        <p class="text-gray-600">Chargement de vos favoris...</p>
+      <div v-if="isLoading" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div v-for="i in 4" :key="i" class="animate-pulse">
+          <div class="bg-gray-200 aspect-[4/3] rounded-2xl mb-4"></div>
+          <div class="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+          <div class="h-4 bg-gray-200 rounded w-1/2"></div>
+        </div>
       </div>
-    </div>
+    </main>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
-import { Heart, User, ArrowLeft } from 'lucide-vue-next'
+import { ref, onMounted } from 'vue'
+import { Heart, ArrowLeft } from 'lucide-vue-next'
+import SimpleHeader from '@/components/layout/SimpleHeader.vue'
 import AccommodationCard from '@/components/accommodation/AccommodationCard.vue'
-import { useFavorites } from '@/composables/useFavorites'
-import { logementService } from '@/services/logement.service'
+import { favoriService } from '@/services/favori.service'
 import type { Accommodation } from '@/types/accommodation'
 
-const { favoritesList } = useFavorites()
-
-const allAccommodations = ref<Accommodation[]>([])
+const favoriteAccommodations = ref<Accommodation[]>([])
 const isLoading = ref(true)
 
-// Récupérer uniquement les logements favoris (réactif aux changements de favoritesList)
-const favoriteAccommodations = computed(() => {
-  if (!favoritesList.value || favoritesList.value.length === 0) {
-    return []
-  }
-  return allAccommodations.value.filter(acc => 
-    favoritesList.value.includes(acc.id)
-  )
-})
-
-// Surveiller les changements de favoritesList pour recharger si nécessaire
-watch(favoritesList, () => {
-  // La liste se met à jour automatiquement grâce au computed
-  // mais on peut forcer un rechargement si nécessaire
-}, { deep: true })
-
-// Charger tous les logements pour filtrer les favoris
-const loadAccommodations = async () => {
+// Charger les favoris directement depuis le backend
+const loadFavorites = async () => {
   isLoading.value = true
   try {
-    // Charger tous les logements (on pourrait optimiser en chargeant seulement les favoris)
-    const response = await logementService.getAll({
-      page: 1,
-      limit: 100, // Charger beaucoup pour avoir tous les favoris
-      status: 'actif',
-    })
-    allAccommodations.value = response.properties || []
+    favoriteAccommodations.value = await favoriService.getAll()
   } catch (error) {
-    console.error('Erreur lors du chargement des logements:', error)
-    allAccommodations.value = []
+    console.error('Erreur lors du chargement des favoris:', error)
+    favoriteAccommodations.value = []
   } finally {
     isLoading.value = false
   }
 }
 
 onMounted(() => {
-  try {
-    loadAccommodations()
-  } catch (error) {
-    console.error('Erreur au montage du composant:', error)
-    isLoading.value = false
-  }
+  loadFavorites()
 })
 </script>
+
 

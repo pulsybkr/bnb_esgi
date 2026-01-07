@@ -19,6 +19,7 @@ import aiRoutes from './routes/ai/ai.routes';
 
 import serviceRoutes from './routes/service';
 import pricingRoutes from './routes/pricing';
+import favoriRoutes from './routes/favori/favori.routes';
 
 import { apiLogger, errorHandler, swaggerSpec } from './config';
 
@@ -181,6 +182,7 @@ app.use('/messages', messageRoutes);
 app.use('/payments', paymentRoutes);
 app.use('/search', searchRoutes);
 app.use('/ai', aiRoutes);
+app.use('/favoris', favoriRoutes);
 
 
 app.use((req: Request, res: Response) => {
