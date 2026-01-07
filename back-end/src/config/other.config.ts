@@ -4,7 +4,7 @@ export const apiLogger = (req: Request, res: Response, next: NextFunction) => {
     const start = Date.now();
 
     // Log request
-    console.log(`📨 [${new Date().toISOString()}] ${req.method} ${req.url}`);
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
     console.log(`   From: ${req.ip} (${req.get('User-Agent')?.substring(0, 50)}...)`);
 
     if (req.body && Object.keys(req.body).length > 0) {
@@ -14,14 +14,14 @@ export const apiLogger = (req: Request, res: Response, next: NextFunction) => {
     // Log response when finished
     res.on('finish', () => {
         const duration = Date.now() - start;
-        console.log(`📤 [${new Date().toISOString()}] ${req.method} ${req.url} - ${res.statusCode} (${duration}ms)`);
+        console.log(`[${new Date().toISOString()}] ${req.method} ${req.url} - ${res.statusCode} (${duration}ms)`);
     });
 
     next();
 };
 
 export const errorHandler = (error: any, req: Request, res: Response, next: NextFunction) => {
-    console.error('❌ Error:', error);
+    console.error('Error:', error);
 
     if (error.name === 'AuthenticationError') {
         return res.status(401).json({

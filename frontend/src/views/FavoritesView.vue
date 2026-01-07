@@ -5,7 +5,7 @@
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between h-16">
           <div class="flex items-center">
-            <router-link to="/" class="text-2xl font-bold text-gray-900 hover:text-gray-700">
+            <router-link to="/" class="text-2xl font-bold text-indigo-600 hover:text-indigo-700">
               bnb
             </router-link>
           </div>
@@ -60,7 +60,7 @@
         <p class="text-gray-600 mb-4">Vous n'avez pas encore ajouté de logements à vos favoris</p>
         <router-link
           to="/"
-          class="inline-block px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          class="inline-block px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-colors"
         >
           Découvrir les logements
         </router-link>

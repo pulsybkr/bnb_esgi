@@ -5,7 +5,7 @@
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between h-16">
           <div class="flex items-center space-x-4">
-            <router-link to="/" class="text-2xl font-bold text-gray-900">bnb</router-link>
+            <router-link to="/" class="text-2xl font-bold text-indigo-600">bnb</router-link>
             <h2 class="text-lg font-semibold text-gray-700">Calendrier de disponibilité</h2>
           </div>
           <router-link

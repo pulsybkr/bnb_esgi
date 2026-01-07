@@ -4,6 +4,7 @@ export * from './formData.middleware';
 export * from './upload.middleware';
 export * from './ownership.middleware';
 export * from './reservation.middleware';
+export * from './upload.middleware';
 
 // Re-export commonly used middlewares for convenience
 export { checkNotAlreadyAuthenticated } from './auth.middleware';

@@ -50,7 +50,7 @@
             </span>
             <span
               v-if="nightly.isWeekend"
-              class="px-1.5 py-0.5 bg-blue-100 text-blue-700 text-xs rounded"
+              class="px-1.5 py-0.5 bg-gradient-to-br from-blue-100 to-indigo-100 text-xs rounded"
             >
               WE
             </span>

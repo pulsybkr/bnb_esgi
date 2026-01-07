@@ -91,8 +91,23 @@ function transformBackendProperty(property: any): Accommodation {
   }
 
   // Extraire les images depuis les photos
+  // Construire l'URL complète si c'est un chemin relatif
+  const getImageUrl = (url: string) => {
+    if (!url) return ''
+    // Si l'URL commence déjà par http, la retourner telle quelle
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return url
+    }
+    // Sinon, construire l'URL complète avec le base URL de l'API
+    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3333'
+    return url.startsWith('/') ? `${apiBaseUrl}${url}` : `${apiBaseUrl}/${url}`
+  }
+  
   const images = property.photos && Array.isArray(property.photos)
-    ? property.photos.map((photo: any) => photo.url || photo.url_miniature).filter(Boolean)
+    ? property.photos.map((photo: any) => {
+        const url = photo.url || photo.url_miniature
+        return url ? getImageUrl(url) : null
+      }).filter(Boolean)
     : []
 
   // Extraire les coordonnées
@@ -156,6 +171,7 @@ function transformBackendProperty(property: any): Accommodation {
       priceType: service.type_prix || service.priceType || 'fixed',
       icon: service.icone || service.icon,
     })) || [],
+    status: property.status || 'actif', // Statut du logement
   }
 }
 
@@ -190,14 +206,19 @@ export const logementService = {
   /**
    * Crée un nouveau logement
    */
-  async create(data: CreatePropertyData): Promise<Accommodation> {
+  async create(data: CreatePropertyData & { imagesInfo?: Array<{ index: number; isMain: boolean }> }): Promise<Accommodation> {
     const formData = new FormData()
     
-    // Ajouter les images
+    // Ajouter les images (Multer attend un champ nommé 'images' pour chaque fichier)
     if (data.images && data.images.length > 0) {
-      data.images.forEach((file, index) => {
-        formData.append(`images[${index}]`, file)
+      data.images.forEach((file) => {
+        formData.append('images', file)
       })
+    }
+    
+    // Ajouter les informations sur les images (ordre et isMain)
+    if (data.imagesInfo && data.imagesInfo.length > 0) {
+      formData.append('imagesInfo', JSON.stringify(data.imagesInfo))
     }
 
     // Ajouter les autres données
@@ -227,11 +248,8 @@ export const logementService = {
     if (data.checkIn) formData.append('checkIn', data.checkIn)
     if (data.checkOut) formData.append('checkOut', data.checkOut)
 
-    const response = await apiClient.post('/logements', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    })
+    // Pour FormData, ne pas définir de headers, laisser axios gérer automatiquement
+    const response = await apiClient.post('/logements', formData)
     return transformBackendProperty(response.data.data.property)
   },
 
@@ -259,11 +277,8 @@ export const logementService = {
       formData.append('images', file)
     })
 
-    const response = await apiClient.post(`/logements/${id}/photos/upload`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    })
+    // Pour FormData, ne pas définir de headers, laisser axios gérer automatiquement
+    const response = await apiClient.post(`/logements/${id}/photos/upload`, formData)
     return response.data.data.photos
   },
 

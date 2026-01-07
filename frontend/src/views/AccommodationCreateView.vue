@@ -5,7 +5,7 @@
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between h-16">
           <div class="flex items-center space-x-4">
-            <router-link to="/" class="text-2xl font-bold text-gray-900">bnb</router-link>
+            <router-link to="/" class="text-2xl font-bold text-indigo-600">bnb</router-link>
             <h2 class="text-lg font-semibold text-gray-700">Créer un nouveau logement</h2>
           </div>
           <router-link
@@ -613,6 +613,10 @@ const handleSubmit = async () => {
   isSubmitting.value = true
 
   try {
+    // Récupérer les images avec leur statut isMain depuis le composant ImageUpload
+    const imageUploadComponent = imageUploadRef.value
+    const imagesInfo = imageUploadComponent?.getImagesInfo?.() || []
+    
     // Préparer les données pour l'API
     const propertyData = {
       title: formData.title,
@@ -631,6 +635,7 @@ const handleSubmit = async () => {
       checkIn: formData.availability.checkIn,
       checkOut: formData.availability.checkOut,
       images: formData.images,
+      imagesInfo: imagesInfo, // Envoyer l'ordre et le statut isMain de chaque image
     }
 
     // Appeler l'API pour créer le logement
@@ -647,4 +652,3 @@ const handleSubmit = async () => {
   }
 }
 </script>
-

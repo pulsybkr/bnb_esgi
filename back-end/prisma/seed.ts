@@ -4,7 +4,7 @@ import bcrypt from 'bcryptjs';
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('🌱 Seeding database...');
+  console.log('Seeding database...');
 
   // Hash password for users
   const hashedPassword = await bcrypt.hash('password123', 12);
@@ -67,7 +67,7 @@ async function main() {
     },
   });
 
-  console.log('✅ Users created');
+  console.log('Users created');
 
   // Create accommodations
   const accommodation1 = await prisma.logement.upsert({
@@ -623,7 +623,7 @@ async function main() {
     },
   });
 
-  console.log('✅ Accommodations created');
+  console.log('Accommodations created');
 
   // Create photos for accommodations
   const photos1 = [
@@ -775,7 +775,7 @@ async function main() {
     }
   }
 
-  console.log('✅ Photos created');
+  console.log('Photos created');
 
   // Create some availabilities
   const today = new Date();
@@ -796,14 +796,14 @@ async function main() {
     });
   }
 
-  console.log('✅ Availabilities created');
+  console.log('Availabilities created');
 
   console.log('🎉 Seeding completed!');
 }
 
 main()
   .catch((e) => {
-    console.error('❌ Error seeding database:', e);
+    console.error('Error seeding database:', e);
     process.exit(1);
   })
   .finally(async () => {

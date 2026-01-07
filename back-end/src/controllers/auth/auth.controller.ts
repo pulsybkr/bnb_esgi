@@ -22,6 +22,8 @@ export class AuthController {
         message: 'User registered successfully',
         data: {
           user: result.user,
+          accessToken: result.tokens.accessToken,
+          refreshToken: result.tokens.refreshToken,
         },
       });
     } catch (error) {
@@ -46,6 +48,8 @@ export class AuthController {
         message: 'Login successful',
         data: {
           user: result.user,
+          accessToken: result.tokens.accessToken,
+          refreshToken: result.tokens.refreshToken,
         },
       });
     } catch (error) {
@@ -70,6 +74,8 @@ export class AuthController {
         message: 'Token refreshed successfully',
         data: {
           user: result.user,
+          accessToken: result.tokens.accessToken,
+          refreshToken: result.tokens.refreshToken,
         },
       });
     } catch (error) {
@@ -155,6 +161,52 @@ export class AuthController {
         success: true,
         message: 'Profile updated successfully',
         data: { user: updatedUser },
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Upload profile photo
+   */
+  static async uploadProfilePhoto(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const authReq = req as AuthenticatedRequest;
+
+      if (!authReq.user) {
+        res.status(401).json({
+          success: false,
+          message: 'User not authenticated',
+        });
+        return;
+      }
+
+      // Vérifier qu'un fichier a été uploadé
+      if (!req.file) {
+        res.status(400).json({
+          success: false,
+          message: 'Aucun fichier fourni',
+          type: 'validation_error',
+        });
+        return;
+      }
+
+      // Construire l'URL de la photo
+      const photoUrl = `/uploads/profiles/${req.file.filename}`;
+
+      // Mettre à jour le profil avec la nouvelle photo
+      const updatedUser = await UserService.updateUserProfile(authReq.user.id, {
+        profilePhoto: photoUrl,
+      });
+
+      res.json({
+        success: true,
+        message: 'Photo de profil mise à jour avec succès',
+        data: {
+          user: updatedUser,
+          photoUrl,
+        },
       });
     } catch (error) {
       next(error);

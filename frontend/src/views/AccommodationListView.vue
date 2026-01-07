@@ -1,77 +1,12 @@
 <template>
   <div class="min-h-screen bg-gray-50">
     <!-- Header -->
-    <header class="bg-white shadow-sm border-b sticky top-0 z-50">
+    <header class="bg-white shadow-sm border-b">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex items-center h-16 gap-8">
+        <div class="flex justify-between items-center h-16">
           <div class="flex items-center">
-            <h1 class="text-2xl font-bold text-gray-900">bnb</h1>
+            <h1 class="text-2xl font-bold text-indigo-600">bnb</h1>
           </div>
-          
-          <!-- Espace pour aligner avec la sidebar -->
-          <div class="w-80 flex-shrink-0"></div>
-          
-          <!-- Barre de recherche alignée avec les cards -->
-          <div class="flex-1 relative">
-            <div class="relative">
-              <input 
-                v-model="searchQuery"
-                type="text"
-                placeholder="Rechercher par titre, description ou ville..."
-                class="w-full px-4 py-2 pl-10 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                @focus="showHistoryDropdown = true"
-                @blur="hideHistoryDropdown"
-                @keyup.enter="handleSearch"
-              />
-              <Search class="w-4 h-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
-              <button 
-                v-if="searchQuery"
-                @click="searchQuery = ''"
-                class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                type="button"
-              >
-                <X class="w-4 h-4" />
-              </button>
-            </div>
-
-            <!-- Dropdown historique de recherche -->
-            <div 
-              v-if="showHistoryDropdown && searchHistory.length > 0 && !searchQuery"
-              class="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-80 overflow-y-auto"
-            >
-              <div class="p-2">
-                <div class="flex justify-between items-center px-3 py-2 mb-1">
-                  <h3 class="text-sm font-medium text-gray-700">Recherches récentes</h3>
-                  <button 
-                    @mousedown.prevent="clearHistory"
-                    class="text-xs text-gray-500 hover:text-gray-700"
-                    type="button"
-                  >
-                    Tout effacer
-                  </button>
-                </div>
-                <div
-                  v-for="(item, index) in searchHistory"
-                  :key="index"
-                  @mousedown.prevent="selectHistoryItem(item)"
-                  class="w-full flex items-center justify-between px-3 py-2 hover:bg-gray-50 rounded-md group cursor-pointer"
-                >
-                  <div class="flex items-center space-x-2">
-                    <Search class="w-4 h-4 text-gray-400" />
-                    <span class="text-sm text-gray-700">{{ item }}</span>
-                  </div>
-                  <button
-                    @mousedown.prevent.stop="removeFromHistory(item)"
-                    class="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-600 transition-opacity"
-                    type="button"
-                  >
-                    <X class="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-
           <div class="flex items-center space-x-4">
             <router-link
               to="/favorites"
@@ -89,9 +24,74 @@
                 {{ favoritesList.value.length }}
               </span>
             </router-link>
-            <button class="p-2 text-gray-600 hover:text-gray-900" type="button" title="Mon compte">
-              <User class="w-5 h-5" />
-            </button>
+            <!-- Menu utilisateur -->
+            <div class="relative">
+              <button 
+                @click="toggleUserMenu"
+                class="p-2 text-gray-600 hover:text-gray-900 transition-colors rounded-lg hover:bg-gray-100"
+                type="button"
+                :title="isAuthenticated ? 'Mon compte' : 'Se connecter'"
+              >
+                <div v-if="isAuthenticated && user" class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-semibold text-sm">
+                  {{ userInitials }}
+                </div>
+                <User v-else class="w-5 h-5" />
+              </button>
+
+              <!-- Menu déroulant -->
+              <div 
+                v-if="showUserMenu"
+                class="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-2xl border border-gray-200 py-2 z-50"
+              >
+                <!-- Utilisateur connecté -->
+                <template v-if="isAuthenticated && user">
+                  <!-- Profil utilisateur -->
+                  <div class="px-4 py-3 border-b border-gray-100">
+                    <p class="text-sm font-semibold text-gray-900">{{ fullName }}</p>
+                    <p class="text-xs text-gray-500 truncate">{{ user.email }}</p>
+                  </div>
+
+                  <!-- Menu items -->
+                  <button 
+                    @click="goToProfile"
+                    class="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2 transition-colors"
+                  >
+                    <User class="w-4 h-4" />
+                    <span>Mon profil</span>
+                  </button>
+
+                  <button 
+                    v-if="isOwner"
+                    @click="goToMyProperties"
+                    class="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2 transition-colors"
+                  >
+                    <Home class="w-4 h-4" />
+                    <span>Mes logements</span>
+                  </button>
+
+                  <div class="border-t border-gray-100 mt-2 pt-2">
+                    <button 
+                      @click="handleLogout"
+                      class="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2 transition-colors"
+                    >
+                      <LogOut class="w-4 h-4" />
+                      <span>Se déconnecter</span>
+                    </button>
+                  </div>
+                </template>
+
+                <!-- Utilisateur non connecté -->
+                <template v-else>
+                  <button 
+                    @click="goToLogin"
+                    class="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2 transition-colors"
+                  >
+                    <User class="w-4 h-4" />
+                    <span>Se connecter</span>
+                  </button>
+                </template>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -152,12 +152,22 @@
             class="mb-12"
           />
 
-          <!-- Titre de la section principale -->
-          <div v-if="!isLoading && filteredAccommodations.length > 0" class="mb-6">
+          <!-- Titre de la section principale avec bouton pour propriétaires -->
+          <div v-if="!isLoading && filteredAccommodations.length > 0" class="mb-6 flex justify-between items-center">
             <h2 class="text-2xl font-bold text-gray-900">
               <span v-if="hasActiveFilters">Résultats de votre recherche</span>
               <span v-else>Tous les logements</span>
             </h2>
+            
+            <!-- Bouton "Ajouter un logement" visible uniquement pour les propriétaires -->
+            <router-link
+              v-if="isAuthenticated && isOwner"
+              to="/accommodation/create"
+              class="flex items-center space-x-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium shadow-sm"
+            >
+              <Plus class="w-5 h-5" />
+              <span>Ajouter un logement</span>
+            </router-link>
           </div>
 
           <!-- Grille des logements -->
@@ -173,10 +183,20 @@
           <div v-if="!isLoading && filteredAccommodations.length === 0" class="text-center py-12">
             <Home class="w-16 h-16 text-gray-400 mx-auto mb-4" />
             <h3 class="text-lg font-medium text-gray-900 mb-2">Aucun logement trouvé</h3>
-            <p class="text-gray-600">
+            <p class="text-gray-600 mb-4">
               <span v-if="hasActiveFilters">Essayez de modifier vos critères de recherche</span>
               <span v-else>Les logements sont en cours de chargement ou la base de données est vide</span>
             </p>
+            
+            <!-- Bouton "Ajouter un logement" pour propriétaires quand aucun résultat -->
+            <router-link
+              v-if="isAuthenticated && isOwner && !hasActiveFilters"
+              to="/accommodation/create"
+              class="inline-flex items-center space-x-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium shadow-sm"
+            >
+              <Plus class="w-5 h-5" />
+              <span>Ajouter votre premier logement</span>
+            </router-link>
           </div>
 
           <!-- Message si chargement -->
@@ -203,7 +223,7 @@
                 :class="[
                   'px-3 py-2 text-sm font-medium rounded-md',
                   page === currentPage 
-                    ? 'text-white bg-blue-600' 
+                    ? 'text-white bg-gradient-to-r from-blue-600 to-indigo-600' 
                     : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
                 ]"
                 type="button"
@@ -228,15 +248,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch, onActivated } from 'vue'
 import { useRouter } from 'vue-router'
-import { Search, User, Home, X, Heart } from 'lucide-vue-next'
+import { Search, User, Home, X, Heart, Plus, LogOut } from 'lucide-vue-next'
 import AccommodationCard from '@/components/AccommodationCard.vue'
 import FilterSidebar from '@/components/FilterSidebar.vue'
 import { accommodations } from '@/data/fixtures'
 import type { Accommodation, FilterOptions } from '@/types/accommodation'
 import { useSearchHistory } from '@/composables/useSearchHistory'
 import { useFavorites } from '@/composables/useFavorites'
+import { useAuthStore } from '@/stores/auth'
+import { authService } from '@/services/auth.service'
 import { getTagLabels } from '@/data/tags'
 import { generatePreferencesFromHistory } from '@/utils/recommendations'
 import type { UserPreferences } from '@/utils/recommendations'
@@ -245,11 +267,35 @@ import PopularAccommodations from '@/components/PopularAccommodations.vue'
 import RecommendationsAccommodations from '@/components/RecommendationsAccommodations.vue'
 import { logementService } from '@/services/logement.service'
 
-console.log('📋 AccommodationListView: Script setup chargé')
+console.log('AccommodationListView: Script setup chargé')
 
 const router = useRouter()
+const authStore = useAuthStore()
 const { searchHistory, addToHistory, removeFromHistory, clearHistory } = useSearchHistory()
 const { favoritesList } = useFavorites()
+
+// État pour le menu utilisateur
+const showUserMenu = ref(false)
+
+// Computed pour vérifier si l'utilisateur est propriétaire
+const isOwner = computed(() => authStore.isOwner)
+const isAuthenticated = computed(() => {
+  const authenticated = authStore.isAuthenticated
+  console.log('État authentification:', {
+    authenticated,
+    hasUser: !!authStore.user,
+    hasAccessToken: !!authStore.accessToken,
+    user: authStore.user
+  })
+  return authenticated
+})
+const user = computed(() => authStore.user)
+const fullName = computed(() => authStore.fullName)
+
+const userInitials = computed(() => {
+  if (!user.value) return ''
+  return `${user.value.firstName[0]}${user.value.lastName[0]}`.toUpperCase()
+})
 
 // État réactif
 const allAccommodations = ref<Accommodation[]>([])
@@ -430,7 +476,7 @@ const paginatedAccommodations = computed(() => {
   // Les données viennent déjà paginées de l'API, donc on les retourne telles quelles
   // après le filtrage local (qui peut réduire le nombre d'éléments affichés)
   const result = filteredAccommodations.value
-  console.log('📄 Pagination:', {
+  console.log('Pagination:', {
     totalFromAPI: pagination.value.total,
     filteredLocal: filteredAccommodations.value.length,
     page: currentPage.value,
@@ -460,6 +506,38 @@ const handleFiltersChanged = (filters: FilterOptions) => {
 const goToDetail = (id: string) => {
   router.push(`/accommodation/${id}`)
 }
+
+const toggleUserMenu = () => {
+  showUserMenu.value = !showUserMenu.value
+}
+
+const goToProfile = () => {
+  showUserMenu.value = false
+  router.push('/profile')
+}
+
+const goToMyProperties = () => {
+  showUserMenu.value = false
+  router.push('/my-properties')
+}
+
+const goToLogin = () => {
+  showUserMenu.value = false
+  router.push('/login')
+}
+
+const handleLogout = async () => {
+  try {
+    await authService.logout()
+  } catch (error) {
+    console.error('Erreur lors de la déconnexion:', error)
+  } finally {
+    authStore.clearAuth()
+    showUserMenu.value = false
+    router.push('/')
+  }
+}
+
 
 // Gérer la recherche (ajout à l'historique)
 const handleSearch = () => {
@@ -550,9 +628,9 @@ const loadAccommodations = async () => {
     }
     
     const response = await logementService.getAll(apiFilters)
-    console.log('📦 Réponse API:', response)
-    console.log('📦 Propriétés transformées:', response.properties)
-    console.log('📦 Pagination API:', {
+    console.log('Réponse API:', response)
+    console.log('Propriétés transformées:', response.properties)
+    console.log('Pagination API:', {
       total: response.total,
       page: response.page,
       limit: response.limit,
@@ -568,7 +646,7 @@ const loadAccommodations = async () => {
       allAccommodations.value = response.properties
     }
     
-    console.log('📦 allAccommodations après assignation:', allAccommodations.value.length, 'logements')
+    console.log('allAccommodations après assignation:', allAccommodations.value.length, 'logements')
     pagination.value = {
       total: response.total,
       page: response.page,
@@ -610,8 +688,27 @@ watch([currentFilters, searchQuery], () => {
   loadAccommodations()
 }, { deep: true })
 
+// Fermer le menu utilisateur si on clique ailleurs
+if (typeof window !== 'undefined') {
+  window.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement
+    if (!target.closest('.relative')) {
+      showUserMenu.value = false
+    }
+  })
+}
+
+// Recharger les données quand on revient sur la page
+import { onActivated } from 'vue'
+
 onMounted(() => {
-  console.log('📋 AccommodationListView: Composant monté')
+  console.log('AccommodationListView: Composant monté')
+  loadAccommodations()
+})
+
+// Recharger aussi si le composant est réactivé (quand on revient sur la route)
+onActivated(() => {
+  console.log('AccommodationListView: Composant réactivé, rechargement des données')
   loadAccommodations()
 })
 </script>

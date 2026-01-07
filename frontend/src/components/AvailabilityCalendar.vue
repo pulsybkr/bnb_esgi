@@ -260,7 +260,7 @@ const getDateClass = (day: number): string => {
   const classes: string[] = []
 
   if (isSameDay(date, today)) {
-    classes.push('ring-2 ring-blue-500')
+    classes.push('ring-2 ring-indigo-600')
   }
 
   if (isDatePast(day)) {
@@ -282,7 +282,7 @@ const getDateClassForMonth = (day: number, monthDate: Date): string => {
   const classes: string[] = []
 
   if (isSameDay(date, today)) {
-    classes.push('ring-2 ring-blue-500')
+    classes.push('ring-2 ring-indigo-600')
   }
 
   if (isDatePast(day, monthDate)) {

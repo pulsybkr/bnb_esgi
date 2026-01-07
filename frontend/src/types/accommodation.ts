@@ -53,6 +53,7 @@ export interface Accommodation {
   services?: Service[]
   tags?: string[]
   pricingConfigId?: string // ID de la configuration de tarification (optionnel)
+  status?: 'actif' | 'suspendu' | 'archive' // Statut du logement
 }
 
 export interface Service {
