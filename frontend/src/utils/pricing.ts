@@ -7,13 +7,12 @@ import type {
   PriceCalculationResult,
   NightlyPrice,
   AnyPricingRule,
-  PricingRuleType,
   SeasonPricingRule,
   WeekendPricingRule,
   LongStayPricingRule,
   CustomPeriodPricingRule,
-  SeasonType
 } from '@/types/pricing'
+import { PricingRuleType, SeasonType } from '@/types/pricing'
 import { normalizeDate, getDatesInRange, type DateRange } from './dateUtils'
 
 /**

@@ -46,7 +46,7 @@ services:
       DB_USER: bnb_user
       DB_PASSWORD: bnb_password
       DB_DATABASE: bnb
-      JWT_SECRET: $2y$10$W107VhHX9DsdcS293AH7eeFSDh6TFPz1wz9AHRtDpbdXvFhQWf3ny
+      JWT_SECRET: "$2y$10$W107VhHX9DsdcS293AH7eeFSDh6TFPz1wz9AHRtDpbdXvFhQWf3ny"
       CORS_ORIGIN: http://localhost:5173
       LOG_LEVEL: debug
     volumes:

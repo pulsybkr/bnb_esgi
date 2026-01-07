@@ -84,7 +84,7 @@
           :class="[
             'aspect-square rounded-lg text-sm font-medium transition-all relative',
             getDateClass(day),
-            isDateClickable(day) ? 'cursor-pointer hover:ring-2 hover:ring-blue-500' : 'cursor-default'
+            isDateClickable(day) ? 'cursor-pointer hover:ring-2 hover:ring-indigo-600' : 'cursor-default'
           ]"
         >
           <span class="absolute top-1 left-1">{{ day }}</span>
@@ -144,7 +144,7 @@
             <input
               v-model="blockRangeStart"
               type="date"
-              class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600"
             />
           </div>
           
@@ -155,7 +155,7 @@
             <input
               v-model="blockRangeEnd"
               type="date"
-              class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600"
             />
           </div>
           
@@ -166,7 +166,7 @@
             <textarea
               v-model="blockReason"
               rows="3"
-              class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600"
               placeholder="Ex: Maintenance, Utilisation personnelle..."
             ></textarea>
           </div>
@@ -307,7 +307,7 @@ const getDateClass = (day: number): string => {
   const classes: string[] = []
 
   if (isSameDay(date, today)) {
-    classes.push('ring-2 ring-blue-500')
+    classes.push('ring-2 ring-indigo-600')
   }
 
   if (isDatePast(day)) {

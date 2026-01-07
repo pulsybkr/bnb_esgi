@@ -15,6 +15,14 @@ export class LogementController {
             }
 
             const propertyData: CreatePropertyData = req.body;
+            
+            // TODO: Upload des fichiers images vers un service de stockage (S3, Cloudinary, etc.)
+            // Pour l'instant, les URLs sont temporaires
+            // const files = (req as any).uploadedFiles;
+            // if (files && files.length > 0) {
+            //     // Upload logic here
+            // }
+            
             const property = await LogementService.createProperty(authReq.user.id, propertyData);
 
             res.status(201).json({
@@ -153,6 +161,43 @@ export class LogementController {
                 success: true,
                 message: 'Photo added successfully',
                 data: { photo },
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * Upload multiple photos to a property
+     */
+    static async uploadMultiplePhotos(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { id } = req.params;
+            const files = (req as any).uploadedFiles as Express.Multer.File[];
+
+            if (!files || files.length === 0) {
+                res.status(400).json({
+                    success: false,
+                    message: 'No files uploaded',
+                });
+                return;
+            }
+
+            // Convert files to photo data
+            // TODO: Upload to cloud storage (S3, Cloudinary, etc.)
+            const photosData: AddPhotoData[] = files.map((file, index) => ({
+                url: `/uploads/${file.originalname}`, // Temporary URL
+                thumbnailUrl: `/uploads/thumb_${file.originalname}`,
+                isMain: index === 0,
+                order: index,
+            }));
+
+            const photos = await LogementService.addMultiplePhotos(id, photosData);
+
+            res.status(201).json({
+                success: true,
+                message: `${photos.length} photos uploaded successfully`,
+                data: { photos },
             });
         } catch (error) {
             next(error);

@@ -12,9 +12,6 @@
             <span>Retour</span>
           </button>
           <div class="flex items-center space-x-4">
-            <button class="p-2 text-gray-600 hover:text-gray-900">
-              <Share class="w-5 h-5" />
-            </button>
             <button 
               @click="toggleFavorite"
               class="p-2 text-gray-600 hover:text-gray-900 transition-colors"
@@ -203,7 +200,7 @@
                       :key="service.id"
                       class="flex items-start space-x-3 p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
                     >
-                      <input
+                    <input 
                         type="checkbox"
                         :value="service.id"
                         :checked="selectedServices.some(s => s.serviceId === service.id)"
@@ -356,7 +353,7 @@
   <!-- Loading ou erreur -->
   <div v-else class="min-h-screen flex items-center justify-center">
     <div class="text-center">
-      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
       <p class="text-gray-600">Chargement du logement...</p>
     </div>
   </div>
@@ -366,7 +363,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { 
-  ArrowLeft, Share, Heart, MapPin, Users, Bed, Bath, Star
+  ArrowLeft, Heart, MapPin, Users, Bed, Bath, Star
 } from 'lucide-vue-next'
 import PhotoGallery from '@/components/accommodation/PhotoGallery.vue'
 import DateRangePicker from '@/components/ui/DateRangePicker.vue'
@@ -603,7 +600,6 @@ const findAccommodation = async () => {
       accommodation.value = mapLogementToAccommodation(currentProperty.value)
       guests.value = Math.min(guests.value, accommodation.value.maxGuests)
     } else {
-      console.log('Logement non trouvé, redirection vers /')
       router.push('/')
     }
   } catch (error) {
@@ -631,6 +627,16 @@ const toggleFavorite = () => {
 // Gestion de la réservation
 const handleReservation = () => {
   if (!accommodation.value) return
+  
+  // Vérifier que l'utilisateur est connecté
+  if (!authStore.isAuthenticated || !authStore.user) {
+    alert('Vous devez être connecté pour effectuer une réservation')
+    router.push({
+      name: 'login',
+      query: { redirect: route.fullPath }
+    })
+    return
+  }
   
   // Validation des dates
   if (!selectedDates.value.start || !selectedDates.value.end) {
@@ -663,6 +669,9 @@ const handleReservation = () => {
   // Format des dates pour l'affichage
   const startDateStr = selectedDates.value.start.toLocaleDateString('fr-FR')
   const endDateStr = selectedDates.value.end.toLocaleDateString('fr-FR')
+  
+  // Informations du client
+  const clientInfo = `\n\nClient:\nNom: ${authStore.user.firstName} ${authStore.user.lastName}\nEmail: ${authStore.user.email}\nNombre de voyageurs: ${guests.value}`
   
   // Détails des services sélectionnés
   let servicesDetails = ''

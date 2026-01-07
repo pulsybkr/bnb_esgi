@@ -5,7 +5,7 @@ const routes = [
   {
     path: '/',
     name: 'home',
-    component: () => import('@/views/AccommodationListView.vue')
+    component: AccommodationListView
   },
   {
     path: '/accommodation/create',
@@ -16,12 +16,40 @@ const routes = [
   {
     path: '/accommodation/:id',
     name: 'accommodation-detail',
-    component: () => import('@/views/AccommodationDetailView.vue')
+    component: AccommodationDetailView
   },
   {
     path: '/accommodation/:id/calendar',
     name: 'accommodation-calendar',
-    component: () => import('@/views/AccommodationCalendarView.vue')
+    component: () => import('@/views/AccommodationCalendarView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/favorites',
+    name: 'favorites',
+    component: () => import('@/views/FavoritesView.vue')
+  },
+  {
+    path: '/login',
+    name: 'login',
+    component: LoginView
+  },
+  {
+    path: '/forgot-password',
+    name: 'forgot-password',
+    component: ForgotPasswordView
+  },
+  {
+    path: '/my-properties',
+    name: 'my-properties',
+    component: () => import('@/views/MyPropertiesView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/profile',
+    name: 'profile',
+    component: () => import('@/views/ProfileView.vue'),
+    meta: { requiresAuth: true }
   }
 ]
 

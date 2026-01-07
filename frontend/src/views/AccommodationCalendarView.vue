@@ -5,7 +5,7 @@
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between h-16">
           <div class="flex items-center space-x-4">
-            <router-link to="/" class="text-2xl font-bold text-gray-900">bnb</router-link>
+            <router-link to="/" class="text-2xl font-bold text-indigo-600">bnb</router-link>
             <h2 class="text-lg font-semibold text-gray-700">Calendrier de disponibilité</h2>
           </div>
           <router-link
@@ -140,6 +140,7 @@ const { currentProperty, isLoading, error: apiError, loadPropertyById } = useLog
 const accommodation = ref<Accommodation | null>(null)
 const bookings = ref<Booking[]>([])
 const blockedDates = ref<BlockedDate[]>([])
+const isLoading = ref(false)
 
 // Charger les données du logement
 onMounted(async () => {
@@ -288,7 +289,7 @@ const handleDateSelected = (date: Date) => {
   console.log('Date sélectionnée:', date)
 }
 
-const handleDateBlocked = (startDate: Date, endDate: Date, reason?: string) => {
+const handleDateBlocked = async (startDate: Date, endDate: Date, reason?: string) => {
   if (!accommodation.value) return
   
   const newBlock: BlockedDate = {
@@ -308,11 +309,14 @@ const handleDateBlocked = (startDate: Date, endDate: Date, reason?: string) => {
   alert(`Période bloquée du ${formatDate(startDate)} au ${formatDate(endDate)}`)
 }
 
-const handleDateUnblocked = (blockedDateId: string) => {
-  blockedDates.value = blockedDates.value.filter(block => block.id !== blockedDateId)
-  
-  // Dans la vraie app, faire un appel API
-  console.log('Date débloquée:', blockedDateId)
+const handleDateUnblocked = async (blockedDateId: string) => {
+  try {
+    await availabilityService.delete(blockedDateId)
+    blockedDates.value = blockedDates.value.filter(block => block.id !== blockedDateId)
+  } catch (err: any) {
+    console.error('Erreur lors du déblocage:', err)
+    alert('Erreur lors du déblocage: ' + (err.message || 'Erreur inconnue'))
+  }
 }
 
 // Utilitaires
