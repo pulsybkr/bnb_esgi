@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { useAuth } from '@/composables/useAuth'
+import { useAuthStore } from '@/stores/auth'
 import AccommodationListView from '@/views/AccommodationListView.vue'
 import AccommodationDetailView from '@/views/AccommodationDetailView.vue'
 import LoginView from '@/views/LoginView.vue'
@@ -88,26 +88,21 @@ const router = createRouter({
 
 // Navigation guard pour protéger les routes
 router.beforeEach(async (to, from, next) => {
-  const { isAuthenticated, isOwner, loadProfile } = useAuth()
+  const authStore = useAuthStore()
 
   // Si la route nécessite une authentification
   if (to.meta.requiresAuth) {
-    // Charger le profil si pas encore chargé
-    if (!isAuthenticated.value) {
-      await loadProfile()
-    }
-
     // Vérifier si l'utilisateur est authentifié
-    if (!isAuthenticated.value) {
-      // Rediriger vers la page d'accueil avec un message
-      alert('Vous devez être connecté pour accéder à cette page')
-      next({ name: 'home' })
+    if (!authStore.isAuthenticated) {
+      // Rediriger vers la page de login avec l'url de redirection en paramètre
+      console.warn('Accès refusé : Authentification requise pour', to.path)
+      next({ name: 'login', query: { redirect: to.fullPath } })
       return
     }
 
     // Si la route nécessite le rôle propriétaire
-    if (to.meta.requiresOwner && !isOwner.value) {
-      alert('Seuls les propriétaires peuvent accéder à cette page')
+    if (to.meta.requiresOwner && !authStore.isOwner) {
+      console.warn('Accès refusé : Rôle propriétaire requis pour', to.path)
       next({ name: 'home' })
       return
     }
