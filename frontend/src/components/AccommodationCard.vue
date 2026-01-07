@@ -5,20 +5,34 @@
   >
     <div class="relative">
       <img 
-        :src="accommodation.images[0]" 
+        :src="currentImageUrl" 
         :alt="accommodation.title"
         class="w-full h-64 object-cover"
         @error="handleImageError"
+        @load="handleImageLoad"
+        v-show="imageLoaded"
+        style="min-height: 256px;"
       />
-      <div class="absolute top-3 right-3">
+      <div 
+        v-show="!imageLoaded"
+        class="w-full h-64 bg-gray-200 flex items-center justify-center absolute inset-0"
+      >
+        <div class="text-center">
+          <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-400 mx-auto mb-2"></div>
+          <p class="text-xs text-gray-500">Chargement...</p>
+        </div>
+      </div>
+      <div class="absolute top-3 right-3 z-10">
         <button 
-          @click.stop="toggleFavorite"
+          @click.prevent.stop="toggleFavorite"
+          @mousedown.prevent.stop
           class="p-2 bg-white rounded-full shadow-md hover:bg-gray-50 transition-colors"
           :class="{ 'bg-red-50': isFavorite }"
+          type="button"
         >
           <Heart 
-            class="w-5 h-5 transition-colors" 
-            :class="isFavorite ? 'text-red-600 fill-current' : 'text-gray-600'"
+            class="w-5 h-5 transition-colors pointer-events-none" 
+            :class="isFavorite ? 'text-red-600 fill-red-600' : 'text-gray-600'"
           />
         </button>
       </div>
@@ -84,7 +98,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { Heart, Star, Users, Bed, Bath } from 'lucide-vue-next'
 import type { Accommodation } from '@/types/accommodation'
 import { useFavorites } from '@/composables/useFavorites'
@@ -96,6 +110,42 @@ const props = defineProps<{
 const { toggleFavorite: toggleFavoriteAction, isFavorite: isFavoriteFn } = useFavorites()
 
 const isFavorite = computed(() => isFavoriteFn(props.accommodation.id))
+const imageLoaded = ref(false)
+const imageError = ref(false)
+const currentImageUrl = ref<string>('')
+
+// Construire l'URL de l'image correctement une seule fois
+const buildImageUrl = (url: string): string => {
+  if (!url) {
+    return 'https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=800&q=80'
+  }
+  
+  // Si l'URL commence déjà par http, la retourner telle quelle
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return url
+  }
+  
+  // Si c'est un chemin relatif, construire l'URL complète
+  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3333'
+  return url.startsWith('/') ? `${apiBaseUrl}${url}` : `${apiBaseUrl}/${url}`
+}
+
+let errorHandled = false
+
+// Initialiser l'URL de l'image
+const initializeImage = () => {
+  errorHandled = false // Réinitialiser le flag d'erreur
+  if (props.accommodation.images && props.accommodation.images.length > 0) {
+    currentImageUrl.value = buildImageUrl(props.accommodation.images[0])
+  } else {
+    currentImageUrl.value = 'https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=800&q=80'
+  }
+  imageLoaded.value = false
+  imageError.value = false
+}
+
+// Initialiser au montage
+initializeImage()
 
 const toggleFavorite = (event: Event) => {
   event.preventDefault()
@@ -104,7 +154,34 @@ const toggleFavorite = (event: Event) => {
 }
 
 const handleImageError = (event: Event) => {
+  // Ne traiter l'erreur qu'une seule fois
+  if (errorHandled || imageError.value) {
+    imageLoaded.value = true // Forcer l'affichage pour éviter le clignotement
+    return
+  }
+  
+  errorHandled = true
+  imageError.value = true
   const img = event.target as HTMLImageElement
-  img.src = 'https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=800&q=80'
+  
+  console.warn('Erreur de chargement d\'image:', img.src)
+  
+  // Utiliser une image de fallback seulement si ce n'est pas déjà l'image de fallback
+  if (!img.src.includes('unsplash.com') && !img.src.includes('placeholder')) {
+    currentImageUrl.value = 'https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=800&q=80'
+    // Ne pas réinitialiser imageLoaded, utiliser directement le fallback
+  }
+  // Toujours marquer comme chargé pour arrêter le clignotement
+  imageLoaded.value = true
 }
+
+const handleImageLoad = () => {
+  imageLoaded.value = true
+  imageError.value = false
+}
+
+// Watcher pour réinitialiser quand l'accommodation change (uniquement si vraiment nécessaire)
+watch(() => props.accommodation.id, () => {
+  initializeImage()
+})
 </script>

@@ -15,7 +15,7 @@
             type="checkbox" 
             :value="type.value"
             v-model="filters.propertyType"
-            class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            class="rounded border-gray-300 bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent focus:ring-indigo-500"
           />
           <span class="ml-2 text-sm text-gray-700">{{ type.label }}</span>
         </label>
@@ -93,7 +93,7 @@
             type="checkbox" 
             :value="amenity"
             v-model="filters.amenities"
-            class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            class="rounded border-gray-300 bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent focus:ring-indigo-500"
           />
           <span class="ml-2 text-sm text-gray-700">{{ amenity }}</span>
         </label>
@@ -113,7 +113,7 @@
             type="checkbox" 
             :value="tag.id"
             v-model="filters.tags"
-            class="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            class="rounded border-gray-300 bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent focus:ring-indigo-500"
           />
           <span class="ml-2 text-sm text-gray-700">{{ tag.label }}</span>
         </label>
@@ -158,7 +158,7 @@
         <button
           @click="useMyLocation"
           :disabled="isGettingLocation"
-          class="w-full px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+          class="w-full px-3 py-2 text-sm font-medium bg-gradient-to-br from-blue-50 to-indigo-50 rounded-md hover:from-blue-100 hover:to-indigo-100 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
         >
           <MapPin class="w-4 h-4" />
           <span>{{ isGettingLocation ? 'Recherche...' : 'Utiliser ma position' }}</span>
@@ -185,7 +185,7 @@
       </button>
       <button 
         @click="applyFilters"
-        class="flex-1 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+        class="flex-1 px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-indigo-600 rounded-md hover:from-blue-700 hover:to-indigo-700"
       >
         Appliquer
       </button>

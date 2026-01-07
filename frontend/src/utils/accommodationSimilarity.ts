@@ -128,7 +128,7 @@ export function findPopularAccommodations(
       location,
       radiusKm
     )
-    filtered = withDistance.map(item => item.accommodation)
+    filtered = withDistance.map(({ distance, ...acc }) => acc as Accommodation)
   }
 
   // Calculer un score de popularité basé sur:

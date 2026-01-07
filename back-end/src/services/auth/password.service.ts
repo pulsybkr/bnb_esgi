@@ -42,32 +42,6 @@ export class PasswordService {
       errors.push(`Password must be no more than ${authConfig.password.maxLength} characters long`);
     }
 
-    // Check for at least one lowercase letter
-    if (!/[a-z]/.test(password)) {
-      errors.push('Password must contain at least one lowercase letter');
-    }
-
-    // Check for at least one uppercase letter
-    if (!/[A-Z]/.test(password)) {
-      errors.push('Password must contain at least one uppercase letter');
-    }
-
-    // Check for at least one digit
-    if (!/\d/.test(password)) {
-      errors.push('Password must contain at least one digit');
-    }
-
-    // Check for at least one special character
-    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
-      errors.push('Password must contain at least one special character');
-    }
-
-    // Check for common weak passwords (basic check)
-    const commonPasswords = ['password', '123456', 'qwerty', 'abc123', 'password123'];
-    if (commonPasswords.includes(password.toLowerCase())) {
-      errors.push('Password is too common, please choose a stronger password');
-    }
-
     return {
       isValid: errors.length === 0,
       errors,

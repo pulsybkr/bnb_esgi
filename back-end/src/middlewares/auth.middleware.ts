@@ -135,16 +135,19 @@ export const checkNotAlreadyAuthenticated = async (
         // Try to verify the token
         JWTService.verifyAccessToken(token);
 
-        // If token is valid, user is already authenticated
-        res.status(400).json({
-          success: false,
-          message: 'User is already authenticated. Please logout first.',
-          type: 'already_authenticated',
-        });
-        return;
+        // If token is valid AND not expired, user is already authenticated
+        // However, we'll allow re-login to replace the existing session
+        // This is useful if the user wants to switch accounts or refresh their session
+        // Just log a warning but allow the login to proceed
+        console.log('Token valide trouvé lors d\'une tentative de connexion, mais reconnexion autorisée');
+        // Clear the existing token cookies to allow new login
+        res.clearCookie('accessToken');
+        res.clearCookie('refreshToken');
       } catch (error) {
-        // Token is invalid/expired, continue to login
+        // Token is invalid/expired, clear it and continue to login
         // This is expected behavior - invalid tokens should allow login
+        res.clearCookie('accessToken');
+        res.clearCookie('refreshToken');
       }
     }
 
