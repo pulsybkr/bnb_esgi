@@ -1,0 +1,72 @@
+services:
+  postgres:
+    image: postgres:15
+    container_name: bnb_postgres_prod
+    environment:
+      POSTGRES_DB: ${DB_DATABASE:-bnb}
+      POSTGRES_USER: ${DB_USER:-bnb_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data_prod:/var/lib/postgresql/data
+    networks:
+      - bnb_network_prod
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-bnb_user} -d ${DB_DATABASE:-bnb}"]
+      timeout: 20s
+      retries: 10
+    restart: unless-stopped
+
+  backend:
+    build: 
+      context: ./back-end
+      dockerfile: Dockerfile.prod
+    container_name: bnb_backend_prod
+    ports:
+      - "3333:3333"
+    environment:
+      NODE_ENV: production
+      APP_KEY: ${APP_KEY}
+      PORT: 3333
+      HOST: 0.0.0.0
+      DB_CONNECTION: pg
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: ${DB_USER:-bnb_user}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_DATABASE: ${DB_DATABASE:-bnb}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      CORS_ORIGIN: ${CORS_ORIGIN:-https://yourdomain.com}
+      LOG_LEVEL: info
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - bnb_network_prod
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+    container_name: bnb_frontend_prod
+    ports:
+      - "80:80"
+    environment:
+      VITE_API_URL: ${VITE_API_URL:-https://api.yourdomain.com}
+      VITE_APP_NAME: bnb
+      VITE_APP_VERSION: 1.0.0
+    depends_on:
+      - backend
+    networks:
+      - bnb_network_prod
+    restart: unless-stopped
+
+volumes:
+  postgres_data_prod:
+
+networks:
+  bnb_network_prod:
+    driver: bridge

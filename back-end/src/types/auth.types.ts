@@ -7,6 +7,7 @@ export interface UserPayload {
   lastName: string;
   userType: 'locataire' | 'proprietaire' | 'admin';
   emailVerified: boolean;
+  tokenVersion?: number;
 }
 
 export interface JWTPayload extends UserPayload {

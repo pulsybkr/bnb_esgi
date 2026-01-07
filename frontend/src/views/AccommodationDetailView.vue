@@ -1,31 +1,6 @@
 <template>
   <div v-if="accommodation" class="min-h-screen bg-white">
-    <!-- Header -->
-    <header class="bg-white shadow-sm border-b sticky top-0 z-40">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between items-center h-16">
-          <button 
-            @click="$router.push('/')"
-            class="flex items-center space-x-2 text-gray-600 hover:text-gray-900"
-          >
-            <ArrowLeft class="w-5 h-5" />
-            <span>Retour</span>
-          </button>
-          <div class="flex items-center space-x-4">
-            <button 
-              @click="toggleFavorite"
-              class="p-2 text-gray-600 hover:text-gray-900 transition-colors"
-              :class="{ 'text-red-600': isFavorite }"
-            >
-              <Heart 
-                class="w-5 h-5 transition-colors" 
-                :class="{ 'fill-current': isFavorite }"
-              />
-            </button>
-          </div>
-        </div>
-      </div>
-    </header>
+    <SimpleHeader />
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -402,6 +377,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import SimpleHeader from '@/components/layout/SimpleHeader.vue'
 import { 
   ArrowLeft, Heart, MapPin, Users, Bed, Bath, Star
 } from 'lucide-vue-next'
@@ -676,7 +652,6 @@ const handleReservation = () => {
   
   // Vérifier que l'utilisateur est connecté
   if (!authStore.isAuthenticated || !authStore.user) {
-    alert('Vous devez être connecté pour effectuer une réservation')
     router.push({
       name: 'login',
       query: { redirect: route.fullPath }

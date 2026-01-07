@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { JWTService } from '../services/auth';
 import { AuthenticatedRequest, PermissionLevel, RoutePermission, AuthenticationError, AuthorizationError } from '../types';
+import prisma from '../prisma/client';
 
 export const authenticateToken = async (
   req: Request,
@@ -22,6 +23,16 @@ export const authenticateToken = async (
     }
 
     const userPayload = JWTService.verifyAccessToken(token);
+
+    // Verify token version against database to allow global logout
+    const user = await prisma.user.findUnique({
+      where: { id: userPayload.id },
+      select: { tokenVersion: true }
+    });
+
+    if (!user || user.tokenVersion !== userPayload.tokenVersion) {
+      throw new AuthenticationError('Token has been invalidated. Please login again.');
+    }
 
     (req as AuthenticatedRequest).user = userPayload;
 
@@ -81,7 +92,16 @@ export const optionalAuth = async (
 
     if (token) {
       const userPayload = JWTService.verifyAccessToken(token);
-      (req as AuthenticatedRequest).user = userPayload;
+
+      // Verify token version for optional auth too
+      const user = await prisma.user.findUnique({
+        where: { id: userPayload.id },
+        select: { tokenVersion: true }
+      });
+
+      if (user && user.tokenVersion === userPayload.tokenVersion) {
+        (req as AuthenticatedRequest).user = userPayload;
+      }
     }
 
     next();

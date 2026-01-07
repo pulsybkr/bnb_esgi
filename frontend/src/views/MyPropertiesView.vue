@@ -16,7 +16,7 @@
               <p class="text-sm text-gray-600">Total</p>
               <p class="text-2xl font-bold text-gray-900">{{ properties.length }}</p>
             </div>
-            <Home class="w-8 h-8 text-indigo-600" />
+            <Home class="w-8 h-8 text-african-green" />
           </div>
         </div>
         <div class="bg-white rounded-lg shadow-sm p-4">
@@ -50,7 +50,7 @@
 
       <!-- Liste des logements -->
       <div v-if="isLoading" class="text-center py-12">
-        <Loader2 class="w-8 h-8 animate-spin mx-auto text-indigo-600" />
+        <Loader2 class="w-8 h-8 animate-spin mx-auto text-african-green" />
         <p class="mt-4 text-gray-600">Chargement de vos logements...</p>
       </div>
 
@@ -60,7 +60,7 @@
         <p class="text-gray-600 mb-4">Commencez par créer votre premier logement</p>
         <router-link
           to="/accommodation/create"
-          class="inline-flex items-center space-x-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
+          class="inline-flex items-center space-x-2 px-6 py-3 bg-african-green text-white rounded-lg hover:bg-african-green-dark transition-colors font-medium shadow-sm"
         >
           <Plus class="w-5 h-5" />
           <span>Créer un logement</span>
@@ -113,7 +113,7 @@
                     <span>{{ property.bedrooms }} chambre{{ property.bedrooms > 1 ? 's' : '' }}</span>
                     <span>{{ property.bathrooms }} salle{{ property.bathrooms > 1 ? 's' : '' }} de bain</span>
                     <span>{{ property.maxGuests }} voyageur{{ property.maxGuests > 1 ? 's' : '' }}</span>
-                    <span class="font-semibold text-indigo-600">{{ property.price }} XOF / nuit</span>
+                    <span class="font-semibold text-african-green">{{ property.price }} XOF / nuit</span>
                   </div>
                 </div>
               </div>
@@ -128,14 +128,14 @@
                 </router-link>
                 <router-link
                   :to="`/accommodation/${property.id}/calendar`"
-                  class="px-3 py-1.5 text-sm text-indigo-700 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition-colors flex items-center space-x-1"
+                  class="px-3 py-1.5 text-sm text-african-green bg-green-50 rounded-lg hover:bg-green-100 transition-colors flex items-center space-x-1 border border-green-100"
                 >
                   <Calendar class="w-4 h-4" />
                   <span>Calendrier</span>
                 </router-link>
                 <router-link
                   :to="`/accommodation/${property.id}/edit`"
-                  class="px-3 py-1.5 text-sm bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg hover:from-blue-100 hover:to-indigo-100 transition-colors inline-block"
+                  class="px-3 py-1.5 text-sm bg-african-cream text-african-green-dark border border-african-green/20 rounded-lg hover:bg-green-100 transition-colors inline-block"
                 >
                   Modifier
                 </router-link>
