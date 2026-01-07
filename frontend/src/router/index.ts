@@ -1,5 +1,9 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
+import AccommodationListView from '@/views/AccommodationListView.vue'
+import AccommodationDetailView from '@/views/AccommodationDetailView.vue'
+import LoginView from '@/views/LoginView.vue'
+import ForgotPasswordView from '@/views/ForgotPasswordView.vue'
 
 const routes = [
   {

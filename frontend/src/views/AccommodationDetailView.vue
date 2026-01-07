@@ -381,11 +381,13 @@ import { getPricingConfig } from '@/data/pricingFixtures'
 import type { PricingConfiguration, PriceCalculationResult } from '@/types/pricing'
 import { useFavorites } from '@/composables/useFavorites'
 import { useLogements } from '@/composables/useLogements'
+import { useAuthStore } from '@/stores/auth'
 import { mapLogementToAccommodation } from '@/utils/mappers/logementMapper'
 import { formatCFA } from '@/utils/currency'
 
 const route = useRoute()
 const router = useRouter()
+const authStore = useAuthStore()
 const { toggleFavorite: toggleFavoriteAction, isFavorite: isFavoriteFn } = useFavorites()
 const { currentProperty, isLoading: isLoadingProperty, error: apiError, loadPropertyById } = useLogements()
 
@@ -671,7 +673,7 @@ const handleReservation = () => {
   const endDateStr = selectedDates.value.end.toLocaleDateString('fr-FR')
   
   // Informations du client
-  const clientInfo = `\n\nClient:\nNom: ${authStore.user.firstName} ${authStore.user.lastName}\nEmail: ${authStore.user.email}\nNombre de voyageurs: ${guests.value}`
+  const clientInfo = `\n\nClient:\nNom: ${authStore.user?.firstName || ''} ${authStore.user?.lastName || ''}\nEmail: ${authStore.user?.email || ''}\nNombre de voyageurs: ${guests.value}`
   
   // Détails des services sélectionnés
   let servicesDetails = ''

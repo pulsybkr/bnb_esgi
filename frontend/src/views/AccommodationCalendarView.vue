@@ -132,6 +132,7 @@ import { normalizeDate } from '@/utils/dateUtils'
 import { useLogements } from '@/composables/useLogements'
 import { mapLogementToAccommodation } from '@/utils/mappers/logementMapper'
 import { formatCFA } from '@/utils/currency'
+import { availabilityService } from '@/services/availability.service'
 
 const route = useRoute()
 const router = useRouter()
@@ -140,7 +141,6 @@ const { currentProperty, isLoading, error: apiError, loadPropertyById } = useLog
 const accommodation = ref<Accommodation | null>(null)
 const bookings = ref<Booking[]>([])
 const blockedDates = ref<BlockedDate[]>([])
-const isLoading = ref(false)
 
 // Charger les données du logement
 onMounted(async () => {
