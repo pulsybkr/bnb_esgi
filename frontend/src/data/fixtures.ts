@@ -10,11 +10,11 @@ export const accommodations: Accommodation[] = [
     location: {
       city: 'Paris',
       country: 'France',
-            address: '15 Quai de la Tournelle, 75005 Paris',
-            coordinates: {
-              latitude: 48.8506,
-              longitude: 2.3548
-            }
+      address: '15 Quai de la Tournelle, 75005 Paris',
+      coordinates: {
+        latitude: 48.8506,
+        longitude: 2.3548
+      }
     },
     images: [
       'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800',
@@ -36,7 +36,14 @@ export const accommodations: Accommodation[] = [
     propertyType: PropertyType.APARTMENT,
     availability: {
       checkIn: '15:00',
-      checkOut: '11:00'
+      checkOut: '11:00',
+      minNights: 1,
+      maxNights: 30
+    },
+    pricing: {
+      basePrice: 120,
+      cleaningFee: 30,
+      serviceFee: 15
     }
   },
   {
@@ -47,11 +54,11 @@ export const accommodations: Accommodation[] = [
     location: {
       city: 'Nice',
       country: 'France',
-            address: '45 Promenade des Anglais, 06000 Nice',
-            coordinates: {
-              latitude: 43.6956,
-              longitude: 7.2556
-            }
+      address: '45 Promenade des Anglais, 06000 Nice',
+      coordinates: {
+        latitude: 43.6956,
+        longitude: 7.2556
+      }
     },
     images: [
       'https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=800',
@@ -73,7 +80,14 @@ export const accommodations: Accommodation[] = [
     propertyType: PropertyType.VILLA,
     availability: {
       checkIn: '16:00',
-      checkOut: '10:00'
+      checkOut: '10:00',
+      minNights: 1,
+      maxNights: 30
+    },
+    pricing: {
+      basePrice: 350,
+      cleaningFee: 80,
+      serviceFee: 40
     }
   },
   {
@@ -109,7 +123,14 @@ export const accommodations: Accommodation[] = [
     propertyType: PropertyType.STUDIO,
     availability: {
       checkIn: '14:00',
-      checkOut: '12:00'
+      checkOut: '12:00',
+      minNights: 1,
+      maxNights: 30
+    },
+    pricing: {
+      basePrice: 85,
+      cleaningFee: 20,
+      serviceFee: 10
     }
   },
   {
@@ -146,7 +167,14 @@ export const accommodations: Accommodation[] = [
     propertyType: PropertyType.HOUSE,
     availability: {
       checkIn: '15:00',
-      checkOut: '11:00'
+      checkOut: '11:00',
+      minNights: 1,
+      maxNights: 30
+    },
+    pricing: {
+      basePrice: 120,
+      cleaningFee: 30,
+      serviceFee: 15
     }
   },
   {
@@ -183,7 +211,14 @@ export const accommodations: Accommodation[] = [
     propertyType: PropertyType.LOFT,
     availability: {
       checkIn: '16:00',
-      checkOut: '10:00'
+      checkOut: '10:00',
+      minNights: 1,
+      maxNights: 30
+    },
+    pricing: {
+      basePrice: 350,
+      cleaningFee: 80,
+      serviceFee: 40
     }
   },
   {
@@ -220,7 +255,14 @@ export const accommodations: Accommodation[] = [
     propertyType: PropertyType.APARTMENT,
     availability: {
       checkIn: '15:00',
-      checkOut: '11:00'
+      checkOut: '11:00',
+      minNights: 1,
+      maxNights: 30
+    },
+    pricing: {
+      basePrice: 120,
+      cleaningFee: 30,
+      serviceFee: 15
     }
   },
   {
@@ -257,7 +299,14 @@ export const accommodations: Accommodation[] = [
     propertyType: PropertyType.VILLA,
     availability: {
       checkIn: '16:00',
-      checkOut: '11:00'
+      checkOut: '11:00',
+      minNights: 1,
+      maxNights: 30
+    },
+    pricing: {
+      basePrice: 450,
+      cleaningFee: 100,
+      serviceFee: 50
     }
   },
   {
@@ -294,7 +343,14 @@ export const accommodations: Accommodation[] = [
     propertyType: PropertyType.HOUSE,
     availability: {
       checkIn: '15:00',
-      checkOut: '10:00'
+      checkOut: '10:00',
+      minNights: 1,
+      maxNights: 30
+    },
+    pricing: {
+      basePrice: 220,
+      cleaningFee: 50,
+      serviceFee: 25
     }
   },
   {
@@ -330,7 +386,14 @@ export const accommodations: Accommodation[] = [
     propertyType: PropertyType.STUDIO,
     availability: {
       checkIn: '14:00',
-      checkOut: '12:00'
+      checkOut: '12:00',
+      minNights: 1,
+      maxNights: 30
+    },
+    pricing: {
+      basePrice: 70,
+      cleaningFee: 15,
+      serviceFee: 8
     }
   },
   {
@@ -367,7 +430,14 @@ export const accommodations: Accommodation[] = [
     propertyType: PropertyType.APARTMENT,
     availability: {
       checkIn: '15:00',
-      checkOut: '11:00'
+      checkOut: '11:00',
+      minNights: 1,
+      maxNights: 30
+    },
+    pricing: {
+      basePrice: 120,
+      cleaningFee: 30,
+      serviceFee: 15
     }
   },
   {
@@ -404,7 +474,14 @@ export const accommodations: Accommodation[] = [
     propertyType: PropertyType.HOUSE,
     availability: {
       checkIn: '16:00',
-      checkOut: '10:00'
+      checkOut: '10:00',
+      minNights: 1,
+      maxNights: 30
+    },
+    pricing: {
+      basePrice: 280,
+      cleaningFee: 60,
+      serviceFee: 30
     }
   },
   {
@@ -441,7 +518,14 @@ export const accommodations: Accommodation[] = [
     propertyType: PropertyType.LOFT,
     availability: {
       checkIn: '15:00',
-      checkOut: '11:00'
+      checkOut: '11:00',
+      minNights: 1,
+      maxNights: 30
+    },
+    pricing: {
+      basePrice: 190,
+      cleaningFee: 45,
+      serviceFee: 22
     }
   }
 ]

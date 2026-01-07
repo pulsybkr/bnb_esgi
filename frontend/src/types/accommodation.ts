@@ -46,9 +46,17 @@ export interface Accommodation {
     isSuperhost: boolean
   }
   propertyType: PropertyType
+  bookingMode?: 'instant' | 'request'
   availability: {
     checkIn: string
     checkOut: string
+    minNights: number
+    maxNights: number
+  }
+  pricing: {
+    basePrice: number
+    cleaningFee: number
+    serviceFee?: number // (optionnel)
   }
   services?: Service[]
   tags?: string[]

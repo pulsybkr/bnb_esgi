@@ -8,12 +8,12 @@ import { CreatePropertyData } from '../services/logement/logement.service';
 // Configuration du dossier d'upload pour les logements
 function ensureUploadsDir(): string {
     const uploadsDir = path.join(__dirname, '../../uploads/logements');
-    
+
     // Créer le dossier s'il n'existe pas
     if (!fs.existsSync(uploadsDir)) {
         fs.mkdirSync(uploadsDir, { recursive: true });
     }
-    
+
     return uploadsDir;
 }
 
@@ -51,7 +51,14 @@ const upload = multer({
  * Middleware pour parser FormData et convertir en format attendu par le service
  */
 export const parseAccommodationFormData = [
-    upload.array('images'),
+    (req: Request, res: Response, next: NextFunction) => {
+        // Si c'est du JSON, on laisse multer tranquille
+        if (req.is('json')) {
+            return next();
+        }
+        // Sinon on utilise multer
+        upload.array('images')(req, res, next);
+    },
     // Middleware de gestion d'erreur pour multer
     (err: any, req: Request, res: Response, next: NextFunction) => {
         if (err) {
@@ -79,80 +86,82 @@ export const parseAccommodationFormData = [
     },
     (req: Request, res: Response, next: NextFunction): void => {
         try {
+            const isJson = req.is('json');
             const files = req.files as Express.Multer.File[] || [];
             const body = req.body;
 
-            // Parser les JSON stringifiés
-            let amenities: any = null;
-            let tags: string[] = [];
-            let services: string[] = [];
+            // Si c'est du JSON, on a déjà les données dans le format presque final
+            // On fait juste quelques mappings de sécurité si nécessaire
 
-            if (body.amenities) {
-                try {
-                    amenities = JSON.parse(body.amenities);
-                } catch (e) {
-                    amenities = body.amenities;
+            // Parser les JSON stringifiés (seulement si c'est du FormData, car en JSON ils sont déjà des objets)
+            let amenities = body.amenities;
+            let tags = body.tags || [];
+            let services = body.services || [];
+
+            if (!isJson) {
+                if (typeof body.amenities === 'string') {
+                    try { amenities = JSON.parse(body.amenities); } catch (e) { }
+                }
+                if (typeof body.tags === 'string') {
+                    try { tags = JSON.parse(body.tags); } catch (e) { tags = []; }
+                }
+                if (typeof body.services === 'string') {
+                    try { services = JSON.parse(body.services); } catch (e) { services = []; }
                 }
             }
 
-            if (body.tags) {
-                try {
-                    tags = JSON.parse(body.tags);
-                } catch (e) {
-                    tags = Array.isArray(body.tags) ? body.tags : [];
+            // Parser les informations sur les images (ordre et isMain) pour FormData
+            let photos = [];
+
+            if (isJson && body.photos) {
+                // Si JSON, on utilise les photos envoyées (ex: Cloudinary)
+                photos = body.photos;
+            } else if (files.length > 0) {
+                // Si FormData, on utilise les fichiers uploadés
+                let imagesInfo: Array<{ index: number; isMain: boolean }> = [];
+                if (body.imagesInfo) {
+                    try {
+                        imagesInfo = typeof body.imagesInfo === 'string' ? JSON.parse(body.imagesInfo) : body.imagesInfo;
+                    } catch (e) {
+                        imagesInfo = [];
+                    }
                 }
-            }
 
-            if (body.services) {
-                try {
-                    services = JSON.parse(body.services);
-                } catch (e) {
-                    services = Array.isArray(body.services) ? body.services : [];
-                }
-            }
+                photos = files.map((file, index) => {
+                    const imageInfo = imagesInfo.find(info => info.index === index);
+                    const isMain = imageInfo?.isMain || (imagesInfo.length === 0 && index === 0);
 
-            // Parser les informations sur les images (ordre et isMain)
-            let imagesInfo: Array<{ index: number; isMain: boolean }> = [];
-            if (body.imagesInfo) {
-                try {
-                    imagesInfo = JSON.parse(body.imagesInfo);
-                } catch (e) {
-                    // Si le parsing échoue, utiliser l'ordre par défaut
-                    imagesInfo = [];
-                }
-            }
-
-            // Les fichiers sont maintenant sauvegardés sur le disque par multer.diskStorage
-            // file.filename contient le nom unique généré par multer
-            const photos = files.map((file, index) => {
-                // Chercher l'information pour cette image
-                const imageInfo = imagesInfo.find(info => info.index === index);
-                const isMain = imageInfo?.isMain || (imagesInfo.length === 0 && index === 0);
-                
-                return {
-                    url: `/uploads/logements/${file.filename}`,
-                    thumbnailUrl: `/uploads/logements/${file.filename}`, // Pour l'instant, même image (pas de génération de thumbnail)
-                    isMain,
-                    order: index,
-                };
-            });
-
-            // Mapper les services du frontend vers les services à créer
-            const servicesToCreate = services
-                .filter((serviceId: string) => SERVICE_MAP[serviceId])
-                .map((serviceId: string) => {
-                    const service = SERVICE_MAP[serviceId];
                     return {
-                        serviceId,
-                        name: service.name,
-                        description: service.description,
-                        price: service.price,
-                        priceType: service.priceType,
+                        url: `/uploads/logements/${file.filename}`,
+                        thumbnailUrl: `/uploads/logements/${file.filename}`,
+                        isMain,
+                        order: index,
                     };
                 });
+            }
 
-            // Mapping des types depuis le format frontend (anglais) vers le format backend (français)
-            const propertyTypeMapping: Record<string, 'maison' | 'appartement' | 'chambre' | 'hotel' | 'villa' | 'studio' | 'loft'> = {
+            // Mapper les services
+            let servicesToCreate: CreatePropertyData['services'] = [];
+            if (Array.isArray(services)) {
+                servicesToCreate = services
+                    .map((s: any) => {
+                        const serviceId = typeof s === 'string' ? s : (s.id || s.serviceId);
+                        if (!serviceId || !SERVICE_MAP[serviceId]) return null;
+
+                        const service = SERVICE_MAP[serviceId];
+                        return {
+                            serviceId,
+                            name: service.name,
+                            description: service.description,
+                            price: service.price,
+                            priceType: service.priceType as any,
+                        };
+                    })
+                    .filter((s): s is NonNullable<typeof s> => s !== null);
+            }
+
+            // Mapping des types
+            const propertyTypeMapping: Record<string, string> = {
                 'house': 'maison',
                 'apartment': 'appartement',
                 'room': 'chambre',
@@ -160,7 +169,6 @@ export const parseAccommodationFormData = [
                 'villa': 'villa',
                 'studio': 'studio',
                 'loft': 'loft',
-                // Support des valeurs françaises aussi (au cas où)
                 'maison': 'maison',
                 'appartement': 'appartement',
                 'chambre': 'chambre',
@@ -169,35 +177,29 @@ export const parseAccommodationFormData = [
             const rawType = body.propertyType || body.type;
             const mappedType = propertyTypeMapping[rawType?.toLowerCase()] || rawType;
 
-            // Construire l'objet CreatePropertyData
-            const propertyData: CreatePropertyData = {
-                title: body.title,
-                description: body.description || undefined,
-                address: body.address,
-                city: body.city,
-                country: body.country,
-                latitude: body.latitude ? parseFloat(body.latitude) : undefined,
-                longitude: body.longitude ? parseFloat(body.longitude) : undefined,
-                type: mappedType as 'maison' | 'appartement' | 'chambre' | 'hotel' | 'villa' | 'studio' | 'loft',
-                roomCount: parseInt(body.roomCount || body.maxGuests) || 1,
-                capacity: parseInt(body.maxGuests || body.capacity) || 1,
+            // Construire l'objet final sans écraser les données si elles sont déjà au bon format
+            const propertyData: Partial<CreatePropertyData> & Record<string, any> = {
+                ...body, // On garde tout le reste (description, etc.)
+                type: mappedType as any,
+                roomCount: parseInt(body.roomCount) || parseInt(body.maxGuests) || 1,
+                capacity: parseInt(body.capacity) || parseInt(body.maxGuests) || 1,
                 bedrooms: parseInt(body.bedrooms) || 0,
                 bathrooms: parseFloat(body.bathrooms) || 0,
-                pricePerNight: parseFloat(body.price) || parseFloat(body.pricePerNight) || 0,
-                currency: body.currency || 'EUR',
+                pricePerNight: parseFloat(body.pricePerNight) || parseFloat(body.price) || 0,
                 amenities: amenities,
-                tags: tags.length > 0 ? tags : undefined,
-                checkIn: body.checkIn || '15:00',
-                checkOut: body.checkOut || '11:00',
+                tags: Array.isArray(tags) && tags.length > 0 ? tags : undefined,
                 services: servicesToCreate.length > 0 ? servicesToCreate : undefined,
-                photos: photos.length > 0 ? photos : undefined,
+                photos: photos.length > 0 ? photos : body.photos,
             };
 
-            // Ajouter les fichiers à req pour traitement ultérieur
+            // Nettoyage des champs alias pour éviter les doublons ou conflits Prisma
+            delete propertyData.propertyType;
+            delete propertyData.maxGuests;
+            delete propertyData.price;
+            delete propertyData.imagesInfo;
+
+            req.body = propertyData;
             (req as any).uploadedFiles = files;
-            
-            // Remplacer req.body par les données parsées
-            req.body = propertyData as any;
 
             next();
         } catch (error) {

@@ -40,6 +40,11 @@ enum StatutLogement {
   archive
 }
 
+enum BookingMode {
+  instant
+  request
+}
+
 enum StatutDisponibilite {
   disponible
   reserve
@@ -48,10 +53,11 @@ enum StatutDisponibilite {
 
 enum StatutReservation {
   en_attente
+  acceptee
   confirmee
-  annulee
-  terminee
   en_cours
+  terminee
+  annulee
 }
 
 enum StatutPaiement {
@@ -174,6 +180,7 @@ model Logement {
   checkIn         String?           @default("15:00") @map("heure_arrivee")
   checkOut        String?           @default("11:00") @map("heure_depart")
   status          StatutLogement    @default(actif)
+  bookingMode     BookingMode       @default(instant) @map("mode_reservation")
   averageRating   Float?            @map("note_moyenne") @default(0)
   reviewCount     Int               @map("nombre_avis") @default(0)
   createdAt       DateTime          @default(now()) @map("created_at")
@@ -234,6 +241,8 @@ model Reservation {
   totalAmount        Decimal           @map("montant_total") @db.Decimal(10, 2)
   currency           String            @default("XOF") @map("devise")
   status             StatutReservation @default(en_attente)
+  negotiatedPrice    Decimal?          @map("prix_negocie") @db.Decimal(10, 2)
+  pricePerNight      Decimal?          @map("prix_par_nuit") @db.Decimal(10, 2)
   tenantMessage      String?           @map("message_locataire") @db.Text
   cancellationReason String?           @map("motif_annulation") @db.Text
   cancellationDate   DateTime?         @map("date_annulation")
@@ -410,19 +419,6 @@ model Service {
   accommodation Logement @relation(fields: [accommodationId], references: [id], onDelete: Cascade)
 
   @@map("services")
-}
-
-
-enum TypeRegleTarification {
-  season
-  weekend
-  long_stay
-  custom
-}
-
-enum TypeSaison {
-  high
-  low
 }
 
 model PricingConfiguration {

@@ -5,7 +5,7 @@
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center h-16">
           <button 
-            @click="$router.back()"
+            @click="$router.push('/')"
             class="flex items-center space-x-2 text-gray-600 hover:text-gray-900"
           >
             <ArrowLeft class="w-5 h-5" />
@@ -74,9 +74,17 @@
             <!-- Description -->
             <div class="mb-8">
               <h2 class="text-xl font-semibold mb-4">À propos de ce logement</h2>
-              <p class="text-gray-700 leading-relaxed">{{ accommodation.description }}</p>
+              <MarkdownContent :content="accommodation.description" class="text-gray-700" />
             </div>
 
+            <!-- Visualisation des disponibilités -->
+            <div class="mb-8 hidden">
+              <h2 class="text-xl font-semibold mb-4">Calendrier des disponibilités</h2>
+              <AvailabilityCalendar
+                :booked-ranges="bookedRanges"
+                :blocked-ranges="blockedRanges"
+              />
+            </div>
 
             <!-- Tags -->
             <div v-if="accommodation.tags && accommodation.tags.length > 0" class="mb-8">
@@ -94,26 +102,32 @@
 
             <!-- Équipements -->
             <div class="mb-8">
-              <h2 class="text-xl font-semibold mb-4">Équipements</h2>
-              <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <h2 class="text-xl font-semibold mb-6">Équipements</h2>
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-6 gap-x-4">
                 <div 
-                  v-for="amenity in accommodation.amenities" 
-                  :key="amenity"
-                  class="flex items-center space-x-2"
+                  v-for="amenityKey in accommodation.amenities" 
+                  :key="amenityKey"
+                  class="flex items-center group"
                 >
-                  <Check class="w-4 h-4 text-green-600" />
-                  <span class="text-gray-700">{{ amenity }}</span>
+                  <div class="w-12 h-12 rounded-xl bg-gray-50 flex items-center justify-center mr-4 group-hover:bg-african-green/10 transition-colors">
+                    <component 
+                      :is="getAmenityInfo(amenityKey).icon" 
+                      class="w-6 h-6 text-gray-700 group-hover:text-african-green transition-colors" 
+                    />
+                  </div>
+                  <span class="text-gray-700 font-medium">{{ getAmenityInfo(amenityKey).label }}</span>
                 </div>
               </div>
             </div>
 
+
             <!-- Informations sur l'hôte -->
             <div class="border-t pt-8">
               <div class="flex items-start space-x-4">
-                <img 
-                  :src="accommodation.host.avatar" 
-                  :alt="accommodation.host.name"
-                  class="w-16 h-16 rounded-full object-cover"
+                <HostAvatar 
+                  :name="accommodation.host.name"
+                  :avatar="accommodation.host.avatar"
+                  size="lg"
                 />
                 <div class="flex-1">
                   <div class="flex items-center space-x-2 mb-2">
@@ -125,7 +139,7 @@
                       Superhost
                     </span>
                   </div>
-                  <p class="text-gray-600 mb-4">
+                  <p class="text-gray-600 mb-4 hidden">
                     Hôte depuis 2020 • Répond généralement en moins d'une heure
                   </p>
                   <button class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200">
@@ -143,7 +157,7 @@
             <div class="bg-white border border-gray-200 rounded-xl p-6 shadow-lg">
               <div class="flex justify-between items-start mb-4">
                 <div>
-                  <span class="text-2xl font-bold">€{{ accommodation.price }}</span>
+                  <span class="text-2xl font-bold">{{ formatCFA(accommodation.price) }}</span>
                   <span class="text-gray-600"> / nuit</span>
                 </div>
                 <div class="text-right">
@@ -244,7 +258,7 @@
                           {{ priceCalculation.weekNights }} nuit{{ priceCalculation.weekNights > 1 ? 's' : '' }} (semaine)
                         </span>
                         <span class="font-medium text-gray-900">
-                          €{{ priceCalculation.nightlyPrices
+                            XOF {{ priceCalculation.nightlyPrices
                             .filter(np => !np.isWeekend)
                             .reduce((sum, np) => sum + np.adjustedPrice, 0)
                             .toFixed(2) }}
@@ -255,7 +269,7 @@
                           {{ priceCalculation.weekendNights }} nuit{{ priceCalculation.weekendNights > 1 ? 's' : '' }} (week-end)
                         </span>
                         <span class="font-medium text-gray-900">
-                          €{{ priceCalculation.nightlyPrices
+                            XOF {{ priceCalculation.nightlyPrices
                             .filter(np => np.isWeekend)
                             .reduce((sum, np) => sum + np.adjustedPrice, 0)
                             .toFixed(2) }}
@@ -264,26 +278,26 @@
                     </template>
                     <div v-else class="flex justify-between text-sm">
                       <span class="text-gray-600">
-                        €{{ averageNightlyPrice.toFixed(2) }} x {{ calculatedNights }} nuit{{ calculatedNights > 1 ? 's' : '' }}
+                        {{ formatCFA(averageNightlyPrice) }} x {{ calculatedNights }} nuit{{ calculatedNights > 1 ? 's' : '' }}
                       </span>
                       <span class="font-medium text-gray-900">
-                        €{{ priceCalculation.subtotal.toFixed(2) }}
+                        {{ formatCFA(priceCalculation.subtotal) }}
                       </span>
                     </div>
                     
                     <!-- Réduction séjour long -->
                     <div v-if="longStayDiscount > 0" class="flex justify-between text-sm text-green-600">
                       <span>Réduction séjour long</span>
-                      <span class="font-medium">-€{{ longStayDiscount.toFixed(2) }}</span>
+                      <span class="font-medium">-{{ formatCFA(longStayDiscount) }}</span>
                     </div>
                   </template>
                   <template v-else>
                     <div class="flex justify-between text-sm">
                       <span class="text-gray-600">
-                        €{{ accommodation.price }} x {{ calculatedNights }} nuit{{ calculatedNights > 1 ? 's' : '' }}
+                        {{ formatCFA(accommodation.price) }} x {{ calculatedNights }} nuit{{ calculatedNights > 1 ? 's' : '' }}
                       </span>
                       <span class="font-medium text-gray-900">
-                        €{{ basePrice.toFixed(2) }}
+                        {{ formatCFA(basePrice) }}
                       </span>
                     </div>
                   </template>
@@ -291,17 +305,17 @@
                   <div v-if="selectedServices.length > 0" class="flex justify-between text-sm">
                     <span class="text-gray-600">Services supplémentaires</span>
                     <span class="font-medium text-gray-900">
-                      €{{ servicesPrice.toFixed(2) }}
+                      {{ formatCFA(servicesPrice) }}
                     </span>
                   </div>
                   <div class="flex justify-between text-sm font-semibold text-lg border-t pt-2">
                     <span>Total</span>
-                    <span>€{{ totalPrice.toFixed(2) }}</span>
+                    <span>{{ formatCFA(totalPrice) }}</span>
                   </div>
                   
                   <!-- Indication du prix moyen par nuit -->
                   <div v-if="calculatedNights > 0" class="text-xs text-gray-500 pt-1">
-                    {{ averageNightlyPrice.toFixed(2) }}€ / nuit en moyenne
+                    {{ averageNightlyPrice.toFixed(2) }}  XOF  / nuit en moyenne
                   </div>
                 </div>
 
@@ -325,7 +339,7 @@
       <SimilarAccommodations
         v-if="accommodation"
         :current-accommodation="accommodation"
-        :all-accommodations="accommodations"
+        :all-accommodations="allAccommodations"
         :max-results="6"
         @accommodation-selected="goToSimilarAccommodation"
       />
@@ -333,13 +347,41 @@
       <!-- Recommandations personnalisées -->
       <RecommendationsAccommodations
         v-if="accommodation"
-        :all-accommodations="accommodations"
+        :all-accommodations="allAccommodations"
         :exclude-accommodation-ids="[accommodation.id]"
         :max-results="6"
         recommendation-type="trending"
         @accommodation-selected="goToSimilarAccommodation"
       />
     </div>
+
+    <!-- Reservation Modal -->
+    <ReservationModal
+      v-if="showReservationModal"
+      :show="showReservationModal"
+      :accommodation="{
+        id: accommodation.id,
+        title: accommodation.title
+      }"
+      :start-date="selectedDates.start!"
+      :end-date="selectedDates.end!"
+      :guests="guestCount"
+      :nights="calculatedNights"
+      :total-amount="totalPrice"
+      :booking-mode="bookingMode"
+      @close="showReservationModal = false"
+      @confirm="handleReservationConfirm"
+    />
+
+    <!-- Payment Modal -->
+    <PaymentModal
+      v-if="showPaymentModal"
+      :show="showPaymentModal"
+      :amount="totalPrice"
+      :reservation-id="currentReservationId"
+      @close="showPaymentModal = false"
+      @success="handlePaymentSuccess"
+    />
   </div>
 
   <!-- Loading ou erreur -->
@@ -357,12 +399,16 @@ import { useRoute, useRouter } from 'vue-router'
 import { 
   ArrowLeft, Heart, MapPin, Users, Bed, Bath, Star
 } from 'lucide-vue-next'
-import PhotoGallery from '@/components/PhotoGallery.vue'
-import DateRangePicker from '@/components/DateRangePicker.vue'
-import PriceCalculator from '@/components/PriceCalculator.vue'
-import SimilarAccommodations from '@/components/SimilarAccommodations.vue'
-import RecommendationsAccommodations from '@/components/RecommendationsAccommodations.vue'
-import { accommodations } from '@/data/fixtures'
+import PhotoGallery from '@/components/accommodation/PhotoGallery.vue'
+import DateRangePicker from '@/components/ui/DateRangePicker.vue'
+import AvailabilityCalendar from '@/components/accommodation/AvailabilityCalendar.vue'
+import PriceCalculator from '@/components/accommodation/PriceCalculator.vue'
+import SimilarAccommodations from '@/components/accommodation/SimilarAccommodations.vue'
+import RecommendationsAccommodations from '@/components/accommodation/RecommendationsAccommodations.vue'
+import MarkdownContent from '@/components/ui/MarkdownContent.vue'
+import HostAvatar from '@/components/ui/HostAvatar.vue'
+import ReservationModal from '@/components/reservation/ReservationModal.vue'
+import PaymentModal from '@/components/payment/PaymentModal.vue'
 import type { Accommodation, SelectedService, Service } from '@/types/accommodation'
 import { hasDateConflict, getBookedDates, type DateRange } from '@/utils/dateUtils'
 import { availableServices, calculateServicePrice, calculateTotalServicesPrice } from '@/data/services'
@@ -371,19 +417,24 @@ import { calculatePrice, calculateAverageNightlyPrice } from '@/utils/pricing'
 import { getPricingConfig } from '@/data/pricingFixtures'
 import type { PricingConfiguration, PriceCalculationResult } from '@/types/pricing'
 import { useFavorites } from '@/composables/useFavorites'
-import { logementService } from '@/services/logement.service'
-import { availabilityService } from '@/services/availability.service'
+import { useLogements } from '@/composables/useLogements'
 import { useAuthStore } from '@/stores/auth'
+import { mapLogementToAccommodation } from '@/utils/mappers/logementMapper'
+import { formatCFA } from '@/utils/currency'
+import { getAmenityInfo, getHouseRuleInfo } from '@/utils/amenities'
+import { ReservationService } from '@/services/reservation/reservation.service'
+
+import { paymentService } from '@/services/payment'
 
 const route = useRoute()
 const router = useRouter()
-const { toggleFavorite: toggleFavoriteAction, isFavorite: isFavoriteFn } = useFavorites()
 const authStore = useAuthStore()
+const { toggleFavorite: toggleFavoriteAction, isFavorite: isFavoriteFn } = useFavorites()
+const { currentProperty, isLoading: isLoadingProperty, error: apiError, loadPropertyById } = useLogements()
 
 // État réactif
 const accommodation = ref<Accommodation | null>(null)
-const isLoading = ref(false)
-const error = ref<string | null>(null)
+const allAccommodations = ref<Accommodation[]>([]) // Pour les recommandations
 const selectedDates = ref<{ start: Date | null; end: Date | null }>({
   start: null,
   end: null,
@@ -565,67 +616,41 @@ const formatServicePrice = (service: Service): string => {
       break
   }
   
-  return `€${price.toFixed(2)}${suffix ? ' ' + suffix : ''}`
+  return `${formatCFA(price)}${suffix ? ' ' + suffix : ''}`
 }
 
 const formatSelectedServicePrice = (serviceId: string): string => {
-  if (!accommodation.value || !accommodation.value.services) return '€0.00'
+  if (!accommodation.value || !accommodation.value.services) return formatCFA(0)
   const service = accommodation.value.services.find(s => s.id === serviceId)
-  if (!service) return '€0.00'
+  if (!service) return formatCFA(0)
   
   const price = calculateServicePrice(service, calculatedNights.value, guests.value)
-  return `€${price.toFixed(2)}`
+  return formatCFA(price)
 }
 
 // Trouver le logement par ID
-const loadAccommodation = async () => {
-  const id = route.params.id as string
-  if (!id) {
-    router.push('/')
-    return
-  }
-
-  isLoading.value = true
-  error.value = null
-
+const findAccommodation = async () => {
   try {
-    const found = await logementService.getById(id)
-    accommodation.value = found
-    guests.value = Math.min(guests.value, found.maxGuests)
+    const id = route.params.id as string
+    console.log('Recherche du logement avec ID:', id)
     
-    // Charger les disponibilités pour les dates bloquées
-    await loadAvailabilities(id)
-  } catch (err: any) {
-    console.error('Erreur lors du chargement du logement:', err)
-    error.value = err.message || 'Erreur lors du chargement du logement'
+    // Charger le logement depuis l'API
+    await loadPropertyById(id)
     
-    // Fallback vers les données mockées
-    const found = accommodations.find(acc => acc.id === id)
-    if (found) {
-      accommodation.value = found
-      guests.value = Math.min(guests.value, found.maxGuests)
+    if (currentProperty.value) {
+      console.log('Logement trouvé:', currentProperty.value.title)
+      // Mapper les données du backend vers le format frontend
+      accommodation.value = mapLogementToAccommodation(currentProperty.value)
+      guests.value = Math.min(guests.value, accommodation.value.maxGuests)
     } else {
       router.push('/')
     }
-  } finally {
-    isLoading.value = false
+  } catch (error) {
+    console.error('Erreur lors de la recherche du logement:', error)
+    router.push('/')
   }
 }
 
-const loadAvailabilities = async (propertyId: string) => {
-  try {
-    const availabilities = await availabilityService.getByProperty(propertyId)
-    // Convertir les disponibilités en plages de dates pour bookedRanges et blockedRanges
-    // Cette logique peut être adaptée selon vos besoins
-  } catch (err) {
-    console.error('Erreur lors du chargement des disponibilités:', err)
-  }
-}
-
-// Navigation vers un logement similaire
-const goToSimilarAccommodation = (id: string) => {
-  router.push(`/accommodation/${id}`)
-}
 
 // Favoris
 const isFavorite = computed(() => {
@@ -637,6 +662,13 @@ const toggleFavorite = () => {
     toggleFavoriteAction(accommodation.value.id)
   }
 }
+
+// Modal states
+const showReservationModal = ref(false)
+const showPaymentModal = ref(false)
+const currentReservationId = ref('')
+const bookingMode = computed(() => accommodation.value?.bookingMode || 'instant')
+const guestCount = computed(() => guests.value)
 
 // Gestion de la réservation
 const handleReservation = () => {
@@ -652,83 +684,59 @@ const handleReservation = () => {
     return
   }
   
-  // Validation des dates
-  if (!selectedDates.value.start || !selectedDates.value.end) {
-    alert('Veuillez sélectionner les dates d\'arrivée et de départ')
+  // Vérifier les conflits de dates
+  if (hasDateConflict(selectedDates.value as DateRange, bookedRanges.value)) {
+    alert('Ces dates ne sont pas disponibles. Veuillez en choisir d\'autres.')
     return
   }
   
-  if (selectedDates.value.start >= selectedDates.value.end) {
-    alert('La date de départ doit être après la date d\'arrivée')
-    return
-  }
-  
-  // Vérification des conflits de dates
-  const selectedRange: DateRange = {
-    start: selectedDates.value.start,
-    end: selectedDates.value.end,
-  }
-  
-  if (hasDateConflict(selectedRange, bookedRanges.value)) {
-    alert('Désolé, cette période est déjà réservée. Veuillez choisir d\'autres dates.')
-    return
-  }
-  
-  // Calcul du nombre de nuits
-  const nights = calculatedNights.value
-  const servicesTotal = servicesPrice.value
-  const accommodationTotal = priceCalculation.value?.total || basePrice.value
-  const finalTotal = totalPrice.value
-  
-  // Format des dates pour l'affichage
-  const startDateStr = selectedDates.value.start.toLocaleDateString('fr-FR')
-  const endDateStr = selectedDates.value.end.toLocaleDateString('fr-FR')
-  
-  // Informations du client
-  const clientInfo = `\n\nClient:\nNom: ${authStore.user.firstName} ${authStore.user.lastName}\nEmail: ${authStore.user.email}\nNombre de voyageurs: ${guests.value}`
-  
-  // Détails des services sélectionnés
-  let servicesDetails = ''
-  if (selectedServices.value.length > 0) {
-    servicesDetails = '\n\nServices supplémentaires :\n'
-    selectedServices.value.forEach(selected => {
-      const service = accommodation.value!.services?.find(s => s.id === selected.serviceId)
-      if (service) {
-        const servicePrice = calculateServicePrice(service, nights, guests.value)
-        servicesDetails += `- ${service.name}: €${servicePrice.toFixed(2)}\n`
-      }
-    })
-    servicesDetails += `Total services: €${servicesTotal.toFixed(2)}\n`
-  }
-  
-  // Créer l'objet de réservation avec toutes les informations
-  const bookingData = {
-    accommodationId: accommodation.value.id,
-    accommodationTitle: accommodation.value.title,
-    guestId: authStore.user.id,
-    guestName: `${authStore.user.firstName} ${authStore.user.lastName}`,
-    guestEmail: authStore.user.email,
-    checkIn: selectedDates.value.start,
-    checkOut: selectedDates.value.end,
-    guests: guests.value,
-    nights: nights,
-    basePrice: accommodationTotal,
-    servicesPrice: servicesTotal,
-    totalPrice: finalTotal,
-    selectedServices: selectedServices.value,
-    status: 'pending'
-  }
-  
-  // TODO: Envoyer la réservation à l'API
-  console.log('Données de réservation:', bookingData)
-  
-  // Simulation de la réservation
-  alert(`Réservation confirmée !${clientInfo}\n\nLogement: ${accommodation.value.title}\nDates: ${startDateStr} au ${endDateStr}\nNuits: ${nights}${servicesDetails}\nPrix hébergement: €${accommodationTotal.toFixed(2)}\nPrix total: €${finalTotal.toFixed(2)}`)
+  // Ouvrir modal de confirmation
+  showReservationModal.value = true
 }
 
-onMounted(() => {
+// Confirmer la réservation
+const handleReservationConfirm = async (message: string) => {
+  if (!accommodation.value || !selectedDates.value.start || !selectedDates.value.end) return
+  
+  try {
+    const reservation = await ReservationService.createReservation({
+      accommodationId: accommodation.value.id,
+      startDate: selectedDates.value.start,
+      endDate: selectedDates.value.end,
+      guestCount: guests.value,
+      tenantMessage: message
+    })
+    
+    currentReservationId.value = reservation.id
+    showReservationModal.value = false
+    
+    // Si instant booking, ouvrir modal paiement
+    if (bookingMode.value === 'instant') {
+      showPaymentModal.value = true
+    } else {
+      alert('Votre demande de réservation a été envoyée au propriétaire')
+      router.push('/reservations')
+    }
+  } catch (error: any) {
+    console.error('Erreur création réservation:', error)
+    alert(error.message || 'Erreur lors de la création de la réservation')
+  }
+}
+
+// Succès paiement
+const handlePaymentSuccess = (paymentId: string) => {
+  showPaymentModal.value = false
+  alert('Paiement effectué avec succès ! Votre réservation est confirmée.')
+  router.push('/reservations')
+}
+
+const goToSimilarAccommodation = (id: string) => {
+  router.push(`/accommodation/${id}`)
+}
+
+onMounted(async () => {
   console.log('AccommodationDetailView monté')
-  loadAccommodation()
+  await findAccommodation()
 })
 </script>
 

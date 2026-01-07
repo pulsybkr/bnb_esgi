@@ -1,28 +1,6 @@
 <template>
   <div class="min-h-screen bg-gray-50">
-    <!-- Header -->
-    <header class="bg-white shadow-sm border-b sticky top-0 z-50">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex items-center justify-between h-16">
-          <div class="flex items-center space-x-4">
-            <button 
-              @click="$router.push('/')"
-              class="text-2xl font-bold text-indigo-600 hover:text-indigo-700"
-            >
-              bnb
-            </button>
-            <h1 class="text-xl font-semibold text-gray-900">Mes logements</h1>
-          </div>
-          <router-link
-            to="/accommodation/create"
-            class="flex items-center space-x-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
-          >
-            <Plus class="w-5 h-5" />
-            <span>Ajouter un logement</span>
-          </router-link>
-        </div>
-      </div>
-    </header>
+    <SimpleHeader />
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <!-- Messages d'erreur -->
@@ -124,7 +102,7 @@
                         'bg-gray-100 text-gray-800'
                       ]"
                     >
-                      {{ getStatusLabel(property.status) }}
+                      {{ getStatusLabel(property.status || 'actif') }}
                     </span>
                   </div>
                   <p class="text-sm text-gray-600 mb-2">
@@ -135,7 +113,7 @@
                     <span>{{ property.bedrooms }} chambre{{ property.bedrooms > 1 ? 's' : '' }}</span>
                     <span>{{ property.bathrooms }} salle{{ property.bathrooms > 1 ? 's' : '' }} de bain</span>
                     <span>{{ property.maxGuests }} voyageur{{ property.maxGuests > 1 ? 's' : '' }}</span>
-                    <span class="font-semibold text-indigo-600">{{ property.price }}€ / nuit</span>
+                    <span class="font-semibold text-indigo-600">{{ property.price }} XOF / nuit</span>
                   </div>
                 </div>
               </div>
@@ -224,6 +202,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { logementService } from '@/services/logement.service'
+import SimpleHeader from '@/components/layout/SimpleHeader.vue'
 import { 
   Home, Plus, Calendar, MapPin, Image, Loader2, 
   CheckCircle, AlertCircle, Archive, Edit, Trash2 

@@ -31,7 +31,7 @@
           </div>
           <div class="text-right">
             <p class="text-sm text-gray-500">Prix par nuit</p>
-            <p class="text-2xl font-bold text-gray-900">€{{ accommodation.price }}</p>
+            <p class="text-2xl font-bold text-gray-900">{{ formatCFA(accommodation.price) }}</p>
           </div>
         </div>
       </div>
@@ -48,7 +48,7 @@
         </div>
         <div class="bg-white rounded-lg shadow-sm p-4">
           <p class="text-sm text-gray-500 mb-1">Revenus ce mois</p>
-          <p class="text-2xl font-bold text-green-600">€{{ monthlyRevenue }}</p>
+          <p class="text-2xl font-bold text-green-600">{{ formatCFA(monthlyRevenue) }}</p>
         </div>
         <div class="bg-white rounded-lg shadow-sm p-4">
           <p class="text-sm text-gray-500 mb-1">Dates bloquées</p>
@@ -108,7 +108,7 @@
                     <span>{{ booking.guests }} {{ booking.guests > 1 ? 'voyageurs' : 'voyageur' }}</span>
                   </div>
                   <div class="flex items-center text-gray-900 font-medium pt-2 border-t border-gray-100">
-                    <span>Total: €{{ booking.totalPrice.toFixed(2) }}</span>
+                    <span>Total: {{ formatCFA(booking.totalPrice) }}</span>
                   </div>
                 </div>
               </div>
@@ -124,97 +124,44 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { X, Calendar, Users } from 'lucide-vue-next'
-import HostCalendar from '@/components/HostCalendar.vue'
+import HostCalendar from '@/components/host/HostCalendar.vue'
 import type { Booking, BlockedDate } from '@/types/booking'
 import { BookingStatus, BlockType } from '@/types/booking'
-import { accommodations } from '@/data/fixtures'
 import type { Accommodation } from '@/types/accommodation'
 import { normalizeDate } from '@/utils/dateUtils'
-import { logementService } from '@/services/logement.service'
+import { useLogements } from '@/composables/useLogements'
+import { mapLogementToAccommodation } from '@/utils/mappers/logementMapper'
+import { formatCFA } from '@/utils/currency'
 import { availabilityService } from '@/services/availability.service'
 
 const route = useRoute()
 const router = useRouter()
+const { currentProperty, isLoading, error: apiError, loadPropertyById } = useLogements()
 
 const accommodation = ref<Accommodation | null>(null)
 const bookings = ref<Booking[]>([])
 const blockedDates = ref<BlockedDate[]>([])
-const isLoading = ref(false)
 
 // Charger les données du logement
-const loadAccommodation = async () => {
+onMounted(async () => {
   const accommodationId = route.params.id as string
-  if (!accommodationId) {
-    router.push('/')
-    return
-  }
-
-  isLoading.value = true
+  
   try {
-    const found = await logementService.getById(accommodationId)
-    accommodation.value = found
+    // Charger le logement depuis l'API
+    await loadPropertyById(accommodationId)
     
-    // Charger les disponibilités et réservations
-    await loadAvailabilities(accommodationId)
-  } catch (err) {
-    console.error('Erreur lors du chargement:', err)
-    // Fallback vers les données mockées
-    const found = accommodations.find(acc => acc.id === accommodationId)
-    if (found) {
-      accommodation.value = found
+    if (currentProperty.value) {
+      accommodation.value = mapLogementToAccommodation(currentProperty.value)
+      // Simuler des réservations (dans la vraie app, cela viendrait de l'API)
       loadBookings(accommodationId)
       loadBlockedDates(accommodationId)
     } else {
       router.push('/')
     }
-  } finally {
-    isLoading.value = false
+  } catch (error) {
+    console.error('Erreur lors du chargement du logement:', error)
+    router.push('/')
   }
-}
-
-const loadAvailabilities = async (accommodationId: string) => {
-  try {
-    const availabilities = await availabilityService.getByProperty(accommodationId)
-    
-    // Séparer les réservations et les blocages
-    const reserved = availabilities.filter(a => a.status === 'reserve')
-    const blocked = availabilities.filter(a => a.status === 'bloque')
-    
-    // Convertir en format Booking
-    bookings.value = reserved.map(a => ({
-      id: a.id,
-      accommodationId: a.accommodationId,
-      guestId: '',
-      guestName: 'Réservation',
-      guestEmail: '',
-      checkIn: new Date(a.startDate),
-      checkOut: new Date(a.endDate),
-      guests: 0,
-      totalPrice: a.customPrice || 0,
-      status: BookingStatus.CONFIRMED,
-      createdAt: new Date(a.createdAt),
-    }))
-    
-    // Convertir en format BlockedDate
-    blockedDates.value = blocked.map(a => ({
-      id: a.id,
-      accommodationId: a.accommodationId,
-      startDate: new Date(a.startDate),
-      endDate: new Date(a.endDate),
-      reason: a.note || 'Bloqué',
-      type: BlockType.MAINTENANCE,
-      createdAt: new Date(a.createdAt),
-    }))
-  } catch (err) {
-    console.error('Erreur lors du chargement des disponibilités:', err)
-    // Fallback vers les données mockées
-    loadBookings(accommodationId)
-    loadBlockedDates(accommodationId)
-  }
-}
-
-onMounted(() => {
-  loadAccommodation()
 })
 
 // Simuler le chargement des réservations
@@ -345,34 +292,21 @@ const handleDateSelected = (date: Date) => {
 const handleDateBlocked = async (startDate: Date, endDate: Date, reason?: string) => {
   if (!accommodation.value) return
   
-  try {
-    const startDateStr = startDate.toISOString().split('T')[0]
-    const endDateStr = endDate.toISOString().split('T')[0]
-    
-    const availability = await availabilityService.blockDates(
-      accommodation.value.id,
-      startDateStr,
-      endDateStr,
-      reason
-    )
-    
-    // Ajouter à la liste locale
-    const newBlock: BlockedDate = {
-      id: availability.id,
-      accommodationId: accommodation.value.id,
-      startDate: new Date(availability.startDate),
-      endDate: new Date(availability.endDate),
-      reason: availability.note || reason,
-      type: reason?.toLowerCase().includes('maintenance') ? BlockType.MAINTENANCE : BlockType.OTHER,
-      createdAt: new Date(availability.createdAt),
-    }
-    
-    blockedDates.value.push(newBlock)
-    alert(`Période bloquée du ${formatDate(startDate)} au ${formatDate(endDate)}`)
-  } catch (err: any) {
-    console.error('Erreur lors du blocage des dates:', err)
-    alert('Erreur lors du blocage des dates: ' + (err.message || 'Erreur inconnue'))
+  const newBlock: BlockedDate = {
+    id: `block-${Date.now()}`,
+    accommodationId: accommodation.value.id,
+    startDate,
+    endDate,
+    reason,
+    type: reason?.toLowerCase().includes('maintenance') ? BlockType.MAINTENANCE : BlockType.OTHER,
+    createdAt: new Date(),
   }
+  
+  blockedDates.value.push(newBlock)
+  
+  // Dans la vraie app, faire un appel API
+  console.log('Date bloquée:', newBlock)
+  alert(`Période bloquée du ${formatDate(startDate)} au ${formatDate(endDate)}`)
 }
 
 const handleDateUnblocked = async (blockedDateId: string) => {
