@@ -54,6 +54,30 @@ const routes = [
     name: 'profile',
     component: () => import('@/views/ProfileView.vue'),
     meta: { requiresAuth: true }
+  },
+  {
+    path: '/reservations',
+    name: 'my-reservations',
+    component: () => import('@/views/reservations/MyReservationsView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/owner/reservations',
+    name: 'owner-reservations',
+    component: () => import('@/views/reservations/OwnerReservationsView.vue'),
+    meta: { requiresAuth: true, requiresOwner: true }
+  },
+  {
+    path: '/reservations/:id',
+    name: 'reservation-detail',
+    component: () => import('@/views/reservations/ReservationDetailView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/conversations',
+    name: 'conversations',
+    component: () => import('@/views/ConversationsView.vue'),
+    meta: { requiresAuth: true }
   }
 ]
 

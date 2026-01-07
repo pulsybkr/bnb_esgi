@@ -47,7 +47,7 @@ export interface CreatePropertyData {
 /**
  * Transforme les données du backend (format Prisma) vers le format Accommodation
  */
-function transformBackendProperty(property: any): Accommodation {
+export function transformBackendProperty(property: any): Accommodation {
   // Mapping des types de logement
   const typeMapping: Record<string, PropertyType> = {
     'appartement': PropertyType.APARTMENT,
@@ -160,7 +160,10 @@ function transformBackendProperty(property: any): Accommodation {
     availability: {
       checkIn: property.heure_arrivee || property.checkIn || '15:00',
       checkOut: property.heure_depart || property.checkOut || '11:00',
+      minNights: property.minNights || 1,
+      maxNights: property.maxNights || 30,
     },
+
     tags,
     services: property.services?.map((service: any) => ({
       id: service.id,
@@ -172,9 +175,14 @@ function transformBackendProperty(property: any): Accommodation {
       priceType: service.type_prix || service.priceType || 'fixed',
       icon: service.icone || service.icon,
     })) || [],
+    pricing: {
+      basePrice: price,
+      cleaningFee: 0, // TODO: Fetch from backend if available
+    },
     status: property.status || 'actif', // Statut du logement
   }
 }
+
 
 export const logementService = {
   /**

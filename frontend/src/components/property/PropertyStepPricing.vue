@@ -28,6 +28,80 @@
       </div>
       <p v-if="errors.pricePerNight" class="text-sm text-red-600 mt-2">{{ errors.pricePerNight }}</p>
       
+      <!-- Mode de réservation -->
+      <div class="mt-6">
+        <label class="block text-sm font-medium text-gray-700 mb-3">
+          Mode de réservation <span class="text-red-500">*</span>
+        </label>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <button
+            type="button"
+            @click="formData.bookingMode = 'instant'"
+            :class="[
+              'p-4 border-2 rounded-xl text-left transition-all',
+              formData.bookingMode === 'instant'
+                ? 'border-african-green bg-green-50'
+                : 'border-gray-200 hover:border-gray-300'
+            ]"
+          >
+            <div class="flex items-start gap-3">
+              <div
+                :class="[
+                  'w-5 h-5 rounded-full border-2 flex items-center justify-center mt-0.5',
+                  formData.bookingMode === 'instant'
+                    ? 'border-african-green'
+                    : 'border-gray-300'
+                ]"
+              >
+                <div
+                  v-if="formData.bookingMode === 'instant'"
+                  class="w-3 h-3 rounded-full bg-african-green"
+                ></div>
+              </div>
+              <div>
+                <h4 class="font-semibold text-gray-900 mb-1">✨ Réservation instantanée</h4>
+                <p class="text-sm text-gray-600">
+                  Les voyageurs peuvent réserver immédiatement après paiement
+                </p>
+              </div>
+            </div>
+          </button>
+
+          <button
+            type="button"
+            @click="formData.bookingMode = 'request'"
+            :class="[
+              'p-4 border-2 rounded-xl text-left transition-all',
+              formData.bookingMode === 'request'
+                ? 'border-african-green bg-green-50'
+                : 'border-gray-200 hover:border-gray-300'
+            ]"
+          >
+            <div class="flex items-start gap-3">
+              <div
+                :class="[
+                  'w-5 h-5 rounded-full border-2 flex items-center justify-center mt-0.5',
+                  formData.bookingMode === 'request'
+                    ? 'border-african-green'
+                    : 'border-gray-300'
+                ]"
+              >
+                <div
+                  v-if="formData.bookingMode === 'request'"
+                  class="w-3 h-3 rounded-full bg-african-green"
+                ></div>
+              </div>
+              <div>
+                <h4 class="font-semibold text-gray-900 mb-1">📋 Sur demande</h4>
+                <p class="text-sm text-gray-600">
+                  Vous approuvez chaque demande de réservation manuellement
+                </p>
+              </div>
+            </div>
+          </button>
+        </div>
+      </div>
+      
       <!-- Prix suggéré -->
       <div class="mt-4 p-4 bg-blue-50 rounded-xl border border-blue-200">
         <div class="flex items-start gap-3">

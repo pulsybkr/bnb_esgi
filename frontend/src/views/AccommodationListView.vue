@@ -154,28 +154,6 @@
         </div>
       </div>
 
-      <!-- Popular accommodations (if no filters) -->
-      <PopularAccommodations
-        v-if="!hasActiveFilters"
-        :all-accommodations="allAccommodations"
-        :location="currentFilters.locationRadius?.center"
-        :location-name="searchQuery || undefined"
-        :radius-km="currentFilters.locationRadius?.radiusKm || 50"
-        :max-results="10"
-        @accommodation-selected="goToDetail"
-        class="mb-12"
-      />
-
-      <!-- Recommendations (if no filters) -->
-      <RecommendationsAccommodations
-        v-if="!hasActiveFilters"
-        :all-accommodations="allAccommodations"
-        :user-preferences="userPreferences"
-        :max-results="10"
-        recommendation-type="personalized"
-        @accommodation-selected="goToDetail"
-        class="mb-12"
-      />
 
       <!-- List view -->
       <div v-if="currentView === 'list'">
@@ -281,11 +259,6 @@ import UserMenu from '@/components/auth/UserMenu.vue'
 import type { Accommodation, FilterOptions } from '@/types/accommodation'
 import { useSearchHistory } from '@/composables/useSearchHistory'
 import { getTagLabels } from '@/data/tags'
-import { generatePreferencesFromHistory } from '@/utils/recommendations'
-import type { UserPreferences } from '@/utils/recommendations'
-import { calculateDistance } from '@/utils/geolocation'
-import PopularAccommodations from '@/components/accommodation/PopularAccommodations.vue'
-import RecommendationsAccommodations from '@/components/accommodation/RecommendationsAccommodations.vue'
 import { useLogements } from '@/composables/useLogements'
 import { mapLogementsToAccommodations } from '@/utils/mappers/logementMapper'
 import { buildBackendFilters } from '@/utils/mappers/filterMapper'
@@ -325,27 +298,6 @@ const sortOptions = [
   { value: 'title-asc', label: 'Nom A-Z', icon: ArrowDownAZ }
 ]
 
-// User preferences for recommendations
-const userPreferences = computed<UserPreferences | undefined>(() => {
-  try {
-    if (searchHistory.value.length > 0) {
-      const viewedAccommodations = allAccommodations.value.filter(acc =>
-        searchHistory.value.some(query =>
-          query.toLowerCase().includes(acc.location.city.toLowerCase()) ||
-          acc.title.toLowerCase().includes(query.toLowerCase())
-        )
-      ).slice(0, 5)
-
-      if (viewedAccommodations.length > 0) {
-        return generatePreferencesFromHistory(searchHistory.value, viewedAccommodations)
-      }
-    }
-    return undefined
-  } catch (error) {
-    console.error('Erreur lors de la génération des préférences:', error)
-    return undefined
-  }
-})
 
 // Fonction pour charger les logements avec filtres depuis l'API
 const loadAccommodationsWithFilters = async () => {
@@ -400,21 +352,6 @@ const activeFiltersCount = computed(() => {
   return count
 })
 
-// Check if filters are active
-const hasActiveFilters = computed(() => {
-  return (
-    searchQuery.value.trim() !== '' ||
-    currentFilters.value.priceRange[0] > 0 ||
-    currentFilters.value.priceRange[1] < 1000000 ||
-    currentFilters.value.propertyType.length > 0 ||
-    currentFilters.value.amenities.length > 0 ||
-    currentFilters.value.tags.length > 0 ||
-    currentFilters.value.maxGuests > 0 ||
-    currentFilters.value.bedrooms > 0 ||
-    currentFilters.value.bathrooms > 0 ||
-    (currentFilters.value.locationRadius !== undefined && currentFilters.value.locationRadius?.radiusKm > 0)
-  )
-})
 
 // Pagination - visiblePages reste calculé côté client pour l'affichage
 const visiblePages = computed(() => {

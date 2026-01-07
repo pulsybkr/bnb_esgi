@@ -116,6 +116,14 @@
                 <Home class="w-5 h-5 text-gray-600" />
                 <span class="text-gray-700">Mes logements</span>
               </button>
+
+              <button
+                @click="navigateTo('/owner/reservations')"
+                class="w-full px-4 py-3 hover:bg-gray-50 transition-colors flex items-center gap-3 text-left"
+              >
+                <Home class="w-5 h-5 text-gray-600" />
+                <span class="text-gray-700">Reservations des logements</span>
+              </button>
             </template>
 
             <div class="my-2 border-t border-gray-200"></div>
@@ -129,15 +137,15 @@
               <span class="text-gray-700">Mes réservations</span>
             </button>
 
-            <!-- Favorites (only for non-owners) -->
+            <!-- Favorites -->
             <button
-              v-if="!isOwner"
               @click="navigateTo('/favorites')"
               class="w-full px-4 py-3 hover:bg-gray-50 transition-colors flex items-center gap-3 text-left"
             >
               <Heart class="w-5 h-5 text-gray-600" />
               <span class="text-gray-700">Mes favoris</span>
             </button>
+
 
             <!-- Conversations -->
             <button

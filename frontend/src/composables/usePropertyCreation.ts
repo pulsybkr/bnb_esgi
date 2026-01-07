@@ -32,6 +32,7 @@ export interface PropertyFormData {
     houseRules: Record<string, boolean>
     pricePerNight: number
     currency: string
+    bookingMode: 'instant' | 'request'
     photos: CloudinaryUploadResponse[]
     mainPhotoIndex: number
 }
@@ -61,6 +62,7 @@ const formData = reactive<PropertyFormData>({
     houseRules: {},
     pricePerNight: 0,
     currency: 'XOF',
+    bookingMode: 'instant',
     photos: [],
     mainPhotoIndex: 0
 })
@@ -263,6 +265,7 @@ export function usePropertyCreation() {
                 capacity: formData.capacity,
                 pricePerNight: formData.pricePerNight,
                 currency: formData.currency,
+                bookingMode: formData.bookingMode,
                 amenities: formData.amenities,
                 houseRules: formData.houseRules,
                 photos: formData.photos.map((photo, index) => ({
@@ -298,6 +301,7 @@ export function usePropertyCreation() {
         formData.houseRules = {}
         formData.pricePerNight = 0
         formData.currency = 'XOF'
+        formData.bookingMode = 'instant'
         formData.photos = []
         formData.mainPhotoIndex = 0
         error.value = null

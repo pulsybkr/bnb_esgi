@@ -157,6 +157,24 @@ export class ReservationController {
     }
 
     /**
+     * Confirm payment for accepted reservation
+     */
+    static async confirmPayment(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { id } = req.params;
+            const reservation = await ReservationService.confirmPayment(id);
+
+            res.json({
+                success: true,
+                message: 'Payment confirmed successfully',
+                data: { reservation },
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
      * Reject a reservation (owner only)
      */
     static async rejectReservation(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -210,6 +228,40 @@ export class ReservationController {
             res.json({
                 success: true,
                 data: { statistics },
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * Update negotiated price for a reservation
+     */
+    static async updateNegotiatedPrice(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const authReq = req as AuthenticatedRequest;
+
+            if (!authReq.user) {
+                throw new Error('User not authenticated');
+            }
+
+            const { id } = req.params;
+            const { newPrice } = req.body;
+
+            if (typeof newPrice !== 'number' || newPrice <= 0) {
+                throw new Error('Invalid price provided');
+            }
+
+            const reservation = await ReservationService.updateNegotiatedPrice(
+                id,
+                newPrice,
+                authReq.user.id
+            );
+
+            res.json({
+                success: true,
+                message: 'Price updated successfully',
+                data: { reservation },
             });
         } catch (error) {
             next(error);
