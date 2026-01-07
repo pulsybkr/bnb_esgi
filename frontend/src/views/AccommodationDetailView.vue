@@ -93,7 +93,7 @@
             </div>
 
             <!-- Équipements -->
-            <div class="mb-8">
+            <div v-if="accommodation.amenities && accommodation.amenities.length > 0" class="mb-8">
               <h2 class="text-xl font-semibold mb-4">Équipements</h2>
               <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
                 <div 
@@ -102,7 +102,7 @@
                   class="flex items-center space-x-2"
                 >
                   <Check class="w-4 h-4 text-green-600" />
-                  <span class="text-gray-700">{{ amenity }}</span>
+                  <span class="text-gray-700">{{ formatAmenity(amenity) }}</span>
                 </div>
               </div>
             </div>
@@ -110,10 +110,12 @@
             <!-- Informations sur l'hôte -->
             <div class="border-t pt-8">
               <div class="flex items-start space-x-4">
-                <img 
-                  :src="accommodation.host.avatar" 
-                  :alt="accommodation.host.name"
-                  class="w-16 h-16 rounded-full object-cover"
+                <!-- Photo de profil de l'hôte -->
+                <UserAvatar 
+                  :name="accommodation.host.name"
+                  :image-url="accommodation.host.avatar"
+                  size="xl"
+                  :border="true"
                 />
                 <div class="flex-1">
                   <div class="flex items-center space-x-2 mb-2">
@@ -128,7 +130,10 @@
                   <p class="text-gray-600 mb-4">
                     Hôte depuis 2020 • Répond généralement en moins d'une heure
                   </p>
-                  <button class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200">
+                  <button 
+                    @click="showContactModal = true"
+                    class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200"
+                  >
                     Contacter l'hôte
                   </button>
                 </div>
@@ -345,17 +350,79 @@
   <!-- Loading ou erreur -->
   <div v-else class="min-h-screen flex items-center justify-center">
     <div class="text-center">
-      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
-      <p class="text-gray-600">Chargement du logement...</p>
+      <LoadingSpinner size="large" centered />
+      <p class="text-gray-600 mt-4">Chargement du logement...</p>
     </div>
   </div>
+
+  <!-- Modal de contact hôte -->
+  <BaseModal 
+    v-model="showContactModal"
+    :title="`Contacter ${accommodation?.host.name || 'l\'hôte'}`"
+    max-width="md"
+  >
+    <div class="space-y-6">
+      <!-- Email -->
+      <div class="flex items-start space-x-3">
+        <div class="flex-shrink-0 w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
+          <Mail class="w-5 h-5 text-indigo-600" />
+        </div>
+        <div class="flex-1">
+          <h4 class="text-sm font-medium text-gray-900 mb-1">Email</h4>
+          <a 
+            v-if="accommodation?.host?.email"
+            :href="`mailto:${accommodation.host.email}`"
+            class="text-indigo-600 hover:text-indigo-800 hover:underline break-all"
+          >
+            {{ accommodation.host.email }}
+          </a>
+          <span v-else class="text-gray-500">Non renseigné</span>
+        </div>
+      </div>
+
+      <!-- Téléphone -->
+      <div class="flex items-start space-x-3">
+        <div class="flex-shrink-0 w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+          <Phone class="w-5 h-5 text-green-600" />
+        </div>
+        <div class="flex-1">
+          <h4 class="text-sm font-medium text-gray-900 mb-1">Téléphone</h4>
+          <a 
+            v-if="accommodation?.host?.phone"
+            :href="`tel:${accommodation.host.phone}`"
+            class="text-indigo-600 hover:text-indigo-800 hover:underline"
+          >
+            {{ accommodation.host.phone }}
+          </a>
+          <span v-else class="text-gray-500">Non renseigné</span>
+        </div>
+      </div>
+
+      <!-- Note -->
+      <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+        <p class="text-sm text-gray-600">
+          💡 <strong>Conseil :</strong> Pour protéger vos informations de paiement, ne transférez jamais d'argent et ne communiquez pas en dehors de la plateforme.
+        </p>
+      </div>
+    </div>
+
+    <template #footer>
+      <button
+        type="button"
+        @click="showContactModal = false"
+        class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors"
+      >
+        Fermer
+      </button>
+    </template>
+  </BaseModal>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { 
-  ArrowLeft, Heart, MapPin, Users, Bed, Bath, Star
+  ArrowLeft, Heart, MapPin, Users, Bed, Bath, Star, X, Loader2
 } from 'lucide-vue-next'
 import PhotoGallery from '@/components/PhotoGallery.vue'
 import DateRangePicker from '@/components/DateRangePicker.vue'
@@ -366,7 +433,7 @@ import { accommodations } from '@/data/fixtures'
 import type { Accommodation, SelectedService, Service } from '@/types/accommodation'
 import { hasDateConflict, getBookedDates, type DateRange } from '@/utils/dateUtils'
 import { availableServices, calculateServicePrice, calculateTotalServicesPrice } from '@/data/services'
-import { Check } from 'lucide-vue-next'
+import { Check, Mail, Phone } from 'lucide-vue-next'
 import { calculatePrice, calculateAverageNightlyPrice } from '@/utils/pricing'
 import { getPricingConfig } from '@/data/pricingFixtures'
 import type { PricingConfiguration, PriceCalculationResult } from '@/types/pricing'
@@ -374,6 +441,10 @@ import { useFavorites } from '@/composables/useFavorites'
 import { logementService } from '@/services/logement.service'
 import { availabilityService } from '@/services/availability.service'
 import { useAuthStore } from '@/stores/auth'
+import LoadingSpinner from '@/components/LoadingSpinner.vue'
+import UserAvatar from '@/components/UserAvatar.vue'
+import BaseModal from '@/components/BaseModal.vue'
+import { reservationService } from '@/services/reservation.service'
 
 const route = useRoute()
 const router = useRouter()
@@ -392,6 +463,49 @@ const guests = ref(1)
 const selectedServices = ref<SelectedService[]>([])
 const showServices = ref(false)
 const priceCalculationFromCalculator = ref<PriceCalculationResult | null>(null)
+
+// Traduire les équipements en français
+const amenityLabels: Record<string, string> = {
+  wifi: 'Wi-Fi',
+  kitchen: 'Cuisine équipée',
+  washingMachine: 'Lave-linge',
+  parking: 'Parking gratuit',
+  airConditioning: 'Climatisation',
+  heating: 'Chauffage',
+  tv: 'Télévision',
+  pool: 'Piscine',
+  gym: 'Salle de sport',
+  elevator: 'Ascenseur',
+  balcony: 'Balcon',
+  terrace: 'Terrasse',
+  garden: 'Jardin',
+  fireplace: 'Cheminée',
+  dishwasher: 'Lave-vaisselle',
+  dryer: 'Sèche-linge',
+  iron: 'Fer à repasser',
+  hairDryer: 'Sèche-cheveux',
+  workspace: 'Espace de travail',
+  crib: 'Lit bébé',
+  highChair: 'Chaise haute',
+  beachAccess: 'Accès plage',
+  skiInOut: 'Ski au pied',
+  hotTub: 'Jacuzzi',
+  sauna: 'Sauna',
+  bbq: 'Barbecue',
+  outdoorFurniture: 'Mobilier extérieur',
+  securityCameras: 'Caméras de sécurité',
+  smokeDetector: 'Détecteur de fumée',
+  carbonMonoxideDetector: 'Détecteur de monoxyde de carbone',
+  fireExtinguisher: 'Extincteur',
+  firstAidKit: 'Trousse de premiers secours',
+}
+
+const formatAmenity = (amenity: string): string => {
+  return amenityLabels[amenity] || amenity.charAt(0).toUpperCase() + amenity.slice(1).replace(/([A-Z])/g, ' $1').trim()
+}
+
+// État modal de contact
+const showContactModal = ref(false)
 
 // Dates minimum (aujourd'hui)
 const minDate = computed(() => {
@@ -639,7 +753,7 @@ const toggleFavorite = () => {
 }
 
 // Gestion de la réservation
-const handleReservation = () => {
+const handleReservation = async () => {
   if (!accommodation.value) return
   
   // Vérifier que l'utilisateur est connecté
@@ -719,12 +833,58 @@ const handleReservation = () => {
     status: 'pending'
   }
   
-  // TODO: Envoyer la réservation à l'API
+  // Envoyer la réservation à l'API (création réelle en base)
   console.log('Données de réservation:', bookingData)
-  
-  // Simulation de la réservation
-  alert(`Réservation confirmée !${clientInfo}\n\nLogement: ${accommodation.value.title}\nDates: ${startDateStr} au ${endDateStr}\nNuits: ${nights}${servicesDetails}\nPrix hébergement: €${accommodationTotal.toFixed(2)}\nPrix total: €${finalTotal.toFixed(2)}`)
+
+  const toYMD = (d: Date) => {
+    const year = d.getFullYear()
+    const month = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+
+  try {
+    const reservation = await reservationService.createReservation({
+      accommodationId: accommodation.value.id,
+      startDate: toYMD(selectedDates.value.start),
+      endDate: toYMD(selectedDates.value.end),
+      guestCount: guests.value,
+      tenantMessage:
+        selectedServices.value.length > 0
+          ? `Services: ${selectedServices.value.map(s => s.serviceId).join(', ')}`
+          : undefined,
+    })
+
+    console.log('Réservation créée:', reservation)
+
+    alert(
+      `Demande de réservation envoyée !${clientInfo}\n\nLogement: ${accommodation.value.title}\nDates: ${startDateStr} au ${endDateStr}\nNuits: ${nights}${servicesDetails}\nPrix hébergement: €${accommodationTotal.toFixed(2)}\nPrix total: €${finalTotal.toFixed(2)}\n\nStatut: En attente de confirmation du propriétaire`
+    )
+  } catch (err: any) {
+    console.error('Erreur création réservation:', err)
+    console.error('Response data:', err.response?.data)
+    
+    let msg = "Impossible de créer la réservation. Vérifie tes dates et réessaie."
+    
+    if (err.response?.data?.message) {
+      msg = err.response.data.message
+    } else if (err.response?.data?.errors) {
+      // Si validation Joi retourne des erreurs détaillées
+      const errors = err.response.data.errors
+      if (Array.isArray(errors)) {
+        msg = `Validation failed:\n${errors.map((e: any) => `- ${e.message || e}`).join('\n')}`
+      } else {
+        msg = `Validation failed: ${JSON.stringify(errors)}`
+      }
+    } else if (err.message) {
+      msg = err.message
+    }
+    
+    alert(msg)
+  }
 }
+
+// Gestion de l'envoi de message
 
 onMounted(() => {
   console.log('AccommodationDetailView monté')

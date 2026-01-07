@@ -9,6 +9,7 @@ import authRoutes from './routes/auth';
 import logementRoutes from './routes/logement/logement.routes';
 import disponibiliteRoutes from './routes/disponibilite/disponibilite.routes';
 import reservationRoutes from './routes/reservation/reservation.routes';
+import messageRoutes from './routes/message/message.routes';
 
 import searchRoutes from './routes/search/search.routes';
 import aiRoutes from './routes/ai/ai.routes';
@@ -73,6 +74,7 @@ app.use('/logements', serviceRoutes); // Services routes: /logements/:id/service
 app.use('/logements', pricingRoutes); // Pricing routes: /logements/:id/pricing
 app.use('/', disponibiliteRoutes); // Includes /logements/:id/availabilities and /availabilities/:id
 app.use('/reservations', reservationRoutes);
+app.use('/messages', messageRoutes);
 app.use('/search', searchRoutes);
 app.use('/ai', aiRoutes);
 

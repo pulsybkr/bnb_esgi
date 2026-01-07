@@ -5,7 +5,7 @@
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center h-16">
           <div class="flex items-center">
-            <h1 class="text-2xl font-bold text-indigo-600">bnb</h1>
+            <AppLogo size="medium" color="primary" :clickable="false" />
           </div>
           <div class="flex items-center space-x-4">
             <router-link
@@ -253,6 +253,7 @@ import { useRouter } from 'vue-router'
 import { Search, User, Home, X, Heart, Plus, LogOut } from 'lucide-vue-next'
 import AccommodationCard from '@/components/AccommodationCard.vue'
 import FilterSidebar from '@/components/FilterSidebar.vue'
+import AppLogo from '@/components/AppLogo.vue'
 import { accommodations } from '@/data/fixtures'
 import type { Accommodation, FilterOptions } from '@/types/accommodation'
 import { useSearchHistory } from '@/composables/useSearchHistory'

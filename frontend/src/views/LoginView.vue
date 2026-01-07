@@ -5,8 +5,8 @@
       <div class="bg-white rounded-2xl shadow-2xl p-8 space-y-6 transform transition-all duration-300 hover:shadow-3xl">
         <!-- Logo et titre -->
         <div class="text-center space-y-2">
-          <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl mb-4 transform transition-transform hover:scale-110">
-            <h1 class="text-3xl font-bold text-white">bnb</h1>
+          <div class="mb-4">
+            <AppLogo size="large" color="primary" :clickable="false" />
           </div>
           <h2 class="text-2xl font-bold text-gray-900">
             {{ isLogin ? 'Bon retour !' : 'Créer un compte' }}
@@ -224,6 +224,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { authService } from '@/services/auth.service'
 import { Mail, Lock, Eye, EyeOff, User, Home, AlertCircle, Loader2 } from 'lucide-vue-next'
+import AppLogo from '@/components/AppLogo.vue'
 
 const router = useRouter()
 const route = useRoute()

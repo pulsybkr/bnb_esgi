@@ -5,12 +5,7 @@
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between h-16">
           <div class="flex items-center space-x-4">
-            <button 
-              @click="$router.push('/')"
-              class="text-2xl font-bold text-indigo-600 hover:text-indigo-700"
-            >
-              bnb
-            </button>
+            <AppLogo size="medium" color="primary" :clickable="true" />
             <h1 class="text-xl font-semibold text-gray-900">Mon profil</h1>
           </div>
         </div>
@@ -18,15 +13,6 @@
     </header>
 
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <!-- Messages d'erreur/succès -->
-      <div v-if="error" class="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-        <p class="text-sm text-red-800">{{ error }}</p>
-      </div>
-      
-      <div v-if="successMessage" class="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
-        <p class="text-sm text-green-800">{{ successMessage }}</p>
-      </div>
-
       <!-- Chargement -->
       <div v-if="isLoading" class="text-center py-12">
         <Loader2 class="w-8 h-8 animate-spin mx-auto text-indigo-600" />
@@ -144,25 +130,6 @@
             </div>
           </div>
 
-          <!-- Statistiques (pour les propriétaires) -->
-          <div v-if="isOwner" class="border-t border-gray-200 pt-6 mt-6">
-            <h3 class="text-lg font-semibold text-gray-900 mb-4">Statistiques</h3>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div class="bg-gray-50 rounded-lg p-4">
-                <p class="text-sm text-gray-600">Logements</p>
-                <p class="text-2xl font-bold text-gray-900">{{ stats?.properties || 0 }}</p>
-              </div>
-              <div class="bg-gray-50 rounded-lg p-4">
-                <p class="text-sm text-gray-600">Réservations</p>
-                <p class="text-2xl font-bold text-gray-900">{{ stats?.reservations || 0 }}</p>
-              </div>
-              <div class="bg-gray-50 rounded-lg p-4">
-                <p class="text-sm text-gray-600">Avis</p>
-                <p class="text-2xl font-bold text-gray-900">{{ stats?.reviews || 0 }}</p>
-              </div>
-            </div>
-          </div>
-
           <!-- Boutons d'action -->
           <div class="border-t border-gray-200 pt-6 mt-6 flex justify-end space-x-3">
             <button
@@ -183,14 +150,62 @@
         </div>
       </div>
     </div>
+
+    <!-- Toast notifications (popup en bas de l'écran) -->
+    <Teleport to="body">
+      <Transition name="toast">
+        <div 
+          v-if="successMessage" 
+          class="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-[100] px-6 py-4 bg-green-600 text-white rounded-xl shadow-2xl flex items-center space-x-3 max-w-md"
+        >
+          <div class="flex-shrink-0">
+            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+            </svg>
+          </div>
+          <p class="font-medium">{{ successMessage }}</p>
+          <button 
+            @click="successMessage = null"
+            class="ml-2 text-green-200 hover:text-white transition-colors"
+          >
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+            </svg>
+          </button>
+        </div>
+      </Transition>
+
+      <Transition name="toast">
+        <div 
+          v-if="error" 
+          class="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-[100] px-6 py-4 bg-red-600 text-white rounded-xl shadow-2xl flex items-center space-x-3 max-w-md"
+        >
+          <div class="flex-shrink-0">
+            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+            </svg>
+          </div>
+          <p class="font-medium">{{ error }}</p>
+          <button 
+            @click="error = null"
+            class="ml-2 text-red-200 hover:text-white transition-colors"
+          >
+            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+            </svg>
+          </button>
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { authService } from '@/services/auth.service'
 import { Loader2, Camera } from 'lucide-vue-next'
+import AppLogo from '@/components/AppLogo.vue'
 
 const authStore = useAuthStore()
 
@@ -199,7 +214,6 @@ const isLoading = ref(false)
 const isSaving = ref(false)
 const error = ref<string | null>(null)
 const successMessage = ref<string | null>(null)
-const stats = ref<any>(null)
 
 // Formulaire
 const form = ref({
@@ -220,8 +234,6 @@ const userInitials = computed(() => {
   if (!user.value) return ''
   return `${user.value.firstName[0]}${user.value.lastName[0]}`.toUpperCase()
 })
-
-const isOwner = computed(() => authStore.isOwner)
 
 // Méthodes
 const getUserTypeLabel = (userType?: string) => {
@@ -253,6 +265,8 @@ const updateProfile = async () => {
   successMessage.value = null
   
   try {
+    console.log('📤 Envoi des données:', form.value)
+    
     // Appeler l'API pour mettre à jour le profil
     const response = await authService.updateProfile({
       firstName: form.value.firstName,
@@ -263,27 +277,36 @@ const updateProfile = async () => {
       country: form.value.country
     })
     
+    console.log('📥 Réponse reçue:', response)
+    
     // Mettre à jour le store avec les nouvelles données
     if (response.success && response.data?.user) {
-      authStore.setUser({
-        ...user.value!,
-        firstName: response.data.user.firstName,
-        lastName: response.data.user.lastName,
-        phone: response.data.user.phone,
-        address: response.data.user.address,
-        city: response.data.user.city,
-        country: response.data.user.country
-      })
+      console.log('✅ Mise à jour du store avec:', response.data.user)
+      
+      // Créer un nouvel objet utilisateur complet en fusionnant l'ancien avec le nouveau
+      const updatedUserData = {
+        ...(user.value || {}),
+        ...response.data.user
+      }
+      
+      authStore.setUser(updatedUserData)
+      console.log('✅ Store mis à jour, nouvel utilisateur:', user.value)
+      
+      // Recharger le formulaire avec les nouvelles données
+      loadProfile()
+    } else {
+      console.warn('⚠️ Réponse inattendue:', response)
     }
     
-    successMessage.value = 'Profil mis à jour avec succès'
+    successMessage.value = '✓ Profil mis à jour avec succès !'
     
-    // Masquer le message de succès après 3 secondes
+    // Masquer le message de succès après 5 secondes
     setTimeout(() => {
       successMessage.value = null
-    }, 3000)
+    }, 5000)
   } catch (err: any) {
-    console.error('Erreur lors de la mise à jour du profil:', err)
+    console.error('❌ Erreur lors de la mise à jour du profil:', err)
+    console.error('Détails:', err.response)
     error.value = err.response?.data?.message || 'Erreur lors de la mise à jour du profil'
   } finally {
     isSaving.value = false
@@ -293,5 +316,42 @@ const updateProfile = async () => {
 onMounted(() => {
   loadProfile()
 })
+
+// Recharger le profil quand l'utilisateur change dans le store
+watch(user, () => {
+  loadProfile()
+}, { deep: true })
 </script>
 
+<style scoped>
+/* Animation pour les toasts */
+.toast-enter-active {
+  animation: toastIn 0.4s ease-out;
+}
+
+.toast-leave-active {
+  animation: toastOut 0.3s ease-in;
+}
+
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 100%);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+@keyframes toastOut {
+  from {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, 100%);
+  }
+}
+</style>

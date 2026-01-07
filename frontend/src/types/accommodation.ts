@@ -43,6 +43,8 @@ export interface Accommodation {
   host: {
     name: string
     avatar: string
+    email?: string
+    phone?: string
     isSuperhost: boolean
   }
   propertyType: PropertyType

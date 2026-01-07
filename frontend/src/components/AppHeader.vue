@@ -3,16 +3,28 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex justify-between items-center h-16">
         <!-- Logo -->
-        <div class="flex items-center cursor-pointer" @click="goHome">
-          <h1 class="text-2xl font-bold text-indigo-600">
-            bnb
-          </h1>
-        </div>
+        <AppLogo size="medium" color="primary" :clickable="true" />
 
         <!-- Navigation et profil -->
         <div class="flex items-center space-x-4">
           <button class="p-2 text-gray-600 hover:text-gray-900 transition-colors rounded-lg hover:bg-gray-100">
             <Search class="w-5 h-5" />
+          </button>
+
+          <!-- Messages (si connecté) -->
+          <button 
+            v-if="isAuthenticated"
+            @click="goToMessages"
+            class="relative p-2 text-gray-600 hover:text-gray-900 transition-colors rounded-lg hover:bg-gray-100"
+            title="Messages"
+          >
+            <MessageSquare class="w-5 h-5" />
+            <span 
+              v-if="unreadCount > 0"
+              class="absolute -top-1 -right-1 bg-red-600 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center"
+            >
+              {{ unreadCount > 9 ? '9+' : unreadCount }}
+            </span>
           </button>
 
           <!-- Utilisateur connecté -->
@@ -100,17 +112,20 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { authService } from '@/services/auth.service'
-import { Search, User, Home, Calendar, Settings, LogOut } from 'lucide-vue-next'
+import { messageService } from '@/services/message.service'
+import { Search, User, Home, Calendar, Settings, LogOut, MessageSquare } from 'lucide-vue-next'
+import AppLogo from '@/components/AppLogo.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
 
 // State
 const showUserMenu = ref(false)
+const unreadCount = ref(0)
 
 // Computed
 const isAuthenticated = computed(() => authStore.isAuthenticated)
@@ -147,6 +162,11 @@ const goToMyProperties = () => {
   showUserMenu.value = false
 }
 
+const goToMessages = () => {
+  router.push('/messages')
+  showUserMenu.value = false
+}
+
 const goToBookings = () => {
   router.push('/bookings')
   showUserMenu.value = false
@@ -170,6 +190,33 @@ const handleLogout = async () => {
     router.push('/')
   }
 }
+
+// Charger le nombre de messages non lus
+const loadUnreadCount = async () => {
+  if (!isAuthenticated.value) {
+    unreadCount.value = 0
+    return
+  }
+  
+  try {
+    unreadCount.value = await messageService.getUnreadCount()
+  } catch (err) {
+    console.error('Erreur chargement messages non lus:', err)
+  }
+}
+
+// Rafraîchir le compteur toutes les 30 secondes
+let countInterval: any
+onMounted(() => {
+  loadUnreadCount()
+  countInterval = setInterval(loadUnreadCount, 30000)
+})
+
+onUnmounted(() => {
+  if (countInterval) {
+    clearInterval(countInterval)
+  }
+})
 
 // Fermer le menu si on clique ailleurs
 if (typeof window !== 'undefined') {

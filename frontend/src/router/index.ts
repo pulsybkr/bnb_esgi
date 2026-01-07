@@ -30,6 +30,12 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/accommodation/:id/edit',
+    name: 'accommodation-edit',
+    component: () => import('@/views/AccommodationEditView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/favorites',
     name: 'favorites',
     component: () => import('@/views/FavoritesView.vue')
@@ -54,6 +60,12 @@ const routes = [
     path: '/profile',
     name: 'profile',
     component: () => import('@/views/ProfileView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/messages',
+    name: 'messages',
+    component: () => import('@/views/MessagesView.vue'),
     meta: { requiresAuth: true }
   }
 ]

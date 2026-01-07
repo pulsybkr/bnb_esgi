@@ -5,7 +5,7 @@
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between h-16">
           <div class="flex items-center space-x-4">
-            <router-link to="/" class="text-2xl font-bold text-indigo-600">bnb</router-link>
+            <AppLogo size="medium" color="primary" :clickable="true" />
             <h2 class="text-lg font-semibold text-gray-700">Créer un nouveau logement</h2>
           </div>
           <router-link
@@ -459,6 +459,7 @@ import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { X, Loader2 } from 'lucide-vue-next'
 import ImageUpload from '@/components/ImageUpload.vue'
+import AppLogo from '@/components/AppLogo.vue'
 import type { Accommodation, Service } from '@/types/accommodation'
 import { PropertyType, PROPERTY_TYPE_OPTIONS } from '@/types/accommodation'
 import { availableServices } from '@/data/services'

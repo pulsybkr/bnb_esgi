@@ -60,18 +60,18 @@ function transformBackendProperty(property: any): Accommodation {
 
   // Extraire les équipements (amenities) depuis le JSON
   let amenities: string[] = []
-  if (property.equipements) {
-    if (typeof property.equipements === 'string') {
+  const amenitiesField = property.amenities || property.equipements
+  if (amenitiesField) {
+    if (typeof amenitiesField === 'string') {
       try {
-        amenities = Object.keys(JSON.parse(property.equipements)).filter(key => 
-          JSON.parse(property.equipements)[key] === true
-        )
+        const parsed = JSON.parse(amenitiesField)
+        amenities = Object.keys(parsed).filter(key => parsed[key] === true)
       } catch {
         amenities = []
       }
-    } else if (typeof property.equipements === 'object') {
-      amenities = Object.keys(property.equipements).filter(key => 
-        property.equipements[key] === true
+    } else if (typeof amenitiesField === 'object') {
+      amenities = Object.keys(amenitiesField).filter(key => 
+        amenitiesField[key] === true
       )
     }
   }
@@ -153,6 +153,8 @@ function transformBackendProperty(property: any): Accommodation {
     host: {
       name: hostName,
       avatar: property.owner?.photo_profil || property.owner?.profilePhoto || '',
+      email: property.owner?.email || '',
+      phone: property.owner?.telephone || property.owner?.phone || '',
       isSuperhost: false, // TODO: Ajouter ce champ dans la base de données
     },
     propertyType: typeMapping[property.type] || PropertyType.APARTMENT,
@@ -295,6 +297,21 @@ export const logementService = {
   async getMyProperties(filters?: Partial<PropertyFilters>): Promise<Accommodation[]> {
     const response = await apiClient.get('/logements/my', { params: filters })
     return response.data.data.properties.map(transformBackendProperty)
+  },
+
+  /**
+   * Récupère les statistiques du propriétaire connecté
+   */
+  async getMyStatistics(): Promise<{
+    totalProperties: number
+    activeProperties: number
+    totalReservations: number
+    totalFavorites: number
+    totalReviews: number
+    averageRating: string
+  }> {
+    const response = await apiClient.get('/logements/my/statistics')
+    return response.data.data.statistics
   },
 }
 

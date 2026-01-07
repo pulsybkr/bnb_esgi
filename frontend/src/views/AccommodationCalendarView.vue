@@ -5,7 +5,7 @@
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between h-16">
           <div class="flex items-center space-x-4">
-            <router-link to="/" class="text-2xl font-bold text-indigo-600">bnb</router-link>
+            <AppLogo size="medium" color="primary" :clickable="true" />
             <h2 class="text-lg font-semibold text-gray-700">Calendrier de disponibilité</h2>
           </div>
           <router-link
@@ -125,6 +125,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { X, Calendar, Users } from 'lucide-vue-next'
 import HostCalendar from '@/components/HostCalendar.vue'
+import AppLogo from '@/components/AppLogo.vue'
 import type { Booking, BlockedDate } from '@/types/booking'
 import { BookingStatus, BlockType } from '@/types/booking'
 import { accommodations } from '@/data/fixtures'
@@ -132,6 +133,7 @@ import type { Accommodation } from '@/types/accommodation'
 import { normalizeDate } from '@/utils/dateUtils'
 import { logementService } from '@/services/logement.service'
 import { availabilityService } from '@/services/availability.service'
+import { reservationService, type BackendReservation } from '@/services/reservation.service'
 
 const route = useRoute()
 const router = useRouter()
@@ -174,25 +176,44 @@ const loadAccommodation = async () => {
 
 const loadAvailabilities = async (accommodationId: string) => {
   try {
-    const availabilities = await availabilityService.getByProperty(accommodationId)
+    const [availabilities, reservations] = await Promise.all([
+      availabilityService.getByProperty(accommodationId),
+      reservationService.getPropertyReservations(accommodationId),
+    ])
     
     // Séparer les réservations et les blocages
-    const reserved = availabilities.filter(a => a.status === 'reserve')
     const blocked = availabilities.filter(a => a.status === 'bloque')
     
-    // Convertir en format Booking
-    bookings.value = reserved.map(a => ({
-      id: a.id,
-      accommodationId: a.accommodationId,
-      guestId: '',
-      guestName: 'Réservation',
-      guestEmail: '',
-      checkIn: new Date(a.startDate),
-      checkOut: new Date(a.endDate),
-      guests: 0,
-      totalPrice: a.customPrice || 0,
-      status: BookingStatus.CONFIRMED,
-      createdAt: new Date(a.createdAt),
+    // Convertir les réservations backend en format Booking (avec infos locataire)
+    const mapStatus = (s: BackendReservation['status']): BookingStatus => {
+      switch (s) {
+        case 'en_attente':
+          return BookingStatus.PENDING
+        case 'confirmee':
+        case 'en_cours':
+          return BookingStatus.CONFIRMED
+        case 'annulee':
+          return BookingStatus.CANCELLED
+        case 'terminee':
+          return BookingStatus.COMPLETED
+        default:
+          return BookingStatus.PENDING
+      }
+    }
+
+    bookings.value = (reservations || []).map(r => ({
+      id: r.id,
+      accommodationId: r.accommodationId,
+      guestId: r.tenant?.id || r.tenantId,
+      guestName: r.tenant ? `${r.tenant.firstName} ${r.tenant.lastName}` : 'Locataire',
+      guestEmail: r.tenant?.email || '',
+      checkIn: new Date(r.startDate),
+      checkOut: new Date(r.endDate),
+      guests: r.guestCount || 0,
+      totalPrice: typeof r.totalAmount === 'string' ? parseFloat(r.totalAmount) : Number(r.totalAmount || 0),
+      status: mapStatus(r.status),
+      createdAt: new Date(r.createdAt),
+      notes: r.tenantMessage || undefined,
     }))
     
     // Convertir en format BlockedDate

@@ -31,13 +31,17 @@ export function useFavorites() {
 
   // Ajouter un favori
   const addFavorite = (accommodationId: string) => {
-    favorites.value.add(accommodationId)
+    const next = new Set(favorites.value)
+    next.add(accommodationId)
+    favorites.value = next
     saveFavorites()
   }
 
   // Retirer un favori
   const removeFavorite = (accommodationId: string) => {
-    favorites.value.delete(accommodationId)
+    const next = new Set(favorites.value)
+    next.delete(accommodationId)
+    favorites.value = next
     saveFavorites()
   }
 
