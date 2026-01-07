@@ -2,7 +2,13 @@
  * Types pour les réservations (synchronisés avec le backend)
  */
 
-export type ReservationStatus = 'en_attente' | 'confirmee' | 'annulee' | 'en_cours' | 'terminee'
+export type ReservationStatus =
+    | 'en_attente'
+    | 'acceptee'
+    | 'confirmee'
+    | 'en_cours'
+    | 'terminee'
+    | 'annulee'
 
 export interface Tenant {
     id: string

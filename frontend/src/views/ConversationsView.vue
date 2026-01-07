@@ -1,6 +1,7 @@
 <template>
-  <div class="min-h-screen bg-gray-50 py-8">
-    <div class="max-w-6xl mx-auto px-4">
+  <div class="min-h-screen bg-gray-50">
+    <SimpleHeader />
+    <div class="max-w-6xl mx-auto px-4 py-8">
       <h1 class="text-3xl font-bold mb-8">Mes conversations</h1>
 
       <div v-if="loading" class="text-center py-12">
@@ -64,6 +65,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { MessageCircle } from 'lucide-vue-next'
+import SimpleHeader from '@/components/layout/SimpleHeader.vue'
 import { messageService } from '@/services/message'
 import ConversationPanel from '@/components/message/ConversationPanel.vue'
 import HostAvatar from '@/components/ui/HostAvatar.vue'

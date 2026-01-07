@@ -53,10 +53,11 @@ enum StatutDisponibilite {
 
 enum StatutReservation {
   en_attente
+  acceptee
   confirmee
-  annulee
-  terminee
   en_cours
+  terminee
+  annulee
 }
 
 enum StatutPaiement {

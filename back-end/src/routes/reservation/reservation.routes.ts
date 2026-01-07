@@ -313,6 +313,13 @@ router.put(
     ReservationController.acceptReservation
 );
 
+// Confirm payment for accepted reservation
+router.put(
+    '/:id/confirm-payment',
+    requireAuth,
+    ReservationController.confirmPayment
+);
+
 /**
  * @openapi
  * /reservations/{id}/reject:

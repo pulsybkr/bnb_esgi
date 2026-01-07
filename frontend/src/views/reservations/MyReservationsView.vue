@@ -1,5 +1,6 @@
 <template>
-  <div class="min-h-screen bg-gray-50 py-8">
+  <div class="min-h-screen bg-gray-50">
+    <SimpleHeader />
     <div class="max-w-6xl mx-auto px-4">
       <h1 class="text-3xl font-bold mb-8">Mes réservations</h1>
 
@@ -33,67 +34,76 @@
         <div
           v-for="reservation in reservations"
           :key="reservation.id"
-          class="bg-white rounded-lg shadow hover:shadow-lg transition-shadow cursor-pointer"
-          @click="goToDetail(reservation.id)"
+          class="bg-white rounded-lg shadow hover:shadow-lg transition-shadow overflow-hidden"
         >
-          <div class="p-6">
-            <div class="flex gap-6">
-              <!-- Image -->
+          <div class="flex flex-col md:flex-row">
+            <!-- Image -->
+            <div class="md:w-64 h-48 md:h-auto flex-shrink-0">
               <img
                 v-if="reservation.accommodation.photos?.[0]"
                 :src="reservation.accommodation.photos[0].url"
                 :alt="reservation.accommodation.title"
-                class="w-32 h-32 object-cover rounded-lg"
+                class="w-full h-full object-cover cursor-pointer"
+                @click="goToDetail(reservation.id)"
               />
-              <div v-else class="w-32 h-32 bg-gray-200 rounded-lg flex items-center justify-center">
-                <Home class="w-12 h-12 text-gray-400" />
+              <div v-else class="w-full h-full bg-gray-200 flex items-center justify-center cursor-pointer" @click="goToDetail(reservation.id)">
+                <Home class="w-16 h-16 text-gray-400" />
+              </div>
+            </div>
+
+            <!-- Détails -->
+            <div class="flex-1 p-6">
+              <div class="flex justify-between items-start mb-3">
+                <div class="flex-1 cursor-pointer" @click="goToDetail(reservation.id)">
+                  <h3 class="text-xl font-semibold hover:text-green-600 transition-colors">{{ reservation.accommodation.title }}</h3>
+                  <p class="text-gray-600 flex items-center gap-1 mt-1">
+                    <MapPin class="w-4 h-4" />
+                    {{ reservation.accommodation.city }}
+                  </p>
+                </div>
+                <span
+                  class="px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap ml-4"
+                  :class="getStatusClass(reservation.status)"
+                >
+                  {{ getStatusLabel(reservation.status) }}
+                </span>
               </div>
 
-              <!-- Détails -->
-              <div class="flex-1">
-                <div class="flex justify-between items-start mb-2">
-                  <div>
-                    <h3 class="text-xl font-semibold">{{ reservation.accommodation.title }}</h3>
-                    <p class="text-gray-600">{{ reservation.accommodation.city }}</p>
-                  </div>
-                  <span
-                    class="px-3 py-1 rounded-full text-sm font-medium"
-                    :class="getStatusClass(reservation.status)"
+              <div class="grid grid-cols-2 gap-4 text-sm text-gray-600 mb-4">
+                <div class="flex items-center gap-2">
+                  <Calendar class="w-4 h-4" />
+                  {{ formatDate(reservation.startDate) }} - {{ formatDate(reservation.endDate) }}
+                </div>
+                <div class="flex items-center gap-2">
+                  <Users class="w-4 h-4" />
+                  {{ reservation.guestCount }} voyageur{{ reservation.guestCount > 1 ? 's' : '' }}
+                </div>
+              </div>
+
+              <div class="flex justify-between items-center pt-4 border-t">
+                <p class="text-xl font-bold text-green-600">{{ formatCFA(reservation.totalAmount) }}</p>
+                <div class="flex gap-2">
+                  <button
+                    v-if="reservation.status === 'acceptee'"
+                    @click.stop="goToDetail(reservation.id)"
+                    class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2 font-semibold"
                   >
-                    {{ getStatusLabel(reservation.status) }}
-                  </span>
-                </div>
-
-                <div class="grid grid-cols-2 gap-4 text-sm text-gray-600 mb-3">
-                  <div class="flex items-center gap-2">
-                    <Calendar class="w-4 h-4" />
-                    {{ formatDate(reservation.startDate) }} - {{ formatDate(reservation.endDate) }}
-                  </div>
-                  <div class="flex items-center gap-2">
-                    <Users class="w-4 h-4" />
-                    {{ reservation.guestCount }} voyageur{{ reservation.guestCount > 1 ? 's' : '' }}
-                  </div>
-                </div>
-
-                <div class="flex justify-between items-center">
-                  <p class="text-lg font-bold">{{ formatCFA(reservation.totalAmount) }}</p>
-                  <div class="flex gap-2">
-                    <button
-                      v-if="reservation.status === 'confirmee'"
-                      @click.stop="openConversation(reservation)"
-                      class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                    >
-                      <MessageCircle class="w-4 h-4 inline mr-2" />
-                      Message
-                    </button>
-                    <button
-                      v-if="reservation.status === 'en_attente' || reservation.status === 'confirmee'"
-                      @click.stop="cancelReservation(reservation.id)"
-                      class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
-                    >
-                      Annuler
-                    </button>
-                  </div>
+                    💳 Payer maintenant
+                  </button>
+                  <button
+                    v-if="reservation.status === 'confirmee'"
+                    @click.stop="openConversation(reservation)"
+                    class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
+                  >
+                    <MessageCircle class="w-4 h-4" />
+                    <span class="hidden sm:inline">Message</span>
+                  </button>
+                  <button
+                    @click.stop="goToDetail(reservation.id)"
+                    class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+                  >
+                    Voir détails
+                  </button>
                 </div>
               </div>
             </div>
@@ -134,10 +144,11 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { Home, Calendar, Users, MessageCircle } from 'lucide-vue-next'
+import { Home, Calendar, Users, MessageCircle, MapPin } from 'lucide-vue-next'
 import { ReservationService } from '@/services/reservation/reservation.service'
 import { messageService } from '@/services/message'
 import ConversationPanel from '@/components/message/ConversationPanel.vue'
+import SimpleHeader from '@/components/layout/SimpleHeader.vue'
 import { formatCFA } from '@/utils/currency'
 import type { Reservation } from '@/types/reservation'
 import type { Message } from '@/types/message'
@@ -147,6 +158,7 @@ const router = useRouter()
 const statuses = [
   { value: null, label: 'Toutes' },
   { value: 'en_attente', label: 'En attente' },
+  { value: 'acceptee', label: 'Acceptées' },
   { value: 'confirmee', label: 'Confirmées' },
   { value: 'en_cours', label: 'En cours' },
   { value: 'terminee', label: 'Terminées' },
@@ -192,6 +204,7 @@ const formatDate = (date: Date) => {
 const getStatusClass = (status: string) => {
   const classes: Record<string, string> = {
     en_attente: 'bg-yellow-100 text-yellow-800',
+    acceptee: 'bg-blue-100 text-blue-800',
     confirmee: 'bg-green-100 text-green-800',
     en_cours: 'bg-blue-100 text-blue-800',
     terminee: 'bg-gray-100 text-gray-800',
@@ -203,6 +216,7 @@ const getStatusClass = (status: string) => {
 const getStatusLabel = (status: string) => {
   const labels: Record<string, string> = {
     en_attente: 'En attente',
+    acceptee: 'Acceptée - Paiement requis',
     confirmee: 'Confirmée',
     en_cours: 'En cours',
     terminee: 'Terminée',

@@ -5,7 +5,7 @@
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center h-16">
           <button 
-            @click="$router.back()"
+            @click="$router.push('/')"
             class="flex items-center space-x-2 text-gray-600 hover:text-gray-900"
           >
             <ArrowLeft class="w-5 h-5" />

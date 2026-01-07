@@ -419,15 +419,13 @@ export class ReservationService {
         }
 
         if (reservation.status !== 'en_attente') {
-            throw new ValidationError(
-                `Cannot accept reservation with status: ${reservation.status}`
-            );
+            `Cannot accept reservation with status: ${reservation.status}`
         }
 
-        // Update reservation status
+        // Update reservation status to acceptee (awaiting payment)
         const updated = await prisma.reservation.update({
             where: { id },
-            data: { status: 'confirmee' },
+            data: { status: 'acceptee' },
             include: {
                 accommodation: {
                     select: {
@@ -460,6 +458,57 @@ export class ReservationService {
             reservation.endDate,
             parseFloat(reservation.totalAmount.toString())
         );
+
+        return updated;
+    }
+
+    /**
+     * Confirm payment for an accepted reservation
+     */
+    static async confirmPayment(id: string): Promise<any> {
+        const reservation = await prisma.reservation.findUnique({
+            where: { id },
+        });
+
+        if (!reservation) {
+            throw new NotFoundError('Reservation not found');
+        }
+
+        if (reservation.status !== 'acceptee') {
+            throw new ValidationError(
+                `Cannot confirm payment for reservation with status: ${reservation.status}`
+            );
+        }
+
+        // Update reservation status to confirmed
+        const updated = await prisma.reservation.update({
+            where: { id },
+            data: { status: 'confirmee' },
+            include: {
+                accommodation: {
+                    select: {
+                        id: true,
+                        title: true,
+                        owner: {
+                            select: {
+                                id: true,
+                                firstName: true,
+                                lastName: true,
+                                email: true,
+                            },
+                        },
+                    },
+                },
+                tenant: {
+                    select: {
+                        id: true,
+                        firstName: true,
+                        lastName: true,
+                        email: true,
+                    },
+                },
+            },
+        });
 
         return updated;
     }

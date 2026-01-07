@@ -1,21 +1,6 @@
 <template>
   <div class="min-h-screen bg-gray-50">
-    <!-- Header -->
-    <header class="bg-white shadow-sm border-b sticky top-0 z-50">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex items-center justify-between h-16">
-          <div class="flex items-center space-x-4">
-            <button 
-              @click="$router.push('/')"
-              class="text-2xl font-bold text-indigo-600 hover:text-indigo-700"
-            >
-              bnb
-            </button>
-            <h1 class="text-xl font-semibold text-gray-900">Mon profil</h1>
-          </div>
-        </div>
-      </div>
-    </header>
+    <SimpleHeader />
 
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <!-- Messages d'erreur/succès -->
@@ -191,6 +176,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { authService } from '@/services/auth.service'
 import { Loader2, Camera } from 'lucide-vue-next'
+import SimpleHeader from '@/components/layout/SimpleHeader.vue'
 
 const authStore = useAuthStore()
 

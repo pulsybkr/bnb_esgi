@@ -157,6 +157,24 @@ export class ReservationController {
     }
 
     /**
+     * Confirm payment for accepted reservation
+     */
+    static async confirmPayment(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const { id } = req.params;
+            const reservation = await ReservationService.confirmPayment(id);
+
+            res.json({
+                success: true,
+                message: 'Payment confirmed successfully',
+                data: { reservation },
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
      * Reject a reservation (owner only)
      */
     static async rejectReservation(req: Request, res: Response, next: NextFunction): Promise<void> {
