@@ -18,6 +18,7 @@ export interface Disponibilite {
 }
 
 export interface CreateDisponibiliteData {
+    accommodationId: string
     startDate: Date
     endDate: Date
     status: DisponibiliteStatus
@@ -27,6 +28,7 @@ export interface CreateDisponibiliteData {
 }
 
 export interface UpdateDisponibiliteData {
+    accommodationId?: string
     startDate?: Date
     endDate?: Date
     status?: DisponibiliteStatus
