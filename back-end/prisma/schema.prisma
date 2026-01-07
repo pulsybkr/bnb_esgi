@@ -412,19 +412,6 @@ model Service {
   @@map("services")
 }
 
-
-enum TypeRegleTarification {
-  season
-  weekend
-  long_stay
-  custom
-}
-
-enum TypeSaison {
-  high
-  low
-}
-
 model PricingConfiguration {
   id              String   @id @default(uuid())
   accommodationId String   @unique @map("id_logement")

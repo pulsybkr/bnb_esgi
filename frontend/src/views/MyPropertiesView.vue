@@ -124,7 +124,7 @@
                         'bg-gray-100 text-gray-800'
                       ]"
                     >
-                      {{ getStatusLabel(property.status) }}
+                      {{ getStatusLabel(property.status || 'actif') }}
                     </span>
                   </div>
                   <p class="text-sm text-gray-600 mb-2">

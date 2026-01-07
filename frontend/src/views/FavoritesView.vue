@@ -17,10 +17,10 @@
             >
               <Heart class="w-5 h-5 fill-red-500 text-red-500" />
               <span 
-                v-if="favoritesList.value && favoritesList.value.length > 0"
+                v-if="favoritesList && favoritesList.length > 0"
                 class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium"
               >
-                {{ favoritesList.value.length }}
+                {{ favoritesList.length }}
               </span>
             </router-link>
             <button class="p-2 text-gray-600 hover:text-gray-900" type="button" title="Mon compte">
@@ -77,7 +77,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { Heart, User, ArrowLeft } from 'lucide-vue-next'
-import AccommodationCard from '@/components/AccommodationCard.vue'
+import AccommodationCard from '@/components/accommodation/AccommodationCard.vue'
 import { useFavorites } from '@/composables/useFavorites'
 import { logementService } from '@/services/logement.service'
 import type { Accommodation } from '@/types/accommodation'

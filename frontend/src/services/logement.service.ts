@@ -41,6 +41,7 @@ export interface CreatePropertyData {
   checkIn?: string
   checkOut?: string
   images?: File[]
+  status?: 'actif' | 'suspendu' | 'archive'
 }
 
 /**
@@ -63,14 +64,14 @@ function transformBackendProperty(property: any): Accommodation {
   if (property.equipements) {
     if (typeof property.equipements === 'string') {
       try {
-        amenities = Object.keys(JSON.parse(property.equipements)).filter(key => 
+        amenities = Object.keys(JSON.parse(property.equipements)).filter(key =>
           JSON.parse(property.equipements)[key] === true
         )
       } catch {
         amenities = []
       }
     } else if (typeof property.equipements === 'object') {
-      amenities = Object.keys(property.equipements).filter(key => 
+      amenities = Object.keys(property.equipements).filter(key =>
         property.equipements[key] === true
       )
     }
@@ -102,24 +103,24 @@ function transformBackendProperty(property: any): Accommodation {
     const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3333'
     return url.startsWith('/') ? `${apiBaseUrl}${url}` : `${apiBaseUrl}/${url}`
   }
-  
+
   const images = property.photos && Array.isArray(property.photos)
     ? property.photos.map((photo: any) => {
-        const url = photo.url || photo.url_miniature
-        return url ? getImageUrl(url) : null
-      }).filter(Boolean)
+      const url = photo.url || photo.url_miniature
+      return url ? getImageUrl(url) : null
+    }).filter(Boolean)
     : []
 
   // Extraire les coordonnées
   const coordinates = property.latitude && property.longitude
     ? {
-        latitude: typeof property.latitude === 'string' 
-          ? parseFloat(property.latitude) 
-          : property.latitude.toNumber ? property.latitude.toNumber() : Number(property.latitude),
-        longitude: typeof property.longitude === 'string'
-          ? parseFloat(property.longitude)
-          : property.longitude.toNumber ? property.longitude.toNumber() : Number(property.longitude),
-      }
+      latitude: typeof property.latitude === 'string'
+        ? parseFloat(property.latitude)
+        : property.latitude.toNumber ? property.latitude.toNumber() : Number(property.latitude),
+      longitude: typeof property.longitude === 'string'
+        ? parseFloat(property.longitude)
+        : property.longitude.toNumber ? property.longitude.toNumber() : Number(property.longitude),
+    }
     : undefined
 
   // Extraire le prix
@@ -165,8 +166,8 @@ function transformBackendProperty(property: any): Accommodation {
       id: service.id,
       name: service.nom || service.name,
       description: service.description,
-      price: typeof service.price === 'string' 
-        ? parseFloat(service.price) 
+      price: typeof service.price === 'string'
+        ? parseFloat(service.price)
         : service.price?.toNumber ? service.price.toNumber() : Number(service.price || 0),
       priceType: service.type_prix || service.priceType || 'fixed',
       icon: service.icone || service.icon,
@@ -182,10 +183,10 @@ export const logementService = {
   async getAll(filters: PropertyFilters = {}): Promise<PropertyListResponse> {
     const response = await apiClient.get('/logements', { params: filters })
     const backendData = response.data.data
-    
+
     // Transformer les propriétés
     const transformedProperties = backendData.properties.map(transformBackendProperty)
-    
+
     return {
       properties: transformedProperties,
       total: backendData.total,
@@ -208,14 +209,14 @@ export const logementService = {
    */
   async create(data: CreatePropertyData & { imagesInfo?: Array<{ index: number; isMain: boolean }> }): Promise<Accommodation> {
     const formData = new FormData()
-    
+
     // Ajouter les images (Multer attend un champ nommé 'images' pour chaque fichier)
     if (data.images && data.images.length > 0) {
       data.images.forEach((file) => {
         formData.append('images', file)
       })
     }
-    
+
     // Ajouter les informations sur les images (ordre et isMain)
     if (data.imagesInfo && data.imagesInfo.length > 0) {
       formData.append('imagesInfo', JSON.stringify(data.imagesInfo))
@@ -232,19 +233,19 @@ export const logementService = {
     formData.append('bedrooms', data.bedrooms.toString())
     formData.append('bathrooms', data.bathrooms.toString())
     formData.append('price', data.price.toString())
-    
+
     if (data.amenities) {
       formData.append('amenities', JSON.stringify(data.amenities))
     }
-    
+
     if (data.tags) {
       formData.append('tags', JSON.stringify(data.tags))
     }
-    
+
     if (data.services) {
       formData.append('services', JSON.stringify(data.services))
     }
-    
+
     if (data.checkIn) formData.append('checkIn', data.checkIn)
     if (data.checkOut) formData.append('checkOut', data.checkOut)
 

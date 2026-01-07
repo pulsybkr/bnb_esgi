@@ -2,7 +2,7 @@
   <div class="min-h-screen">
     <!-- Header -->
     <header class="bg-white shadow-sm border-b sticky top-0 z-40">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between h-20">
           <!-- Logo -->
           <div class="flex items-center">
@@ -30,23 +30,10 @@
                 @click="searchQuery = ''"
                 class="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                 type="button"
-                :title="isAuthenticated ? 'Mon compte' : 'Se connecter'"
               >
                 <X class="w-5 h-5" />
               </button>
-
-              <!-- Menu déroulant -->
-              <div 
-                v-if="showUserMenu"
-                class="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-2xl border border-gray-200 py-2 z-50"
-              >
-                <!-- Utilisateur connecté -->
-                <template v-if="isAuthenticated && user">
-                  <!-- Profil utilisateur -->
-                  <div class="px-4 py-3 border-b border-gray-100">
-                    <p class="text-sm font-semibold text-gray-900">{{ fullName }}</p>
-                    <p class="text-xs text-gray-500 truncate">{{ user.email }}</p>
-                  </div>
+            </div>
 
             <!-- Search history dropdown -->
             <Transition name="dropdown">
@@ -96,7 +83,7 @@
       </div>
     </header>
 
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <!-- Controls bar -->
       <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <!-- Results count -->
@@ -174,7 +161,7 @@
         :location="currentFilters.locationRadius?.center"
         :location-name="searchQuery || undefined"
         :radius-km="currentFilters.locationRadius?.radiusKm || 50"
-        :max-results="6"
+        :max-results="10"
         @accommodation-selected="goToDetail"
         class="mb-12"
       />
@@ -184,7 +171,7 @@
         v-if="!hasActiveFilters"
         :all-accommodations="allAccommodations"
         :user-preferences="userPreferences"
-        :max-results="6"
+        :max-results="10"
         recommendation-type="personalized"
         @accommodation-selected="goToDetail"
         class="mb-12"
@@ -193,7 +180,7 @@
       <!-- List view -->
       <div v-if="currentView === 'list'">
         <!-- Accommodations grid -->
-        <div v-if="displayedAccommodations.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <div v-if="displayedAccommodations.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6 mb-8">
           <AccommodationCard 
             v-for="accommodation in displayedAccommodations" 
             :key="accommodation.id"
@@ -280,7 +267,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch, onActivated } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { 
   Search, User, Home, X, SlidersHorizontal, ArrowUpDown, 
@@ -293,9 +280,6 @@ import ViewToggle from '@/components/ui/ViewToggle.vue'
 import UserMenu from '@/components/auth/UserMenu.vue'
 import type { Accommodation, FilterOptions } from '@/types/accommodation'
 import { useSearchHistory } from '@/composables/useSearchHistory'
-import { useFavorites } from '@/composables/useFavorites'
-import { useAuthStore } from '@/stores/auth'
-import { authService } from '@/services/auth.service'
 import { getTagLabels } from '@/data/tags'
 import { generatePreferencesFromHistory } from '@/utils/recommendations'
 import type { UserPreferences } from '@/utils/recommendations'
@@ -308,7 +292,6 @@ import { buildBackendFilters } from '@/utils/mappers/filterMapper'
 import { useDebounceFn } from '@vueuse/core'
 
 const router = useRouter()
-const authStore = useAuthStore()
 const { searchHistory, addToHistory, removeFromHistory, clearHistory } = useSearchHistory()
 const { properties, isLoading: isLoadingProperties, error: apiError, loadProperties, pagination } = useLogements()
 
@@ -514,130 +497,6 @@ watch(searchQuery, (newValue, oldValue) => {
   }
 })
 
-// Charger les logements depuis l'API
-const loadAccommodations = async () => {
-  isLoading.value = true
-  error.value = null
-  
-  try {
-    // Construire les filtres API depuis les filtres locaux
-    const apiFilters: any = {
-      page: currentPage.value,
-      limit: itemsPerPage,
-      status: 'actif',
-    }
-    
-    // Ajouter les filtres
-    if (currentFilters.value.priceRange[0] > 0) {
-      apiFilters.minPrice = currentFilters.value.priceRange[0]
-    }
-    if (currentFilters.value.priceRange[1] < 1000) {
-      apiFilters.maxPrice = currentFilters.value.priceRange[1]
-    }
-    
-    if (currentFilters.value.propertyType.length > 0) {
-      apiFilters.type = currentFilters.value.propertyType[0] // API supporte un seul type
-    }
-    
-    if (currentFilters.value.maxGuests > 0) {
-      apiFilters.minCapacity = currentFilters.value.maxGuests
-    }
-    
-    // Recherche textuelle sur ville ou pays
-    if (searchQuery.value.trim()) {
-      const query = searchQuery.value.trim()
-      // Essayer d'abord la ville, puis le pays
-      if (query.length > 2) {
-        apiFilters.city = query
-      }
-    }
-    
-    // Mapping du tri
-    const sortMapping: Record<string, { sortBy: string; sortOrder: string }> = {
-      'price-asc': { sortBy: 'pricePerNight', sortOrder: 'asc' },
-      'price-desc': { sortBy: 'pricePerNight', sortOrder: 'desc' },
-      'rating-desc': { sortBy: 'averageRating', sortOrder: 'desc' },
-      'date-desc': { sortBy: 'createdAt', sortOrder: 'desc' },
-    }
-    
-    if (sortMapping[sortBy.value]) {
-      Object.assign(apiFilters, sortMapping[sortBy.value])
-    }
-    
-    const response = await logementService.getAll(apiFilters)
-    console.log('Réponse API:', response)
-    console.log('Propriétés transformées:', response.properties)
-    console.log('Pagination API:', {
-      total: response.total,
-      page: response.page,
-      limit: response.limit,
-      totalPages: response.totalPages
-    })
-    
-    // Si c'est la page 1 ou si on change de page, remplacer les données
-    // Sinon, on pourrait append pour une pagination infinie
-    if (currentPage.value === 1) {
-      allAccommodations.value = response.properties
-    } else {
-      // Pour les pages suivantes, on remplace car on fait une nouvelle requête
-      allAccommodations.value = response.properties
-    }
-    
-    console.log('allAccommodations après assignation:', allAccommodations.value.length, 'logements')
-    pagination.value = {
-      total: response.total,
-      page: response.page,
-      limit: response.limit,
-      totalPages: response.totalPages,
-    }
-  } catch (err: any) {
-    console.error('Erreur lors du chargement des logements:', err)
-    
-    // Gérer les erreurs spécifiques
-    if (err.response?.status === 503) {
-      error.value = err.response?.data?.message || 'La base de données n\'est pas accessible. Veuillez démarrer PostgreSQL.'
-    } else if (err.response?.data?.message) {
-      error.value = err.response.data.message
-    } else {
-      error.value = err.message || 'Erreur lors du chargement des logements'
-    }
-    
-    // En cas d'erreur, utiliser les données mockées comme fallback
-    allAccommodations.value = accommodations
-    pagination.value = {
-      total: accommodations.length,
-      page: 1,
-      limit: itemsPerPage,
-      totalPages: Math.ceil(accommodations.length / itemsPerPage),
-    }
-  } finally {
-    isLoading.value = false
-  }
-}
-
-// Watchers pour recharger les données
-watch([currentPage, sortBy], () => {
-  loadAccommodations()
-})
-
-watch([currentFilters, searchQuery], () => {
-  currentPage.value = 1
-  loadAccommodations()
-}, { deep: true })
-
-// Fermer le menu utilisateur si on clique ailleurs
-if (typeof window !== 'undefined') {
-  window.addEventListener('click', (e) => {
-    const target = e.target as HTMLElement
-    if (!target.closest('.relative')) {
-      showUserMenu.value = false
-    }
-  })
-}
-
-// Recharger les données quand on revient sur la page
-import { onActivated } from 'vue'
-
 // Watchers pour recharger les données quand les filtres changent
 watch([currentFilters, sortBy, currentPage], () => {
   loadAccommodationsWithFilters()
@@ -681,4 +540,3 @@ onMounted(async () => {
   transform: translateY(-10px);
 }
 </style>
-
