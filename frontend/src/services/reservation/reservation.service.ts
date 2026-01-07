@@ -107,7 +107,7 @@ export class ReservationService {
             const response = await apiClient.get<{
                 success: boolean
                 data: { reservations: Reservation[] }
-            }>(`/reservations/property/${propertyId}`, { params: filters })
+            }>(`/logements/${propertyId}/reservations`, { params: filters })
             return response.data.data.reservations
         } catch (error) {
             throw ErrorHandler.handleError(error)

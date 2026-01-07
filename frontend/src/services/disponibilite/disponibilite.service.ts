@@ -13,15 +13,18 @@ import type {
 
 export class DisponibiliteService {
     /**
-     * Créer une nouvelle disponibilité
+     * Créer une disponibilité pour un logement
      */
-    static async createDisponibilite(data: CreateDisponibiliteData): Promise<Disponibilite> {
+    static async createAvailability(
+        accommodationId: string,
+        data: CreateDisponibiliteData
+    ): Promise<Disponibilite> {
         try {
             const response = await apiClient.post<{
                 success: boolean
-                data: { disponibilite: Disponibilite }
-            }>('/disponibilites', data)
-            return response.data.data.disponibilite
+                data: { availability: Disponibilite }
+            }>(`/logements/${accommodationId}/availabilities`, data)
+            return response.data.data.availability
         } catch (error) {
             throw ErrorHandler.handleError(error)
         }
@@ -58,15 +61,39 @@ export class DisponibiliteService {
     }
 
     /**
-     * Récupérer les disponibilités pour un logement
+     * Récupérer les disponibilités pour un logement avec filtres
      */
-    static async getPropertyDisponibilites(propertyId: string): Promise<Disponibilite[]> {
+    static async getPropertyAvailabilities(
+        accommodationId: string,
+        filters?: DisponibiliteFilters
+    ): Promise<Disponibilite[]> {
         try {
             const response = await apiClient.get<{
                 success: boolean
-                data: { disponibilites: Disponibilite[] }
-            }>(`/disponibilites/property/${propertyId}`)
-            return response.data.data.disponibilites
+                data: { availabilities: Disponibilite[] }
+            }>(`/logements/${accommodationId}/availabilities`, { params: filters })
+            return response.data.data.availabilities
+        } catch (error) {
+            throw ErrorHandler.handleError(error)
+        }
+    }
+
+    /**
+     * Récupérer les dates disponibles pour un logement
+     */
+    static async getAvailableDates(
+        accommodationId: string,
+        startDate: string,
+        endDate: string
+    ): Promise<Disponibilite[]> {
+        try {
+            const response = await apiClient.get<{
+                success: boolean
+                data: { availableDates: Disponibilite[] }
+            }>(`/logements/${accommodationId}/available-dates`, {
+                params: { startDate, endDate }
+            })
+            return response.data.data.availableDates
         } catch (error) {
             throw ErrorHandler.handleError(error)
         }
@@ -93,9 +120,27 @@ export class DisponibiliteService {
     /**
      * Supprimer une disponibilité
      */
-    static async deleteDisponibilite(id: string): Promise<void> {
+    static async deleteAvailability(id: string): Promise<void> {
         try {
-            await apiClient.delete(`/disponibilites/${id}`)
+            await apiClient.delete(`/availabilities/${id}`)
+        } catch (error) {
+            throw ErrorHandler.handleError(error)
+        }
+    }
+
+    /**
+     * Créer plusieurs disponibilités en masse
+     */
+    static async bulkCreateAvailabilities(
+        accommodationId: string,
+        periods: CreateDisponibiliteData[]
+    ): Promise<Disponibilite[]> {
+        try {
+            const response = await apiClient.post<{
+                success: boolean
+                data: { availabilities: Disponibilite[] }
+            }>(`/logements/${accommodationId}/availabilities/bulk`, { periods })
+            return response.data.data.availabilities
         } catch (error) {
             throw ErrorHandler.handleError(error)
         }

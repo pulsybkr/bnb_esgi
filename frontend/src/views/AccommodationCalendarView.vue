@@ -132,7 +132,8 @@ import { normalizeDate } from '@/utils/dateUtils'
 import { useLogements } from '@/composables/useLogements'
 import { mapLogementToAccommodation } from '@/utils/mappers/logementMapper'
 import { formatCFA } from '@/utils/currency'
-import { availabilityService } from '@/services/availability.service'
+import { DisponibiliteService } from '@/services/disponibilite/disponibilite.service'
+import { ReservationService } from '@/services/reservation/reservation.service'
 
 const route = useRoute()
 const router = useRouter()
@@ -152,9 +153,11 @@ onMounted(async () => {
     
     if (currentProperty.value) {
       accommodation.value = mapLogementToAccommodation(currentProperty.value)
-      // Simuler des réservations (dans la vraie app, cela viendrait de l'API)
-      loadBookings(accommodationId)
-      loadBlockedDates(accommodationId)
+      // Charger les vraies données depuis l'API
+      await Promise.all([
+        loadAvailabilities(accommodationId),
+        loadReservations(accommodationId)
+      ])
     } else {
       router.push('/')
     }
@@ -164,70 +167,54 @@ onMounted(async () => {
   }
 })
 
-// Simuler le chargement des réservations
-const loadBookings = (accommodationId: string) => {
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  
-  bookings.value = [
-    {
-      id: '1',
-      accommodationId,
-      guestId: 'guest1',
-      guestName: 'Marie Dupont',
-      guestEmail: 'marie.dupont@example.com',
-      checkIn: new Date(today.getTime() + 5 * 24 * 60 * 60 * 1000),
-      checkOut: new Date(today.getTime() + 8 * 24 * 60 * 60 * 1000),
-      guests: 2,
-      totalPrice: accommodation.value?.price ? accommodation.value.price * 3 : 0,
-      status: BookingStatus.CONFIRMED,
-      createdAt: new Date(),
-    },
-    {
-      id: '2',
-      accommodationId,
-      guestId: 'guest2',
-      guestName: 'Jean Martin',
-      guestEmail: 'jean.martin@example.com',
-      checkIn: new Date(today.getTime() + 15 * 24 * 60 * 60 * 1000),
-      checkOut: new Date(today.getTime() + 18 * 24 * 60 * 60 * 1000),
-      guests: 4,
-      totalPrice: accommodation.value?.price ? accommodation.value.price * 3 : 0,
-      status: BookingStatus.CONFIRMED,
-      createdAt: new Date(),
-    },
-    {
-      id: '3',
-      accommodationId,
-      guestId: 'guest3',
-      guestName: 'Sophie Laurent',
-      guestEmail: 'sophie.laurent@example.com',
-      checkIn: new Date(today.getTime() + 25 * 24 * 60 * 60 * 1000),
-      checkOut: new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000),
-      guests: 2,
-      totalPrice: accommodation.value?.price ? accommodation.value.price * 5 : 0,
-      status: BookingStatus.PENDING,
-      createdAt: new Date(),
-    },
-  ]
+// Charger les disponibilités depuis l'API
+const loadAvailabilities = async (accommodationId: string) => {
+  try {
+    const availabilities = await DisponibiliteService.getPropertyAvailabilities(accommodationId, {
+      status: 'bloque'
+    })
+    
+    // Convertir les disponibilités en BlockedDate
+    blockedDates.value = availabilities.map((avail: any) => ({
+      id: avail.id,
+      accommodationId: avail.accommodationId,
+      startDate: new Date(avail.startDate),
+      endDate: new Date(avail.endDate),
+      reason: avail.note || 'Bloqué par le propriétaire',
+      type: BlockType.OTHER,
+      createdAt: new Date(avail.createdAt)
+    }))
+  } catch (error) {
+    console.error('Erreur lors du chargement des disponibilités:', error)
+  }
 }
 
-// Simuler le chargement des dates bloquées
-const loadBlockedDates = (accommodationId: string) => {
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  
-  blockedDates.value = [
-    {
-      id: 'block1',
-      accommodationId,
-      startDate: new Date(today.getTime() + 35 * 24 * 60 * 60 * 1000),
-      endDate: new Date(today.getTime() + 37 * 24 * 60 * 60 * 1000),
-      reason: 'Maintenance',
-      type: BlockType.MAINTENANCE,
-      createdAt: new Date(),
-    },
-  ]
+// Charger les réservations depuis l'API
+const loadReservations = async (accommodationId: string) => {
+  try {
+    const reservations = await ReservationService.getPropertyReservations(accommodationId)
+    
+    // Convertir les réservations en Booking
+    bookings.value = reservations
+      .filter((r: any) => r.status === 'confirmee' || r.status === 'en_cours')
+      .map((reservation: any) => ({
+        id: reservation.id,
+        accommodationId: reservation.accommodationId,
+        guestId: reservation.tenantId,
+        guestName: `${reservation.tenant?.firstName || ''} ${reservation.tenant?.lastName || ''}`.trim(),
+        guestEmail: reservation.tenant?.email || '',
+        checkIn: new Date(reservation.startDate),
+        checkOut: new Date(reservation.endDate),
+        guests: reservation.guestCount,
+        totalPrice: parseFloat(reservation.totalAmount.toString()),
+        status: reservation.status === 'confirmee' ? BookingStatus.CONFIRMED : 
+                reservation.status === 'en_cours' ? BookingStatus.CONFIRMED :
+                BookingStatus.PENDING,
+        createdAt: new Date(reservation.createdAt)
+      }))
+  } catch (error) {
+    console.error('Erreur lors du chargement des réservations:', error)
+  }
 }
 
 // Réservations à venir (non annulées)
@@ -292,27 +279,35 @@ const handleDateSelected = (date: Date) => {
 const handleDateBlocked = async (startDate: Date, endDate: Date, reason?: string) => {
   if (!accommodation.value) return
   
-  const newBlock: BlockedDate = {
-    id: `block-${Date.now()}`,
-    accommodationId: accommodation.value.id,
-    startDate,
-    endDate,
-    reason,
-    type: reason?.toLowerCase().includes('maintenance') ? BlockType.MAINTENANCE : BlockType.OTHER,
-    createdAt: new Date(),
+  try {
+    // Créer la disponibilité avec statut "bloqué"
+    await DisponibiliteService.createAvailability(accommodation.value.id, {
+      startDate,
+      endDate,
+      status: 'bloque',
+      note: reason
+    })
+    
+    // Recharger les disponibilités
+    await loadAvailabilities(accommodation.value.id)
+    
+    alert(`Période bloquée du ${formatDate(startDate)} au ${formatDate(endDate)}`)
+  } catch (err: any) {
+    console.error('Erreur lors du blocage:', err)
+    alert('Erreur lors du blocage: ' + (err.message || 'Erreur inconnue'))
   }
-  
-  blockedDates.value.push(newBlock)
-  
-  // Dans la vraie app, faire un appel API
-  console.log('Date bloquée:', newBlock)
-  alert(`Période bloquée du ${formatDate(startDate)} au ${formatDate(endDate)}`)
 }
 
 const handleDateUnblocked = async (blockedDateId: string) => {
+  if (!accommodation.value) return
+  
   try {
-    await availabilityService.delete(blockedDateId)
-    blockedDates.value = blockedDates.value.filter(block => block.id !== blockedDateId)
+    await DisponibiliteService.deleteAvailability(blockedDateId)
+    
+    // Recharger les disponibilités
+    await loadAvailabilities(accommodation.value.id)
+    
+    alert('Date débloquée avec succès')
   } catch (err: any) {
     console.error('Erreur lors du déblocage:', err)
     alert('Erreur lors du déblocage: ' + (err.message || 'Erreur inconnue'))

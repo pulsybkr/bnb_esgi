@@ -1,16 +1,16 @@
 <template>
   <div class="relative">
     <!-- Galerie principale -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-2 h-96 md:h-80">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-2 h-64 sm:h-80 md:h-96">
       <!-- Image principale -->
       <div 
-        class="md:col-span-2 row-span-2 relative cursor-pointer"
+        class="md:col-span-2 md:row-span-2 relative cursor-pointer h-full"
         @click="openModal(0)"
       >
         <img 
           :src="images[currentImageIndex]" 
           :alt="`Image ${currentImageIndex + 1}`"
-          class="w-full h-full object-cover rounded-l-lg"
+          class="w-full h-full object-cover rounded-lg md:rounded-l-lg md:rounded-r-none"
           @error="handleImageError"
         />
         <div class="absolute inset-0 bg-black/0 hover:bg-black/10 transition-all duration-200 flex items-center justify-center pointer-events-none">
@@ -18,11 +18,11 @@
         </div>
       </div>
       
-      <!-- Images secondaires -->
+      <!-- Images secondaires (masquées sur mobile) -->
       <div 
         v-for="(image, index) in images.slice(1, 5)" 
         :key="index"
-        class="relative cursor-pointer"
+        class="hidden md:block relative cursor-pointer h-full"
         @click="openModal(index + 1)"
       >
         <img 
