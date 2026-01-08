@@ -66,9 +66,9 @@ export class ReservationService {
         }
 
         // Check for availability conflicts
-        const hasConflict = await this.checkAvailability(accommodationId, startDate, endDate);
+        const isAvailable = await this.checkAvailability(accommodationId, startDate, endDate);
 
-        if (!hasConflict) {
+        if (!isAvailable) {
             throw new ValidationError(
                 'The selected dates are not available. Please choose different dates.'
             );
@@ -419,7 +419,7 @@ export class ReservationService {
         }
 
         if (reservation.status !== 'en_attente') {
-            `Cannot accept reservation with status: ${reservation.status}`
+            throw new ValidationError(`Cannot accept reservation with status: ${reservation.status}`);
         }
 
         // Update reservation status to acceptee (awaiting payment)

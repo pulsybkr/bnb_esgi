@@ -126,6 +126,9 @@ export class JWTService {
 
       return { userId: decoded.userId };
     } catch (error) {
+      if (error instanceof AuthenticationError) {
+        throw error;
+      }
       if (error instanceof jwt.TokenExpiredError) {
         throw new AuthenticationError('Email verification token has expired');
       }
@@ -160,6 +163,9 @@ export class JWTService {
 
       return { userId: decoded.userId };
     } catch (error) {
+      if (error instanceof AuthenticationError) {
+        throw error;
+      }
       if (error instanceof jwt.TokenExpiredError) {
         throw new AuthenticationError('Password reset token has expired');
       }
