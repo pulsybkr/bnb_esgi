@@ -15,15 +15,15 @@ export class DisponibiliteService {
     /**
      * Créer une disponibilité pour un logement
      */
-    static async createDisponibilite(
+    static async createAvailability(
+        accommodationId: string,
         data: CreateDisponibiliteData
     ): Promise<Disponibilite> {
         try {
-            const { accommodationId, ...rest } = data
             const response = await apiClient.post<{
                 success: boolean
                 data: { availability: Disponibilite }
-            }>(`/logements/${accommodationId}/availabilities`, rest)
+            }>(`/logements/${accommodationId}/availabilities`, data)
             return response.data.data.availability
         } catch (error) {
             throw ErrorHandler.handleError(error)
@@ -38,7 +38,7 @@ export class DisponibiliteService {
             const response = await apiClient.get<{
                 success: boolean
                 data: { disponibilite: Disponibilite }
-            }>(`/availabilities/${id}`)
+            }>(`/disponibilites/${id}`)
             return response.data.data.disponibilite
         } catch (error) {
             throw ErrorHandler.handleError(error)
@@ -53,7 +53,7 @@ export class DisponibiliteService {
             const response = await apiClient.get<{
                 success: boolean
                 data: { disponibilites: Disponibilite[] }
-            }>('/availabilities', { params: filters })
+            }>('/disponibilites', { params: filters })
             return response.data.data.disponibilites
         } catch (error) {
             throw ErrorHandler.handleError(error)
@@ -63,7 +63,7 @@ export class DisponibiliteService {
     /**
      * Récupérer les disponibilités pour un logement avec filtres
      */
-    static async getPropertyDisponibilites(
+    static async getPropertyAvailabilities(
         accommodationId: string,
         filters?: DisponibiliteFilters
     ): Promise<Disponibilite[]> {
@@ -110,7 +110,7 @@ export class DisponibiliteService {
             const response = await apiClient.put<{
                 success: boolean
                 data: { disponibilite: Disponibilite }
-            }>(`/availabilities/${id}`, data)
+            }>(`/disponibilites/${id}`, data)
             return response.data.data.disponibilite
         } catch (error) {
             throw ErrorHandler.handleError(error)
@@ -120,7 +120,7 @@ export class DisponibiliteService {
     /**
      * Supprimer une disponibilité
      */
-    static async deleteDisponibilite(id: string): Promise<void> {
+    static async deleteAvailability(id: string): Promise<void> {
         try {
             await apiClient.delete(`/availabilities/${id}`)
         } catch (error) {
@@ -131,7 +131,7 @@ export class DisponibiliteService {
     /**
      * Créer plusieurs disponibilités en masse
      */
-    static async bulkCreateDisponibilites(
+    static async bulkCreateAvailabilities(
         accommodationId: string,
         periods: CreateDisponibiliteData[]
     ): Promise<Disponibilite[]> {

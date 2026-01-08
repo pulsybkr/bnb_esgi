@@ -24,11 +24,11 @@
           <!-- Photo de profil -->
           <div class="flex items-center space-x-6 mb-8">
             <div class="relative">
-              <div class="w-24 h-24 rounded-full bg-african-green flex items-center justify-center text-white text-2xl font-semibold shadow-md">
+              <div class="w-24 h-24 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white text-2xl font-semibold">
                 {{ userInitials }}
               </div>
               <button 
-                class="absolute bottom-0 right-0 bg-african-green text-white rounded-full p-2 hover:bg-african-green-dark transition-colors shadow-sm"
+                class="absolute bottom-0 right-0 bg-indigo-600 text-white rounded-full p-2 hover:bg-indigo-700 transition-colors"
                 title="Changer la photo de profil"
               >
                 <Camera class="w-4 h-4" />
@@ -40,8 +40,8 @@
               <span 
                 class="inline-block mt-2 px-3 py-1 text-sm font-medium rounded-full"
                 :class="{
-                  'bg-green-100 text-african-green-dark': user?.userType === 'locataire',
-                  'bg-african-green text-white': user?.userType === 'proprietaire',
+                  'bg-gradient-to-br from-blue-100 to-indigo-100 text-blue-800': user?.userType === 'locataire',
+                  'bg-purple-100 text-purple-800': user?.userType === 'proprietaire',
                   'bg-gray-100 text-gray-800': user?.userType === 'admin'
                 }"
               >
@@ -60,7 +60,7 @@
                 <input
                   v-model="form.firstName"
                   type="text"
-                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-african-green focus:border-african-green"
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                   placeholder="Votre prénom"
                 />
               </div>
@@ -70,7 +70,7 @@
                 <input
                   v-model="form.lastName"
                   type="text"
-                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-african-green focus:border-african-green"
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                   placeholder="Votre nom"
                 />
               </div>
@@ -80,7 +80,7 @@
                 <input
                   v-model="form.email"
                   type="email"
-                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-african-green focus:border-african-green"
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                   placeholder="votre@email.com"
                   disabled
                 />
@@ -92,7 +92,7 @@
                 <input
                   v-model="form.phone"
                   type="tel"
-                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-african-green focus:border-african-green"
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                   placeholder="+33 6 12 34 56 78"
                 />
               </div>
@@ -102,7 +102,7 @@
                 <input
                   v-model="form.address"
                   type="text"
-                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-african-green focus:border-african-green"
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                   placeholder="Votre adresse"
                 />
               </div>
@@ -112,7 +112,7 @@
                 <input
                   v-model="form.city"
                   type="text"
-                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-african-green focus:border-african-green"
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                   placeholder="Votre ville"
                 />
               </div>
@@ -122,38 +122,28 @@
                 <input
                   v-model="form.country"
                   type="text"
-                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-african-green focus:border-african-green"
+                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                   placeholder="Votre pays"
                 />
               </div>
             </div>
           </div>
 
-          <!-- Espace Propriétaire (uniquement pour les propriétaires) -->
+          <!-- Statistiques (pour les propriétaires) -->
           <div v-if="isOwner" class="border-t border-gray-200 pt-6 mt-6">
-            <div class="flex items-center justify-between mb-4">
-              <h3 class="text-lg font-semibold text-gray-900">Espace Propriétaire</h3>
-              <button
-                @click="$router.push('/accommodation/create')"
-                class="inline-flex items-center space-x-2 px-4 py-2 bg-african-green text-white rounded-lg hover:bg-african-green-dark transition-colors shadow-sm"
-              >
-                <Plus class="w-4 h-4" />
-                <span>Ajouter un logement</span>
-              </button>
-            </div>
-            
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Statistiques</h3>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div class="bg-gray-50 rounded-lg p-4 border border-gray-100">
-                <p class="text-sm text-gray-600">Mes logements</p>
+              <div class="bg-gray-50 rounded-lg p-4">
+                <p class="text-sm text-gray-600">Logements</p>
                 <p class="text-2xl font-bold text-gray-900">{{ stats?.properties || 0 }}</p>
               </div>
-              <div class="bg-gray-50 rounded-lg p-4 border border-gray-100">
-                <p class="text-sm text-gray-600">Réservations reçues</p>
+              <div class="bg-gray-50 rounded-lg p-4">
+                <p class="text-sm text-gray-600">Réservations</p>
                 <p class="text-2xl font-bold text-gray-900">{{ stats?.reservations || 0 }}</p>
               </div>
-              <div class="bg-gray-50 rounded-lg p-4 border border-gray-100">
-                <p class="text-sm text-gray-600">Note moyenne</p>
-                <p class="text-2xl font-bold text-gray-900">{{ stats?.avgRating?.toFixed(1) || '0.0' }}/5</p>
+              <div class="bg-gray-50 rounded-lg p-4">
+                <p class="text-sm text-gray-600">Avis</p>
+                <p class="text-2xl font-bold text-gray-900">{{ stats?.reviews || 0 }}</p>
               </div>
             </div>
           </div>
@@ -169,7 +159,7 @@
             <button
               @click="updateProfile"
               :disabled="isSaving"
-              class="px-4 py-2 text-white bg-african-green rounded-lg hover:bg-african-green-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 shadow-sm"
+              class="px-4 py-2 text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
             >
               <Loader2 v-if="isSaving" class="w-4 h-4 animate-spin" />
               <span>{{ isSaving ? 'Enregistrement...' : 'Enregistrer les modifications' }}</span>
@@ -185,12 +175,10 @@
 import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { authService } from '@/services/auth.service'
-import { Loader2, Camera, Plus } from 'lucide-vue-next'
+import { Loader2, Camera } from 'lucide-vue-next'
 import SimpleHeader from '@/components/layout/SimpleHeader.vue'
-import { useRouter } from 'vue-router'
 
 const authStore = useAuthStore()
-const router = useRouter()
 
 // État
 const isLoading = ref(false)

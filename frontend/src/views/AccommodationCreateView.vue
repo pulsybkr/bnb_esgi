@@ -99,18 +99,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { Home, X, Sparkles, CheckCircle2 } from 'lucide-vue-next'
 import PropertyCreationWizard from '@/components/property/PropertyCreationWizard.vue'
-import { usePropertyCreation } from '@/composables/usePropertyCreation'
 
 const router = useRouter()
-const { resetForm } = usePropertyCreation()
-
-onMounted(() => {
-  resetForm()
-})
 
 const showWelcome = ref(true)
 const showSuccessModal = ref(false)
