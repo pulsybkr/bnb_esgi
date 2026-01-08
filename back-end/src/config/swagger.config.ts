@@ -86,9 +86,36 @@ const swaggerOptions: swaggerJsdoc.Options = {
                 name: 'Auth',
                 description: 'Endpoints d\'authentification et gestion des utilisateurs',
             },
+            {
+                name: 'Verification',
+                description: 'Vérification d\'identité des utilisateurs',
+            },
+            {
+                name: 'Notifications',
+                description: 'Gestion des notifications push',
+            },
+            {
+                name: 'Admin - Verifications',
+                description: 'Gestion admin des vérifications d\'identité',
+            },
+            {
+                name: 'Admin - Moderation',
+                description: 'Modération des annonces, utilisateurs et signalements',
+            },
+            {
+                name: 'Admin - Analytics',
+                description: 'Statistiques et analytics de la plateforme',
+            },
+            {
+                name: 'Admin - Reporting',
+                description: 'Génération et export de rapports',
+            },
         ],
     },
-    apis: ['./src/routes/**/*.ts'], // Chemins vers les fichiers contenant les annotations
+    apis: [
+        './src/routes/**/*.ts',
+        './src/controllers/**/*.ts',
+    ], // Chemins vers les fichiers contenant les annotations
 };
 
 export const swaggerSpec = swaggerJsdoc(swaggerOptions);

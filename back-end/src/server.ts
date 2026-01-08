@@ -39,6 +39,11 @@ import pricingRoutes from './routes/pricing';
 import favoriRoutes from './routes/favori/favori.routes';
 import reviewRoutes from './routes/review.routes';
 
+// Nouvelles routes
+import verificationRoutes from './routes/verification';
+import notificationRoutes from './routes/notification';
+import adminRoutes from './routes/admin';
+
 import { apiLogger, errorHandler, swaggerSpec } from './config';
 
 const app: Express = express();
@@ -166,6 +171,7 @@ app.use(apiLogger);
 app.use('/uploads', express.static('uploads'));
 app.use('/uploads/logements', express.static(path.join(__dirname, '../uploads/logements')));
 app.use('/uploads/profiles', express.static(path.join(__dirname, '../uploads/profiles')));
+app.use('/uploads/verifications', express.static(path.join(__dirname, '../uploads/verifications')));
 
 app.get('/', (req: Request, res: Response) => {
   res.json({ message: 'BnB ESGI API is running!' });
@@ -200,6 +206,11 @@ app.use('/search', searchRoutes);
 app.use('/ai', aiRoutes);
 app.use('/favoris', favoriRoutes);
 app.use('/reviews', reviewRoutes);
+
+// Nouvelles routes
+app.use('/verification', verificationRoutes);
+app.use('/notifications', notificationRoutes);
+app.use('/admin', adminRoutes);
 
 
 app.use((req: Request, res: Response) => {

@@ -1,5 +1,4 @@
 export const authConfig = {
-  // JWT Configuration
   jwt: {
     secret: process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production',
     refreshSecret: process.env.JWT_REFRESH_SECRET || 'your-super-secret-refresh-key-change-in-production',
@@ -7,7 +6,6 @@ export const authConfig = {
     refreshTokenExpiry: process.env.JWT_REFRESH_EXPIRY || '7d', // 7 days
   },
 
-  // Password Configuration
   password: {
     saltRounds: parseInt(process.env.BCRYPT_SALT_ROUNDS || '12'),
     minLength: 8,
