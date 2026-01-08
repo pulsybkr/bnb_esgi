@@ -4,15 +4,14 @@
       <div class="flex justify-between items-center h-16">
         <!-- Logo -->
         <div class="flex items-center cursor-pointer" @click="goHome">
-          <h1 class="text-2xl font-bold text-african-green flex items-center gap-2 transition-transform hover:scale-105">
-            <Home class="w-7 h-7" />
-            <span>bnb</span>
+          <h1 class="text-2xl font-bold text-indigo-600">
+            bnb
           </h1>
         </div>
 
         <!-- Navigation et profil -->
         <div class="flex items-center space-x-4">
-          <button class="p-2 text-gray-600 hover:text-african-green transition-colors rounded-lg hover:bg-gray-100">
+          <button class="p-2 text-gray-600 hover:text-gray-900 transition-colors rounded-lg hover:bg-gray-100">
             <Search class="w-5 h-5" />
           </button>
 
@@ -20,9 +19,9 @@
           <div v-if="isAuthenticated" class="relative">
             <button 
               @click="toggleUserMenu"
-              class="flex items-center space-x-2 p-2 text-gray-600 hover:text-african-green transition-colors rounded-lg hover:bg-gray-100"
+              class="flex items-center space-x-2 p-2 text-gray-600 hover:text-gray-900 transition-colors rounded-lg hover:bg-gray-100"
             >
-              <div class="w-8 h-8 rounded-full bg-african-green flex items-center justify-center text-white font-semibold shadow-sm">
+              <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-semibold">
                 {{ userInitials }}
               </div>
             </button>
