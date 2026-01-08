@@ -69,7 +69,7 @@ export function useDisponibilites() {
     /**
      * Créer une disponibilité
      */
-    const createDisponibilite = async (data: CreateDisponibiliteData): Promise<Disponibilite | null> => {
+    const createDisponibilite = async (data: CreateDisponibiliteData & { logementId: string }): Promise<Disponibilite | null> => {
         try {
             isLoading.value = true
             error.value = null

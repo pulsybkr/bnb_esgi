@@ -741,4 +741,33 @@ router.delete('/:id/photos/:photoId', requireAuth, verifyPropertyOwnership, Loge
  */
 router.put('/:id/photos/:photoId/main', requireAuth, verifyPropertyOwnership, LogementController.setMainPhoto);
 
+/**
+ * @openapi
+ * /logements/{id}/reservations:
+ *   get:
+ *     tags:
+ *       - Réservations
+ *     summary: Réservations d'un bien
+ *     description: Récupère toutes les réservations pour un bien spécifique (propriétaire uniquement)
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID du logement
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [en_attente, confirmee, annulee, en_cours, terminee]
+ *     responses:
+ *       200:
+ *         description: Liste des réservations
+ */
+import { ReservationController } from '../../controllers/reservation';
+router.get('/:id/reservations', requireAuth, verifyPropertyOwnership, ReservationController.getPropertyReservations);
+
 export default router;

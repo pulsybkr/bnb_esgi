@@ -172,6 +172,44 @@
             </button>
           </div>
         </div>
+
+        <!-- Review Section (for completed reservations) -->
+        <div v-if="!isOwner && reservation.status === 'terminee'" class="bg-white rounded-lg shadow p-6">
+          <h3 class="text-xl font-semibold mb-4">Votre avis</h3>
+          
+          <!-- Existing Review -->
+          <div v-if="existingReview" class="space-y-4">
+            <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+              <p class="text-green-800 font-medium mb-2">✓ Vous avez laissé un avis pour ce séjour</p>
+              <ReviewCard :review="existingReview" />
+            </div>
+          </div>
+          
+          <!-- Review Form -->
+          <div v-else-if="canReview">
+            <div v-if="!showReviewForm">
+              <button
+                @click="showReviewForm = true"
+                class="w-full px-6 py-3 bg-african-green text-white rounded-lg hover:bg-african-green-dark font-medium flex items-center justify-center gap-2"
+              >
+                <Star class="w-5 h-5" />
+                Laisser un avis
+              </button>
+            </div>
+            <div v-else>
+              <ReviewForm
+                :reservation-id="reservation.id"
+                @submit="handleReviewSubmit"
+                @cancel="showReviewForm = false"
+              />
+            </div>
+          </div>
+          
+          <!-- Cannot Review Message -->
+          <div v-else-if="!canReviewLoading && canReviewReason" class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+            <p class="text-gray-600">{{ canReviewReason }}</p>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -200,16 +238,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import apiClient from '@/services/api/client'
-import { ArrowLeft, MapPin, MessageCircle, MessageSquare } from 'lucide-vue-next'
+import { ArrowLeft, MapPin, MessageCircle, MessageSquare, Star } from 'lucide-vue-next'
 import { ReservationService } from '@/services/reservation/reservation.service'
 import { messageService } from '@/services/message'
+import { reviewService, type Review } from '@/services/reviewService'
 import ConversationPanel from '@/components/message/ConversationPanel.vue'
 import PaymentModal from '@/components/payment/PaymentModal.vue'
 import SimpleHeader from '@/components/layout/SimpleHeader.vue'
 import HostAvatar from '@/components/ui/HostAvatar.vue'
+import ReviewForm from '@/components/review/ReviewForm.vue'
+import ReviewCard from '@/components/review/ReviewCard.vue'
 import { formatCFA } from '@/utils/currency'
 import { useAuthStore } from '@/stores/auth'
 import type { Reservation } from '@/types/reservation'
@@ -225,6 +266,13 @@ const showConversation = ref(false)
 const showPaymentModal = ref(false)
 const messages = ref<Message[]>([])
 const currentUserId = ref(authStore.user?.id || '')
+
+// Review-related state
+const showReviewForm = ref(false)
+const existingReview = ref<Review | null>(null)
+const canReview = ref(false)
+const canReviewLoading = ref(false)
+const canReviewReason = ref('')
 
 const isOwner = computed(() => {
   if (!reservation.value || !authStore.user) return false
@@ -385,6 +433,61 @@ const handlePaymentSuccess = async () => {
     await loadReservation()
   }
 }
+
+// Review functions
+const checkCanReview = async () =>{
+  if (!reservation.value || isOwner.value || reservation.value.status !== 'terminee') {
+    canReview.value = false
+    return
+  }
+  
+  canReviewLoading.value = true
+  try {
+    const result = await reviewService.canUserReview(reservation.value.id)
+    canReview.value = result.canReview
+    canReviewReason.value = result.reason || ''
+    
+    // If user already reviewed, try to fetch the existing review
+    if (!result.canReview && result.reason?.includes('déjà laissé')) {
+      // Fetch the user's reviews to find this one
+      const myReviews = await reviewService.getMyReviews(1, 100)
+      existingReview.value = myReviews.reviews.find(
+        r => r.reservationId === reservation.value!.id
+      ) || null
+    }
+  } catch (error) {
+    console.error('Erreur vérification avis:', error)
+    canReview.value = false
+  } finally {
+    canReviewLoading.value = false
+  }
+}
+
+const handleReviewSubmit = async (reviewData: any) => {
+  if (!reservation.value) return
+  
+  try {
+    const review = await reviewService.createReview({
+      reservationId: reservation.value.id,
+      ...reviewData
+    })
+    
+    existingReview.value = review
+    showReviewForm.value = false
+    canReview.value = false
+    alert('Merci pour votre avis !')
+  } catch (error: any) {
+    console.error('Erreur création avis:', error)
+    alert(error.response?.data?.message || 'Erreur lors de la création de l\'avis')
+  }
+}
+
+// Watch for reservation changes to check review eligibility
+watch(() => reservation.value?.id, () => {
+  if (reservation.value) {
+    checkCanReview()
+  }
+})
 
 onMounted(() => {
   loadReservation()

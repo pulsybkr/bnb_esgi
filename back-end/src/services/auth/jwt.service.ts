@@ -14,6 +14,7 @@ export class JWTService {
       lastName: user.lastName,
       userType: user.userType,
       emailVerified: user.emailVerified,
+      tokenVersion: user.tokenVersion,
     };
 
     const accessToken = jwt.sign(payload, authConfig.jwt.secret, {
@@ -21,7 +22,7 @@ export class JWTService {
     } as SignOptions);
 
     const refreshToken = jwt.sign(
-      { id: user.id },
+      { id: user.id, tokenVersion: user.tokenVersion },
       authConfig.jwt.refreshSecret,
       {
         expiresIn: authConfig.jwt.refreshTokenExpiry,
@@ -59,9 +60,9 @@ export class JWTService {
   /**
    * Verify and decode a refresh token
    */
-  static verifyRefreshToken(token: string): { id: string } {
+  static verifyRefreshToken(token: string): { id: string; tokenVersion: number } {
     try {
-      const decoded = jwt.verify(token, authConfig.jwt.refreshSecret) as { id: string };
+      const decoded = jwt.verify(token, authConfig.jwt.refreshSecret) as { id: string; tokenVersion: number };
       return decoded;
     } catch (error) {
       if (error instanceof jwt.TokenExpiredError) {

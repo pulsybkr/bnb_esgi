@@ -116,4 +116,13 @@ router.beforeEach(async (to, from, next) => {
   next()
 })
 
+// Track page views for analytics
+router.afterEach((to) => {
+  // Dynamic import to avoid circular dependencies
+  import('@/composables/useAnalytics').then(({ useAnalytics }) => {
+    const { trackPageView } = useAnalytics()
+    trackPageView(document.title, to.fullPath)
+  })
+})
+
 export default router

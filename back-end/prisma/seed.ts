@@ -1,4 +1,4 @@
-import { PrismaClient, TypeLogement, StatutLogement, StatutDisponibilite, StatutReservation, TypeCibleAvis, StatutAvis, StatutUtilisateur, TypeUtilisateur } from '@prisma/client';
+import { PrismaClient, TypeLogement, StatutLogement, StatutDisponibilite, StatutReservation, TypeCibleAvis, StatutAvis, StatutUtilisateur, TypeUtilisateur, Prisma } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
@@ -296,8 +296,48 @@ async function main() {
 
   console.log('✅ Disponibilités créées');
 
-  // Créer quelques réservations réelles
-  for (let i = 0; i < 15; i++) {
+  // Créer des réservations terminées pour chaque locataire (pour pouvoir laisser des avis)
+  const completedReservations = [];
+  for (const tenant of locataires) {
+    // Chaque locataire a 2-3 réservations terminées
+    const reservationCount = getRandomInt(2, 3);
+    for (let i = 0; i < reservationCount; i++) {
+      const logement = getRandomElement(createdLogements);
+      const daysAgo = getRandomInt(30, 90); // Réservations terminées il y a 1-3 mois
+      const start = new Date();
+      start.setDate(start.getDate() - daysAgo);
+      const end = new Date(start);
+      end.setDate(end.getDate() + getRandomInt(2, 7));
+
+      const nights = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+
+      const reservation = await prisma.reservation.create({
+        data: {
+          accommodationId: logement.id,
+          tenantId: tenant.id,
+          startDate: start,
+          endDate: end,
+          guestCount: getRandomInt(1, logement.capacity),
+          totalAmount: Number(logement.pricePerNight) * nights,
+          pricePerNight: logement.pricePerNight,
+          currency: logement.currency,
+          status: StatutReservation.terminee,
+          tenantMessage: getRandomElement([
+            'Hâte de découvrir ce logement !',
+            'Voyage d\'affaires, merci.',
+            'Vacances en famille, nous sommes ravis !',
+            'Première visite dans la région.',
+          ]),
+        }
+      });
+      completedReservations.push(reservation);
+    }
+  }
+
+  console.log(`✅ ${completedReservations.length} Réservations terminées créées`);
+
+  // Créer quelques réservations futures/en cours
+  for (let i = 0; i < 10; i++) {
     const logement = getRandomElement(createdLogements);
     const tenant = getRandomElement(locataires);
     const start = new Date();
@@ -315,40 +355,76 @@ async function main() {
         endDate: end,
         guestCount: getRandomInt(1, logement.capacity),
         totalAmount: Number(logement.pricePerNight) * nights,
+        pricePerNight: logement.pricePerNight,
         currency: logement.currency,
-        status: StatutReservation.confirmee,
+        status: getRandomElement([StatutReservation.confirmee, StatutReservation.en_attente]),
         tenantMessage: 'Hâte de venir !',
       }
     });
   }
 
-  console.log('✅ 15 Réservations créées');
+  console.log('✅ 10 Réservations futures créées');
 
-  // Ajouter des avis
-  const reservations = await prisma.reservation.findMany({ include: { accommodation: true } });
-  for (const res of reservations) {
-    if (Math.random() > 0.3) {
-      await prisma.avis.create({
-        data: {
-          reservationId: res.id,
-          authorId: res.tenantId,
-          targetType: TypeCibleAvis.logement,
-          targetId: res.accommodationId,
-          rating: getRandomInt(3, 5),
-          comment: getRandomElement([
-            'Incroyable séjour !',
-            'Très bon accueil, je recommande.',
-            'Logement propre et bien situé.',
-            'Conforme aux photos, top !',
-            'Un peu bruyant mais superbe vue.',
-            'Propriétaire réactif et très gentil.'
-          ]),
-          status: StatutAvis.publie,
-          publishedAt: new Date(),
-        }
-      });
+  // Ajouter des avis pour CERTAINES réservations terminées (pas toutes)
+  // On laisse au moins 1 réservation sans avis par locataire pour pouvoir tester
+  const reviewComments = [
+    'Séjour absolument parfait ! Le logement était impeccable et exactement comme sur les photos. L\'hôte était très accueillant et disponible. Je recommande vivement ! 🌟',
+    'Très bonne expérience. Logement propre, bien équipé et bien situé. Quelques petits détails à améliorer mais dans l\'ensemble très satisfait.',
+    'Excellent rapport qualité-prix ! Le quartier est calme et sécurisé. Nous avons passé un merveilleux séjour en famille. Merci pour l\'accueil chaleureux.',
+    'Logement conforme à la description. La climatisation fonctionne parfaitement, ce qui est appréciable. Petit bémol sur le wifi qui était un peu lent.',
+    'Superbe villa avec une vue magnifique ! L\'espace extérieur est vraiment agréable. Nous avons adoré notre séjour. À refaire sans hésiter !',
+    'Bon logement dans l\'ensemble. Quelques équipements manquants mais l\'hôte a été très réactif pour régler les petits soucis. Bonne communication.',
+    'Parfait pour un séjour professionnel. Proche des bureaux, calme et fonctionnel. Internet rapide, c\'est l\'essentiel pour moi.',
+    'Logement spacieux et lumineux. Les enfants ont adoré le jardin. Seul point négatif : un peu éloigné du centre-ville mais rien de rédhibitoire.',
+    'Excellent séjour ! Tout était parfait du début à la fin. L\'hôte nous a donné de super recommandations de restaurants. On reviendra !',
+    'Bien situé, propre et confortable. Exactement ce que nous recherchions pour nos vacances. Merci pour tout !',
+  ];
+
+  // Grouper les réservations par locataire
+  const reservationsByTenant = new Map<string, typeof completedReservations>();
+  for (const reservation of completedReservations) {
+    if (!reservationsByTenant.has(reservation.tenantId)) {
+      reservationsByTenant.set(reservation.tenantId, []);
+    }
+    reservationsByTenant.get(reservation.tenantId)!.push(reservation);
+  }
+
+  // Pour chaque locataire, laisser au moins 1 réservation SANS avis
+  let reviewsCreated = 0;
+  for (const [tenantId, reservations] of reservationsByTenant) {
+    // Laisser la dernière réservation SANS avis pour pouvoir tester
+    const reservationsToReview = reservations.slice(0, -1);
+
+    for (const reservation of reservationsToReview) {
+      // 80% de chance d'avoir un avis pour ces réservations
+      if (Math.random() > 0.2) {
+        const rating = getRandomInt(3, 5);
+        const hasDetailedRatings = Math.random() > 0.4; // 60% ont des notes détaillées
+
+        await prisma.avis.create({
+          data: {
+            reservationId: reservation.id,
+            authorId: reservation.tenantId,
+            targetType: TypeCibleAvis.logement,
+            targetId: reservation.accommodationId,
+            rating,
+            comment: getRandomElement(reviewComments),
+            detailedRatings: hasDetailedRatings ? {
+              cleanliness: getRandomInt(rating - 1, 5),
+              communication: getRandomInt(rating - 1, 5),
+              location: getRandomInt(rating - 1, 5),
+              value: getRandomInt(rating - 1, 5),
+            } : Prisma.DbNull,
+            status: StatutAvis.publie,
+            publishedAt: new Date(),
+          }
+        });
+        reviewsCreated++;
+      }
     }
   }
+
+  console.log(`✅ ${reviewsCreated} Avis créés (${completedReservations.length - reviewsCreated} réservations sans avis pour tester)`);
 
   // Mettre à jour les notes moyennes
   const allProperties = await prisma.logement.findMany({
@@ -362,7 +438,7 @@ async function main() {
 
   for (const p of allProperties) {
     const reviews = await prisma.avis.findMany({
-      where: { targetId: p.id, targetType: TypeCibleAvis.logement }
+      where: { targetId: p.id, targetType: TypeCibleAvis.logement, status: StatutAvis.publie }
     });
 
     if (reviews.length > 0) {
@@ -370,7 +446,7 @@ async function main() {
       await prisma.logement.update({
         where: { id: p.id },
         data: {
-          averageRating: avg,
+          averageRating: Math.round(avg * 10) / 10, // Arrondi à 1 décimale
           reviewCount: reviews.length
         }
       });

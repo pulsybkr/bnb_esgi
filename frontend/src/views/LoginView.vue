@@ -224,6 +224,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { authService } from '@/services/auth.service'
 import { Mail, Lock, Eye, EyeOff, User, Home, AlertCircle, Loader2 } from 'lucide-vue-next'
+import { useSeo } from '@/composables/useSeo'
 
 const router = useRouter()
 const route = useRoute()
@@ -231,6 +232,13 @@ const authStore = useAuthStore()
 
 // Rediriger si déjà authentifié
 onMounted(() => {
+  // SEO pour la page de connexion
+  const { setSeoTags } = useSeo()
+  setSeoTags({
+    title: 'Connexion',
+    description: 'Connectez-vous à BnB Afriq pour accéder à votre compte et gérer vos réservations de locations en Afrique.'
+  })
+  
   if (authStore.isAuthenticated) {
     const redirectPath = route.query.redirect as string || '/'
     router.push(redirectPath)

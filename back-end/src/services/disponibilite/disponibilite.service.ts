@@ -54,6 +54,20 @@ export class DisponibiliteService {
             );
         }
 
+        // If creating a 'bloque' or 'reserve' period, delete overlapping 'disponible' periods
+        if (availabilityData.status === 'bloque' || availabilityData.status === 'reserve') {
+            await prisma.disponibilite.deleteMany({
+                where: {
+                    accommodationId,
+                    status: 'disponible',
+                    AND: [
+                        { startDate: { lt: availabilityData.endDate } },
+                        { endDate: { gt: availabilityData.startDate } },
+                    ],
+                },
+            });
+        }
+
         const availability = await prisma.disponibilite.create({
             data: {
                 accommodationId,
@@ -217,9 +231,10 @@ export class DisponibiliteService {
         endDate: Date,
         excludeAvailabilityId?: string
     ): Promise<boolean> {
-        // Check for overlapping availabilities
+        // Check for overlapping availabilities (only reserve and bloque, not disponible)
         const where: any = {
             accommodationId,
+            status: { in: ['reserve', 'bloque'] }, // Ignore 'disponible' status
             AND: [
                 { startDate: { lt: endDate } },
                 { endDate: { gt: startDate } },

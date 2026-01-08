@@ -48,6 +48,7 @@ export class AuthService {
         email: true,
         userType: true,
         emailVerified: true,
+        tokenVersion: true,
         phone: true,
         status: true,
         registrationDate: true,
@@ -63,6 +64,7 @@ export class AuthService {
       lastName: user.lastName,
       userType: user.userType,
       emailVerified: user.emailVerified,
+      tokenVersion: user.tokenVersion,
     };
 
     const tokens = JWTService.generateTokens(userPayload);
@@ -90,6 +92,7 @@ export class AuthService {
         passwordHash: true,
         userType: true,
         emailVerified: true,
+        tokenVersion: true,
         phone: true,
         status: true,
         registrationDate: true,
@@ -120,6 +123,7 @@ export class AuthService {
       lastName: user.lastName,
       userType: user.userType,
       emailVerified: user.emailVerified,
+      tokenVersion: user.tokenVersion,
     };
 
     const tokens = JWTService.generateTokens(userPayload);
@@ -135,7 +139,9 @@ export class AuthService {
    */
   static async refreshToken(refreshToken: string): Promise<{ user: UserPayload; tokens: AuthTokens }> {
     // Verify refresh token
-    const { id } = JWTService.verifyRefreshToken(refreshToken);
+    const decoded = JWTService.verifyRefreshToken(refreshToken);
+    const id = decoded.id;
+    const tokenVersion = decoded.tokenVersion;
 
     // Get user data
     const user = await prisma.user.findUnique({
@@ -147,11 +153,12 @@ export class AuthService {
         email: true,
         userType: true,
         emailVerified: true,
+        tokenVersion: true,
         status: true,
       },
     });
 
-    if (!user || user.status !== 'actif') {
+    if (!user || user.status !== 'actif' || user.tokenVersion !== tokenVersion) {
       throw new AuthenticationError('Invalid refresh token');
     }
 
@@ -163,6 +170,7 @@ export class AuthService {
       lastName: user.lastName,
       userType: user.userType,
       emailVerified: user.emailVerified,
+      tokenVersion: user.tokenVersion,
     };
 
     const tokens = JWTService.generateTokens(userPayload);
@@ -183,6 +191,7 @@ export class AuthService {
         email: true,
         userType: true,
         emailVerified: true,
+        tokenVersion: true,
         status: true,
       },
     });
@@ -198,6 +207,7 @@ export class AuthService {
       lastName: user.lastName,
       userType: user.userType,
       emailVerified: user.emailVerified,
+      tokenVersion: user.tokenVersion,
     };
   }
 
@@ -308,9 +318,14 @@ export class AuthService {
    * Logout user (invalidate refresh token)
    */
   static async logout(userId: string): Promise<void> {
-    // In a production app, you might want to maintain a blacklist of tokens
-    // For now, we'll just update the last login time
-    await this.updateLastLogin(userId);
+    // Invalidate all existing tokens by incrementing tokenVersion
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        tokenVersion: { increment: 1 },
+        lastLogin: new Date()
+      },
+    });
   }
 
   /**

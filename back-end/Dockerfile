@@ -1,25 +1,40 @@
-FROM node:20-alpine
+# Stage 1: Build
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Copier les fichiers de dépendances
+# Installer les dépendances système pour Prisma/Native modules
+RUN apk add --no-cache netcat-openbsd
+
 COPY package*.json ./
 COPY prisma ./prisma/
 
-# Installer les dépendances
 RUN npm ci
-
-# Générer le client Prisma
 RUN npx prisma generate
 
-# Copier le reste du code
 COPY . .
-
-# Exposer le port
-EXPOSE 3333
-
-# Build the application
 RUN npm run build
 
-# Start the application
-CMD ["npm", "start"]
+# Stage 2: Production
+FROM node:20-alpine AS runner
+
+WORKDIR /app
+
+# Installer netcat pour l'entrypoint
+RUN apk add --no-cache netcat-openbsd
+
+# Copier seulement les fichiers nécessaires du builder
+COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/docker-entrypoint.sh /usr/local/bin/
+
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+# Définir l'environnement
+ENV NODE_ENV=production
+
+EXPOSE 3333
+
+ENTRYPOINT ["docker-entrypoint.sh"]

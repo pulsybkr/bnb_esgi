@@ -335,6 +335,12 @@
         </div>
       </div>
 
+      <!-- Reviews Section -->
+      <div v-if="accommodation" class="mt-12 border-t pt-12">
+        <h2 class="text-2xl font-bold text-gray-900 mb-6">Avis des voyageurs</h2>
+        <ReviewList :accommodation-id="accommodation.id" />
+      </div>
+
       <!-- Logements similaires -->
       <SimilarAccommodations
         v-if="accommodation"
@@ -409,6 +415,7 @@ import MarkdownContent from '@/components/ui/MarkdownContent.vue'
 import HostAvatar from '@/components/ui/HostAvatar.vue'
 import ReservationModal from '@/components/reservation/ReservationModal.vue'
 import PaymentModal from '@/components/payment/PaymentModal.vue'
+import ReviewList from '@/components/review/ReviewList.vue'
 import type { Accommodation, SelectedService, Service } from '@/types/accommodation'
 import { hasDateConflict, getBookedDates, type DateRange } from '@/utils/dateUtils'
 import { availableServices, calculateServicePrice, calculateTotalServicesPrice } from '@/data/services'
@@ -425,6 +432,8 @@ import { getAmenityInfo, getHouseRuleInfo } from '@/utils/amenities'
 import { ReservationService } from '@/services/reservation/reservation.service'
 
 import { paymentService } from '@/services/payment'
+import { DisponibiliteService } from '@/services/disponibilite/disponibilite.service'
+import { useSeo } from '@/composables/useSeo'
 
 const route = useRoute()
 const router = useRouter()
@@ -451,51 +460,42 @@ const minDate = computed(() => {
   return today
 })
 
-// Plages de dates réservées (simulation - à remplacer par les vraies données de l'API)
-// Dans la vraie app, cela viendrait de l'API : GET /api/accommodations/:id/bookings
-const bookedRanges = computed<DateRange[]>(() => {
-  // Exemple de réservations pour démonstration
-  // Dans la vraie app, cela viendrait de l'API
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  
-  // Simuler quelques réservations
-  const ranges: DateRange[] = [
-    {
-      start: new Date(today.getTime() + 5 * 24 * 60 * 60 * 1000), // +5 jours
-      end: new Date(today.getTime() + 8 * 24 * 60 * 60 * 1000),   // +8 jours
-    },
-    {
-      start: new Date(today.getTime() + 15 * 24 * 60 * 60 * 1000), // +15 jours
-      end: new Date(today.getTime() + 18 * 24 * 60 * 60 * 1000),   // +18 jours
-    },
-    {
-      start: new Date(today.getTime() + 25 * 24 * 60 * 60 * 1000), // +25 jours
-      end: new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000),   // +30 jours
-    },
-  ]
-  
-  return ranges
-})
+// Plages de dates réservées (chargées depuis l'API)
+const bookedRanges = ref<DateRange[]>([])
 
-// Dates désactivées (toutes les dates des plages réservées)
+// Plages de dates bloquées (chargées depuis l'API)
+const blockedRanges = ref<DateRange[]>([])
+
+// Charger les disponibilités et réservations depuis l'API
+const loadAvailabilityData = async (accommodationId: string) => {
+  try {
+    // Charger les réservations confirmées
+    const reservations = await ReservationService.getPropertyReservations(accommodationId, {
+      status: 'confirmee'
+    })
+    
+    bookedRanges.value = reservations.map(r => ({
+      start: new Date(r.startDate),
+      end: new Date(r.endDate)
+    }))
+    
+    // Charger les disponibilités bloquées
+    const availabilities = await DisponibiliteService.getPropertyAvailabilities(accommodationId, {
+      status: 'bloque'
+    })
+    
+    blockedRanges.value = availabilities.map(a => ({
+      start: new Date(a.startDate),
+      end: new Date(a.endDate)
+    }))
+  } catch (error) {
+    console.error('Erreur lors du chargement des disponibilités:', error)
+  }
+}
+
+// Dates désactivées (toutes les dates des plages réservées et bloquées)
 const disabledDates = computed(() => {
-  return getBookedDates(bookedRanges.value)
-})
-
-// Plages de dates bloquées (pour l'affichage du calendrier)
-// Dans la vraie app, cela viendrait de l'API : GET /api/accommodations/:id/blocked-dates
-const blockedRanges = computed<DateRange[]>(() => {
-  // Exemple de dates bloquées pour démonstration
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  
-  return [
-    {
-      start: new Date(today.getTime() + 35 * 24 * 60 * 60 * 1000), // +35 jours
-      end: new Date(today.getTime() + 37 * 24 * 60 * 60 * 1000),   // +37 jours
-    },
-  ]
+  return getBookedDates([...bookedRanges.value, ...blockedRanges.value])
 })
 
 const handleDateChange = (dates: { start: Date | null; end: Date | null }) => {
@@ -737,6 +737,22 @@ const goToSimilarAccommodation = (id: string) => {
 onMounted(async () => {
   console.log('AccommodationDetailView monté')
   await findAccommodation()
+  
+  // SEO dynamique pour la page de détail
+  if (accommodation.value) {
+    const { setSeoTags } = useSeo()
+    const city = accommodation.value.location.city || ''
+    const description = accommodation.value.description.substring(0, 160).replace(/\n/g, ' ')
+    
+    setSeoTags({
+      title: `${accommodation.value.title} - ${city}`,
+      description: description || `Découvrez ${accommodation.value.title} à ${city}. ${accommodation.value.bedrooms} chambre(s), ${accommodation.value.maxGuests} voyageurs max.`,
+      image: accommodation.value.images[0] || undefined,
+      url: window.location.href
+    })
+    
+    await loadAvailabilityData(accommodation.value.id)
+  }
 })
 </script>
 

@@ -1,4 +1,5 @@
 services:
+  # === Base de données principale ===
   postgres:
     image: postgres:15
     container_name: bnb_postgres
@@ -7,7 +8,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+      - "5433:5432" # Changé en 5433 pour éviter le conflit avec l'autre Postgres sur 5432
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./database/init:/docker-entrypoint-initdb.d
@@ -17,71 +18,117 @@ services:
       test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
       timeout: 20s
       retries: 10
+    restart: unless-stopped
 
+  # === Adminer (admin BDD) ===
+  # Accesible via https://zuajeu.com/adminer-bnb/
   adminer:
     image: adminer
     container_name: bnb_adminer
     ports:
-      - "${ADMINER_PORT:-8080}:8080"
+      - "8082:8080"
     depends_on:
       - postgres
     networks:
       - bnb_network
+    restart: unless-stopped
 
-  backend:
-    build:
-      context: ./back-end
-      dockerfile: Dockerfile
-    container_name: bnb_backend
-    ports:
-      - "${BACKEND_PORT:-3333}:3333"
+  # === Matomo Analytics ===
+  matomo_db:
+    image: mariadb:10
+    container_name: bnb_matomo_db
     environment:
-      NODE_ENV: ${NODE_ENV}
-      APP_KEY: ${APP_KEY}
-      PORT: ${BACKEND_PORT:-3333}
-      HOST: 0.0.0.0
-      DB_CONNECTION: ${DB_CONNECTION}
-      DB_HOST: ${DB_HOST}
-      DB_PORT: 5432
-      DB_USER: ${POSTGRES_USER}
-      DB_PASSWORD: ${POSTGRES_PASSWORD}
-      DB_DATABASE: ${POSTGRES_DB}
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${DB_HOST}:5432/${POSTGRES_DB}?schema=public
-      JWT_SECRET: ${JWT_SECRET}
-      CORS_ORIGIN: ${CORS_ORIGIN}
-      LOG_LEVEL: ${LOG_LEVEL}
+      MYSQL_ROOT_PASSWORD: ${MATOMO_DB_ROOT_PASSWORD:-matomo_root_secret}
+      MYSQL_DATABASE: ${MATOMO_DB_NAME:-matomo}
+      MYSQL_USER: ${MATOMO_DB_USER:-matomo}
+      MYSQL_PASSWORD: ${MATOMO_DB_PASSWORD:-matomo_password}
     volumes:
-      - ./back-end:/app
-      - /app/node_modules
-    depends_on:
-      postgres:
-        condition: service_healthy
+      - matomo_db_data:/var/lib/mysql
     networks:
       - bnb_network
+    restart: unless-stopped
 
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    container_name: bnb_frontend
-    ports:
-      - "${FRONTEND_PORT:-5173}:5173"
+  matomo:
+    image: matomo:5
+    container_name: bnb_matomo
     environment:
-      VITE_API_URL: ${VITE_API_URL}
-      VITE_APP_NAME: ${VITE_APP_NAME}
-      VITE_APP_VERSION: ${VITE_APP_VERSION}
+      MATOMO_DATABASE_HOST: matomo_db
+      MATOMO_DATABASE_USERNAME: ${MATOMO_DB_USER:-matomo}
+      MATOMO_DATABASE_PASSWORD: ${MATOMO_DB_PASSWORD:-matomo_password}
+      MATOMO_DATABASE_DBNAME: ${MATOMO_DB_NAME:-matomo}
     volumes:
-      - ./frontend:/app
-      - /app/node_modules
+      - matomo_data:/var/www/html
+    ports:
+      - "8081:80"
     depends_on:
-      - backend
+      - matomo_db
     networks:
       - bnb_network
+    restart: unless-stopped
+
+  # === GlitchTip (Error Tracking) ===
+  glitchtip_db:
+    image: postgres:15
+    container_name: bnb_glitchtip_db
+    environment:
+      POSTGRES_DB: glitchtip
+      POSTGRES_USER: glitchtip
+      POSTGRES_PASSWORD: ${GLITCHTIP_DB_PASSWORD:-glitchtip_password}
+    volumes:
+      - glitchtip_db_data:/var/lib/postgresql/data
+    networks:
+      - bnb_network
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: bnb_redis
+    networks:
+      - bnb_network
+    restart: unless-stopped
+
+  glitchtip:
+    image: glitchtip/glitchtip
+    command: sh -c "./bin/run-migrate.sh && uwsgi --ini /conf/uwsgi.ini"
+    environment:
+      DATABASE_URL: postgres://glitchtip:${GLITCHTIP_DB_PASSWORD:-glitchtip_password}@glitchtip_db:5432/glitchtip
+      SECRET_KEY: ${GLITCHTIP_SECRET_KEY:-change-me-in-production}
+      PORT: 8000
+      EMAIL_URL: ${GLITCHTIP_EMAIL_URL:-consolemail://}
+      GLITCHTIP_DOMAIN: ${GLITCHTIP_DOMAIN:-https://zuajeu.com/glitchtip}
+      DEFAULT_FROM_EMAIL: ${GLITCHTIP_FROM_EMAIL:-noreply@bnb-afriq.com}
+      CELERY_WORKER_AUTOSCALE: "1,3"
+      REDIS_URL: redis://redis:6379/0
+    ports:
+      - "8000:8000"
+    depends_on:
+      - glitchtip_db
+      - redis
+    networks:
+      - bnb_network
+    restart: unless-stopped
+
+  glitchtip_worker:
+    image: glitchtip/glitchtip
+    command: ./bin/run-celery-with-beat.sh
+    environment:
+      DATABASE_URL: postgres://glitchtip:${GLITCHTIP_DB_PASSWORD:-glitchtip_password}@glitchtip_db:5432/glitchtip
+      SECRET_KEY: ${GLITCHTIP_SECRET_KEY:-change-me-in-production}
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      - glitchtip_db
+      - redis
+    networks:
+      - bnb_network
+    restart: unless-stopped
 
 volumes:
   postgres_data:
+  matomo_data:
+  matomo_db_data:
+  glitchtip_db_data:
 
 
 networks:
   bnb_network:
-    driver: ${bnb_network_driver:-bridge}
+    driver: bridge
