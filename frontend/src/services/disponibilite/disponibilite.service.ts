@@ -145,4 +145,17 @@ export class DisponibiliteService {
             throw ErrorHandler.handleError(error)
         }
     }
+
+    // Aliases pour compatibilité avec useDisponibilites.ts
+    static async getPropertyDisponibilites(propertyId: string): Promise<Disponibilite[]> {
+        return this.getPropertyAvailabilities(propertyId)
+    }
+
+    static async createDisponibilite(data: CreateDisponibiliteData & { logementId: string }): Promise<Disponibilite> {
+        return this.createAvailability(data.logementId, data)
+    }
+
+    static async deleteDisponibilite(id: string): Promise<void> {
+        return this.deleteAvailability(id)
+    }
 }
