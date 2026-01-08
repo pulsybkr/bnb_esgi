@@ -50,7 +50,17 @@
             class="w-full h-64 object-cover"
           />
           <div class="p-6">
-            <h2 class="text-2xl font-bold mb-2">{{ reservation.accommodation.title }}</h2>
+            <div class="flex justify-between items-start mb-2">
+              <h2 class="text-2xl font-bold">{{ reservation.accommodation.title }}</h2>
+              <button
+                @click="openAccommodation"
+                class="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 text-sm font-medium transition-colors"
+                title="Voir le logement"
+              >
+                <ExternalLink class="w-4 h-4" />
+                Voir le logement
+              </button>
+            </div>
             <p class="text-gray-600 flex items-center gap-2">
               <MapPin class="w-4 h-4" />
               {{ reservation.accommodation.city }}
@@ -241,7 +251,7 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import apiClient from '@/services/api/client'
-import { ArrowLeft, MapPin, MessageCircle, MessageSquare, Star } from 'lucide-vue-next'
+import { ArrowLeft, MapPin, MessageCircle, MessageSquare, Star, ExternalLink } from 'lucide-vue-next'
 import { ReservationService } from '@/services/reservation/reservation.service'
 import { messageService } from '@/services/message'
 import { reviewService, type Review } from '@/services/reviewService'
@@ -415,6 +425,13 @@ const cancelReservation = async () => {
 
 const openPaymentModal = () => {
   showPaymentModal.value = true
+}
+
+const openAccommodation = () => {
+  if (!reservation.value) return
+  const accommodationId = reservation.value.accommodation.id
+  const url = router.resolve({ name: 'accommodation-detail', params: { id: accommodationId } }).href
+  window.open(url, '_blank')
 }
 
 const handlePaymentSuccess = async () => {

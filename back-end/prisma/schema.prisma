@@ -120,6 +120,27 @@ enum StatutSignalement {
   rejete
 }
 
+enum StatutVerification {
+  en_attente
+  approuve
+  rejete
+  expire
+}
+
+enum TypeDocument {
+  passeport
+  carte_identite
+  permis_conduire
+  titre_sejour
+}
+
+enum PlateformAppareil {
+  ios
+  android
+  web
+}
+
+
 model User {
   id               String            @id @default(uuid())
   firstName        String            @map("nom")
@@ -139,20 +160,25 @@ model User {
   registrationDate DateTime          @default(now()) @map("date_inscription")
   lastLogin        DateTime?         @map("derniere_connexion")
   tokenVersion     Int               @default(0) @map("token_version")
+  isVerified       Boolean           @default(false) @map("identite_verifiee")
+  verificationLevel Int              @default(0) @map("niveau_verification")
   createdAt        DateTime          @default(now()) @map("created_at")
   updatedAt        DateTime          @updatedAt @map("updated_at")
 
   // Relations
-  logements           Logement[]
-  reservations        Reservation[]
-  messagesEnvoyes     Message[]      @relation("MessagesEnvoyes")
-  messagesRecus       Message[]      @relation("MessagesRecus")
-  avisRediges         Avis[]         @relation("AvisRediges")
-  favoris             Favori[]
-  paiements           Paiement[]
-  notifications       Notification[]
-  signalementsCrees   Signalement[]  @relation("SignalementsCrees")
-  signalementsTraites Signalement[]  @relation("SignalementsTraites")
+  logements                Logement[]
+  reservations             Reservation[]
+  messagesEnvoyes          Message[]                @relation("MessagesEnvoyes")
+  messagesRecus            Message[]                @relation("MessagesRecus")
+  avisRediges              Avis[]                   @relation("AvisRediges")
+  favoris                  Favori[]
+  paiements                Paiement[]
+  notifications            Notification[]
+  signalementsCrees        Signalement[]            @relation("SignalementsCrees")
+  signalementsTraites      Signalement[]            @relation("SignalementsTraites")
+  identityVerifications    IdentityVerification[]   @relation("UserVerifications")
+  verificationsReviewed    IdentityVerification[]   @relation("VerificationsReviewed")
+  pushTokens               PushNotificationToken[]
 
   @@map("users")
 }
@@ -472,3 +498,61 @@ model PricingRule {
 
   @@map("regles_tarification")
 }
+
+// ============================================
+// Nouveaux modèles pour les fonctionnalités avancées
+// ============================================
+
+model IdentityVerification {
+  id              String             @id @default(uuid())
+  userId          String             @map("id_utilisateur")
+  documentType    TypeDocument       @map("type_document")
+  documentNumber  String?            @map("numero_document")
+  documentUrl     String             @map("url_document")
+  selfieUrl       String?            @map("url_selfie")
+  status          StatutVerification @default(en_attente)
+  submittedAt     DateTime           @default(now()) @map("date_soumission")
+  reviewedAt      DateTime?          @map("date_verification")
+  reviewedBy      String?            @map("verifie_par")
+  rejectionReason String?            @map("motif_rejet") @db.Text
+  expiresAt       DateTime?          @map("date_expiration")
+  createdAt       DateTime           @default(now()) @map("created_at")
+  updatedAt       DateTime           @updatedAt @map("updated_at")
+
+  // Relations
+  user     User  @relation("UserVerifications", fields: [userId], references: [id], onDelete: Cascade)
+  reviewer User? @relation("VerificationsReviewed", fields: [reviewedBy], references: [id])
+
+  @@map("identity_verifications")
+}
+
+model PushNotificationToken {
+  id        String            @id @default(uuid())
+  userId    String            @map("id_utilisateur")
+  token     String            @unique
+  platform  PlateformAppareil
+  deviceId  String?           @map("id_appareil")
+  isActive  Boolean           @default(true) @map("actif")
+  createdAt DateTime          @default(now()) @map("created_at")
+  updatedAt DateTime          @updatedAt @map("updated_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("push_notification_tokens")
+}
+
+model PushNotificationLog {
+  id           String    @id @default(uuid())
+  userId       String    @map("id_utilisateur")
+  title        String
+  body         String    @db.Text
+  data         Json?
+  sentAt       DateTime  @default(now()) @map("date_envoi")
+  deliveredAt  DateTime? @map("date_livraison")
+  failedAt     DateTime? @map("date_echec")
+  errorMessage String?   @map("message_erreur") @db.Text
+
+  @@map("push_notification_logs")
+}
+
